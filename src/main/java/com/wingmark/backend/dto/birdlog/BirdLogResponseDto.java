@@ -8,7 +8,7 @@ import com.wingmark.backend.enums.Visibility;
 import java.time.Instant;
 import java.util.UUID;
 
-public record BirdLogResponse(
+public record BirdLogResponseDto(
         UUID id,
         UUID userId,
         UUID speciesId,

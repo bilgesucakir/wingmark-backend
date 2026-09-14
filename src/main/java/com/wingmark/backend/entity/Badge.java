@@ -2,7 +2,9 @@ package com.wingmark.backend.entity;
 
 import com.wingmark.backend.enums.BadgeCriteriaType;
 import com.wingmark.backend.enums.BadgeTier;
+import com.wingmark.backend.util.JsonMapConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -12,6 +14,8 @@ import lombok.experimental.SuperBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.Map;
 
 @Getter
 @Setter
@@ -38,12 +42,13 @@ public class Badge extends BaseEntity {
     private Integer criteriaValue;
 
     /**
-     * Free-form JSON for criteria that need extra parameters, e.g. SPECIES_IN_RADIUS
-     * needs a radius in meters in addition to the species-count criteriaValue:
-     * {"radiusMeters": 5000}
+     * Free-form parameters for criteria that need more than the plain count in
+     * criteriaValue, e.g. SPECIES_IN_RADIUS needs a radius in meters: {"radiusMeters": 5000}.
+     * Stored as a JSON string in a single TEXT column via JsonMapConverter.
      */
+    @Convert(converter = JsonMapConverter.class)
     @Column(columnDefinition = "TEXT")
-    private String criteriaMetadata;
+    private Map<String, Object> criteriaMetadata;
 
     @Enumerated(EnumType.STRING)
     private BadgeTier tier;

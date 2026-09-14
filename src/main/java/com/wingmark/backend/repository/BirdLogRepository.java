@@ -11,6 +11,9 @@ import java.util.UUID;
 
 public interface BirdLogRepository extends JpaRepository<BirdLog, UUID> {
 
+    /** Admin-only use: every log across every user. There is no cross-user viewing feature for regular users. */
+    List<BirdLog> findAllByOrderByObservedAtDesc();
+
     List<BirdLog> findByUserIdOrderByObservedAtDesc(UUID userId);
 
     Optional<BirdLog> findByIdAndUserId(UUID id, UUID userId);

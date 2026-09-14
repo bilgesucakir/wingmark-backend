@@ -1,8 +1,8 @@
 package com.wingmark.backend.service.impl;
 
-import com.wingmark.backend.dto.birdlog.BirdLogResponse;
-import com.wingmark.backend.dto.birdlog.CreateBirdLogRequest;
-import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequest;
+import com.wingmark.backend.dto.birdlog.BirdLogResponseDto;
+import com.wingmark.backend.dto.birdlog.CreateBirdLogRequestDto;
+import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequestDto;
 import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.exception.ResourceNotFoundException;
@@ -27,19 +27,26 @@ public class BirdLogServiceImpl implements BirdLogService {
     private final BadgeService badgeService;
 
     @Override
-    public List<BirdLogResponse> listForUser(UUID userId) {
+    public List<BirdLogResponseDto> getAll() {
+        return birdLogRepository.findAllByOrderByObservedAtDesc().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<BirdLogResponseDto> getByUserId(UUID userId) {
         return birdLogRepository.findByUserIdOrderByObservedAtDesc(userId).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Override
-    public BirdLogResponse get(UUID userId, UUID logId) {
+    public BirdLogResponseDto getById(UUID userId, UUID logId) {
         return toResponse(findOwnedLog(userId, logId));
     }
 
     @Override
-    public List<BirdLogResponse> findWithinBounds(UUID userId, double minLat, double maxLat, double minLng, double maxLng) {
+    public List<BirdLogResponseDto> getByLocation(UUID userId, double minLat, double maxLat, double minLng, double maxLng) {
         return birdLogRepository.findWithinBounds(userId, minLat, maxLat, minLng, maxLng).stream()
                 .map(this::toResponse)
                 .toList();
@@ -47,7 +54,7 @@ public class BirdLogServiceImpl implements BirdLogService {
 
     @Override
     @Transactional
-    public BirdLogResponse create(UUID userId, CreateBirdLogRequest request) {
+    public BirdLogResponseDto create(UUID userId, CreateBirdLogRequestDto request) {
         validateSpecies(request.speciesId());
 
         BirdLog log = BirdLog.builder()
@@ -74,7 +81,7 @@ public class BirdLogServiceImpl implements BirdLogService {
 
     @Override
     @Transactional
-    public BirdLogResponse update(UUID userId, UUID logId, UpdateBirdLogRequest request) {
+    public BirdLogResponseDto update(UUID userId, UUID logId, UpdateBirdLogRequestDto request) {
         BirdLog log = findOwnedLog(userId, logId);
         validateSpecies(request.speciesId());
 
@@ -117,7 +124,7 @@ public class BirdLogServiceImpl implements BirdLogService {
                 .orElseThrow(() -> ResourceNotFoundException.of("BirdLog", logId));
     }
 
-    private BirdLogResponse toResponse(BirdLog log) {
+    private BirdLogResponseDto toResponse(BirdLog log) {
         String speciesCommonName = null;
         if (log.getSpeciesId() != null) {
             speciesCommonName = speciesRepository.findById(log.getSpeciesId())
@@ -125,7 +132,7 @@ public class BirdLogServiceImpl implements BirdLogService {
                     .orElse(null);
         }
 
-        return new BirdLogResponse(
+        return new BirdLogResponseDto(
                 log.getId(),
                 log.getUserId(),
                 log.getSpeciesId(),

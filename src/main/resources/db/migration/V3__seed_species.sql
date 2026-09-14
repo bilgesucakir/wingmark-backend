@@ -17,6 +17,6 @@ values
 
 insert into species_images (id, created_at, updated_at, species_id, life_stage, gender, image_url, caption)
 values
-    ('33333333-3333-3333-3333-333333333301', now(), now(), '22222222-2222-2222-2222-222222222201', 'ADULT', 'MALE', 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/House_Sparrow%2C_England_-_May_09.jpg/320px-House_Sparrow%2C_England_-_May_09.jpg', 'Adult male, grey crown and black bib'),
-    ('33333333-3333-3333-3333-333333333302', now(), now(), '22222222-2222-2222-2222-222222222201', 'ADULT', 'FEMALE', 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/House_Sparrow01.jpg/320px-House_Sparrow01.jpg', 'Adult female, plain brown and buff'),
-    ('33333333-3333-3333-3333-333333333303', now(), now(), '22222222-2222-2222-2222-222222222202', 'ADULT', 'NOT_APPLICABLE', 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Erithacus_rubecula_with_cocked_head.jpg/320px-Erithacus_rubecula_with_cocked_head.jpg', 'Adult, sexes look alike');
+    ('33333333-3333-3333-3333-333333333301', now(), now(), '22222222-2222-2222-2222-222222222201', 'ADULT', 'MALE', 'https://upload.wikimedia.org/wikipedia/commons/4/48/Passer_domesticus_adult%2Cwinter-male.jpg', 'Adult male in winter plumage, grey crown, chestnut nape, black bib'),
+    ('33333333-3333-3333-3333-333333333302', now(), now(), '22222222-2222-2222-2222-222222222201', 'ADULT', 'FEMALE', 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Female_house_sparrow_at_Kodai.jpg', 'Adult female, plain brown and buff'),
+    ('33333333-3333-3333-3333-333333333303', now(), now(), '22222222-2222-2222-2222-222222222202', 'ADULT', 'NOT_APPLICABLE', 'https://upload.wikimedia.org/wikipedia/commons/f/f3/Erithacus_rubecula_with_cocked_head.jpg', 'Adult, sexes look alike');

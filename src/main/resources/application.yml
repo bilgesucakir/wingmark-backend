@@ -39,7 +39,10 @@ wingmark:
   storage:
     upload-dir: ${UPLOAD_DIR:uploads}
   xeno-canto:
-    base-url: ${XENO_CANTO_BASE_URL:https://xeno-canto.org/api/2}
+    base-url: ${XENO_CANTO_BASE_URL:https://xeno-canto.org/api/3}
+    api-key: ${XENO_CANTO_API_KEY:}
+  inaturalist:
+    base-url: ${INATURALIST_BASE_URL:https://api.inaturalist.org/v1}
 
 springdoc:
   api-docs:

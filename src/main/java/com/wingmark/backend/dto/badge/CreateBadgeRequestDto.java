@@ -6,13 +6,15 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-public record CreateBadgeRequest(
+import java.util.Map;
+
+public record CreateBadgeRequestDto(
         @NotBlank String name,
         String description,
         String icon,
         @NotNull BadgeCriteriaType criteriaType,
         @NotNull @Positive Integer criteriaValue,
-        String criteriaMetadata,
+        Map<String, Object> criteriaMetadata,
         BadgeTier tier
 ) {
 }

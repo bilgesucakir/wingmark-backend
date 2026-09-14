@@ -2,7 +2,7 @@ package com.wingmark.backend.dto.species;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record UpdateSpeciesRequest(
+public record UpdateSpeciesRequestDto(
         @NotBlank String commonName,
         @NotBlank String scientificName,
         String family,

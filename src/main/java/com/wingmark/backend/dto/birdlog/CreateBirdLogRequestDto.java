@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
-public record CreateBirdLogRequest(
+public record CreateBirdLogRequestDto(
         UUID speciesId,
         SpeciesStatus speciesStatus,
         boolean pet,

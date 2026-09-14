@@ -1,6 +1,5 @@
 package com.wingmark.backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wingmark.backend.entity.Badge;
 import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.entity.UserBadge;
@@ -41,7 +40,7 @@ class BadgeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        badgeService = new BadgeServiceImpl(badgeRepository, userBadgeRepository, birdLogRepository, new ObjectMapper());
+        badgeService = new BadgeServiceImpl(badgeRepository, userBadgeRepository, birdLogRepository);
     }
 
     @Test
@@ -117,7 +116,7 @@ class BadgeServiceImplTest {
                 .id(UUID.randomUUID())
                 .criteriaType(BadgeCriteriaType.SPECIES_IN_RADIUS)
                 .criteriaValue(2)
-                .criteriaMetadata("{\"radiusMeters\": 2000}")
+                .criteriaMetadata(java.util.Map.of("radiusMeters", 2000))
                 .build();
 
         UUID speciesA = UUID.randomUUID();

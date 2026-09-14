@@ -1,14 +1,18 @@
 package com.wingmark.backend.controller;
 
-import com.wingmark.backend.dto.birdlog.BirdLogResponse;
-import com.wingmark.backend.dto.birdlog.CreateBirdLogRequest;
-import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequest;
+import com.wingmark.backend.dto.birdlog.BirdLogResponseDto;
+import com.wingmark.backend.dto.birdlog.CreateBirdLogRequestDto;
+import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequestDto;
+import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.security.UserPrincipal;
 import com.wingmark.backend.service.BirdLogService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,45 +27,78 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Bird sighting logs. Regular users can only ever reach their own logs - either
+ * implicitly (create/update/delete/getById/getByLocation, scoped via the JWT principal)
+ * or explicitly by their own id (getByUserId, ownership-checked like
+ * UserController/BadgeController). The one true "all logs, everyone's" endpoint
+ * (getAll) is admin-only, since there's no cross-user viewing feature for regular
+ * users.
+ */
+@Tag(name = "Bird Logs", description = "Bird sighting logs (photo, species, location, notes)")
 @RestController
-@RequestMapping("/api/logs")
+@RequestMapping("/api/bird-logs")
 @RequiredArgsConstructor
 public class BirdLogController {
 
     private final BirdLogService birdLogService;
 
+    /** Admin-only: returns every log across every user, most recently observed first. */
+    @Operation(summary = "Get all bird logs", description = "Admin-only. Returns every log across every user, most recently observed first.")
     @GetMapping
-    public ResponseEntity<List<BirdLogResponse>> list(@AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(birdLogService.listForUser(principal.getId()));
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<BirdLogResponseDto>> getAll() {
+        return ResponseEntity.ok(birdLogService.getAll());
     }
 
-    @GetMapping("/map")
-    public ResponseEntity<List<BirdLogResponse>> map(@AuthenticationPrincipal UserPrincipal principal,
-                                                       @RequestParam double minLat,
-                                                       @RequestParam double maxLat,
-                                                       @RequestParam double minLng,
-                                                       @RequestParam double maxLng) {
-        return ResponseEntity.ok(birdLogService.findWithinBounds(principal.getId(), minLat, maxLat, minLng, maxLng));
+    /** Returns all of the given user's own logs, most recently observed first. userId must match the authenticated caller. */
+    @Operation(summary = "Get bird logs by user", description = "Returns all of this user's own logs, most recently observed first. userId must match the authenticated caller.")
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<BirdLogResponseDto>> getByUserId(@AuthenticationPrincipal UserPrincipal principal,
+                                                                 @PathVariable UUID userId) {
+        if (!principal.getId().equals(userId)) {
+            throw ResourceNotFoundException.of("User", userId);
+        }
+        return ResponseEntity.ok(birdLogService.getByUserId(userId));
     }
 
+    /** Returns the caller's own logs whose coordinates fall within the given lat/lng box, for the map view. */
+    @Operation(summary = "Get bird logs by location", description = "Returns the caller's own logs whose coordinates fall within the given lat/lng bounding box, for the map view.")
+    @GetMapping("/location")
+    public ResponseEntity<List<BirdLogResponseDto>> getByLocation(@AuthenticationPrincipal UserPrincipal principal,
+                                                                    @RequestParam double minLat,
+                                                                    @RequestParam double maxLat,
+                                                                    @RequestParam double minLng,
+                                                                    @RequestParam double maxLng) {
+        return ResponseEntity.ok(birdLogService.getByLocation(principal.getId(), minLat, maxLat, minLng, maxLng));
+    }
+
+    /** Returns one of the caller's own logs by id. */
+    @Operation(summary = "Get bird log by id", description = "Returns one of the caller's own logs by id. 404 if it doesn't exist or belongs to someone else.")
     @GetMapping("/{id}")
-    public ResponseEntity<BirdLogResponse> get(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
-        return ResponseEntity.ok(birdLogService.get(principal.getId(), id));
+    public ResponseEntity<BirdLogResponseDto> getById(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
+        return ResponseEntity.ok(birdLogService.getById(principal.getId(), id));
     }
 
+    /** Creates a new bird sighting log for the caller and re-evaluates their badge progress. */
+    @Operation(summary = "Create a bird log", description = "Creates a new bird sighting log for the caller and re-evaluates their badge progress.")
     @PostMapping
-    public ResponseEntity<BirdLogResponse> create(@AuthenticationPrincipal UserPrincipal principal,
-                                                    @Valid @RequestBody CreateBirdLogRequest request) {
+    public ResponseEntity<BirdLogResponseDto> create(@AuthenticationPrincipal UserPrincipal principal,
+                                                    @Valid @RequestBody CreateBirdLogRequestDto request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(birdLogService.create(principal.getId(), request));
     }
 
+    /** Updates one of the caller's own bird logs and re-evaluates their badge progress. */
+    @Operation(summary = "Update a bird log", description = "Updates one of the caller's own bird logs and re-evaluates their badge progress.")
     @PutMapping("/{id}")
-    public ResponseEntity<BirdLogResponse> update(@AuthenticationPrincipal UserPrincipal principal,
+    public ResponseEntity<BirdLogResponseDto> update(@AuthenticationPrincipal UserPrincipal principal,
                                                     @PathVariable UUID id,
-                                                    @Valid @RequestBody UpdateBirdLogRequest request) {
+                                                    @Valid @RequestBody UpdateBirdLogRequestDto request) {
         return ResponseEntity.ok(birdLogService.update(principal.getId(), id, request));
     }
 
+    /** Deletes one of the caller's own bird logs and re-evaluates their badge progress. */
+    @Operation(summary = "Delete a bird log", description = "Deletes one of the caller's own bird logs and re-evaluates their badge progress.")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
         birdLogService.delete(principal.getId(), id);

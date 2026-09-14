@@ -1,10 +1,10 @@
 package com.wingmark.backend.service.impl;
 
-import com.wingmark.backend.dto.auth.AuthResponse;
-import com.wingmark.backend.dto.auth.ForgotPasswordRequest;
-import com.wingmark.backend.dto.auth.LoginRequest;
-import com.wingmark.backend.dto.auth.RegisterRequest;
-import com.wingmark.backend.dto.auth.ResetPasswordRequest;
+import com.wingmark.backend.dto.auth.AuthResponseDto;
+import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
+import com.wingmark.backend.dto.auth.LoginRequestDto;
+import com.wingmark.backend.dto.auth.RegisterRequestDto;
+import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 import com.wingmark.backend.entity.PasswordResetToken;
 import com.wingmark.backend.entity.RefreshToken;
 import com.wingmark.backend.entity.User;
@@ -44,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResponseDto register(RegisterRequestDto request) {
         if (userRepository.existsByEmailIgnoreCase(request.email())) {
             throw new DuplicateResourceException("An account with this email already exists");
         }
@@ -72,7 +72,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponseDto login(LoginRequestDto request) {
         User user = userRepository.findByEmailIgnoreCase(request.email())
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
@@ -88,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponse refresh(String rawRefreshToken) {
+    public AuthResponseDto refresh(String rawRefreshToken) {
         String hash = TokenHasher.sha256(rawRefreshToken);
         RefreshToken stored = refreshTokenRepository.findByTokenHash(hash)
                 .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
@@ -124,7 +124,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void forgotPassword(ForgotPasswordRequest request) {
+    public void forgotPassword(ForgotPasswordRequestDto request) {
         userRepository.findByEmailIgnoreCase(request.email()).ifPresent(user -> {
             String rawToken = RandomTokenGenerator.generate();
             PasswordResetToken resetToken = PasswordResetToken.builder()
@@ -144,7 +144,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void resetPassword(ResetPasswordRequest request) {
+    public void resetPassword(ResetPasswordRequestDto request) {
         String hash = TokenHasher.sha256(request.token());
         PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(hash)
                 .orElseThrow(() -> new InvalidTokenException("Invalid or expired password reset token"));
@@ -156,6 +156,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(resetToken.getUserId())
                 .orElseThrow(() -> new InvalidTokenException("Invalid or expired password reset token"));
 
+        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("New password must be different from the current password");
+        }
+
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
 
@@ -165,7 +169,7 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.revokeAllForUser(user.getId(), Instant.now());
     }
 
-    private AuthResponse issueTokens(User user) {
+    private AuthResponseDto issueTokens(User user) {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
 
         String rawRefreshToken = RandomTokenGenerator.generate();
@@ -176,6 +180,6 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         refreshTokenRepository.save(refreshToken);
 
-        return new AuthResponse(accessToken, rawRefreshToken, jwtTokenProvider.getAccessTokenExpirationMs());
+        return new AuthResponseDto(accessToken, rawRefreshToken, jwtTokenProvider.getAccessTokenExpirationMs());
     }
 }

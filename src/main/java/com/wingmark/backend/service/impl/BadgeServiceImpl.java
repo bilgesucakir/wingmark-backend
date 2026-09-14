@@ -1,10 +1,8 @@
 package com.wingmark.backend.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wingmark.backend.dto.badge.BadgeResponse;
-import com.wingmark.backend.dto.badge.CreateBadgeRequest;
-import com.wingmark.backend.dto.badge.UserBadgeResponse;
+import com.wingmark.backend.dto.badge.BadgeResponseDto;
+import com.wingmark.backend.dto.badge.CreateBadgeRequestDto;
+import com.wingmark.backend.dto.badge.UserBadgeResponseDto;
 import com.wingmark.backend.entity.Badge;
 import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.entity.UserBadge;
@@ -33,15 +31,14 @@ public class BadgeServiceImpl implements BadgeService {
     private final BadgeRepository badgeRepository;
     private final UserBadgeRepository userBadgeRepository;
     private final BirdLogRepository birdLogRepository;
-    private final ObjectMapper objectMapper;
 
     @Override
-    public List<BadgeResponse> listCatalog() {
+    public List<BadgeResponseDto> getAll() {
         return badgeRepository.findAll().stream().map(this::toResponse).toList();
     }
 
     @Override
-    public List<UserBadgeResponse> listForUser(UUID userId) {
+    public List<UserBadgeResponseDto> getByUserId(UUID userId) {
         List<Badge> badges = badgeRepository.findAll();
         Map<UUID, UserBadge> earned = userBadgeRepository.findByUserId(userId).stream()
                 .collect(java.util.stream.Collectors.toMap(UserBadge::getBadgeId, ub -> ub));
@@ -51,7 +48,7 @@ public class BadgeServiceImpl implements BadgeService {
                     UserBadge userBadge = earned.get(badge.getId());
                     int progress = userBadge != null ? userBadge.getProgress() : 0;
                     boolean isEarned = userBadge != null && userBadge.getEarnedAt() != null;
-                    return new UserBadgeResponse(
+                    return new UserBadgeResponseDto(
                             badge.getId(),
                             badge.getName(),
                             badge.getIcon(),
@@ -66,7 +63,7 @@ public class BadgeServiceImpl implements BadgeService {
 
     @Override
     @Transactional
-    public BadgeResponse create(CreateBadgeRequest request) {
+    public BadgeResponseDto create(CreateBadgeRequestDto request) {
         Badge badge = Badge.builder()
                 .name(request.name())
                 .description(request.description())
@@ -127,17 +124,18 @@ public class BadgeServiceImpl implements BadgeService {
         return maxDistinctSpecies;
     }
 
-    private double extractRadiusMeters(String criteriaMetadata) {
-        if (criteriaMetadata == null || criteriaMetadata.isBlank()) {
+    private double extractRadiusMeters(Map<String, Object> criteriaMetadata) {
+        if (criteriaMetadata == null) {
             return 5000;
         }
-        try {
-            JsonNode node = objectMapper.readTree(criteriaMetadata);
-            return node.has("radiusMeters") ? node.get("radiusMeters").asDouble() : 5000;
-        } catch (Exception ex) {
-            log.warn("Failed to parse badge criteriaMetadata '{}', defaulting to 5000m radius", criteriaMetadata, ex);
-            return 5000;
+        Object radius = criteriaMetadata.get("radiusMeters");
+        if (radius instanceof Number number) {
+            return number.doubleValue();
         }
+        if (radius != null) {
+            log.warn("Badge criteriaMetadata.radiusMeters was not numeric ({}), defaulting to 5000m radius", radius);
+        }
+        return 5000;
     }
 
     private void upsertUserBadge(UUID userId, Badge badge, int progress) {
@@ -155,8 +153,8 @@ public class BadgeServiceImpl implements BadgeService {
         userBadgeRepository.save(userBadge);
     }
 
-    private BadgeResponse toResponse(Badge badge) {
-        return new BadgeResponse(
+    private BadgeResponseDto toResponse(Badge badge) {
+        return new BadgeResponseDto(
                 badge.getId(),
                 badge.getName(),
                 badge.getDescription(),

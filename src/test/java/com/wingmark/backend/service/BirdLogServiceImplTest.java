@@ -1,8 +1,8 @@
 package com.wingmark.backend.service;
 
-import com.wingmark.backend.dto.birdlog.BirdLogResponse;
-import com.wingmark.backend.dto.birdlog.CreateBirdLogRequest;
-import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequest;
+import com.wingmark.backend.dto.birdlog.BirdLogResponseDto;
+import com.wingmark.backend.dto.birdlog.CreateBirdLogRequestDto;
+import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequestDto;
 import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.enums.Gender;
 import com.wingmark.backend.enums.LifeStage;
@@ -50,7 +50,7 @@ class BirdLogServiceImplTest {
         UUID speciesId = UUID.randomUUID();
         when(speciesRepository.existsById(speciesId)).thenReturn(false);
 
-        CreateBirdLogRequest request = new CreateBirdLogRequest(
+        CreateBirdLogRequestDto request = new CreateBirdLogRequestDto(
                 speciesId, SpeciesStatus.CONFIDENT, false, "Tweety",
                 LifeStage.ADULT, Gender.MALE, null, null, 40.0, 29.0, null);
 
@@ -66,11 +66,11 @@ class BirdLogServiceImplTest {
             return log;
         });
 
-        CreateBirdLogRequest request = new CreateBirdLogRequest(
+        CreateBirdLogRequestDto request = new CreateBirdLogRequestDto(
                 null, null, false, null,
                 LifeStage.UNKNOWN, Gender.UNKNOWN, null, "not sure what this was", 40.0, 29.0, null);
 
-        BirdLogResponse response = birdLogService.create(userId, request);
+        BirdLogResponseDto response = birdLogService.create(userId, request);
 
         assertThat(response.speciesId()).isNull();
         assertThat(response.speciesStatus()).isNull();
@@ -81,7 +81,7 @@ class BirdLogServiceImplTest {
     void createTriggersBadgeEvaluationForTheOwningUser() {
         when(birdLogRepository.save(any(BirdLog.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        CreateBirdLogRequest request = new CreateBirdLogRequest(
+        CreateBirdLogRequestDto request = new CreateBirdLogRequestDto(
                 null, null, true, "Pico",
                 LifeStage.ADULT, Gender.MALE, null, null, 10.0, 20.0, null);
 
@@ -95,7 +95,7 @@ class BirdLogServiceImplTest {
         UUID logId = UUID.randomUUID();
         when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> birdLogService.get(userId, logId))
+        assertThatThrownBy(() -> birdLogService.getById(userId, logId))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -114,11 +114,11 @@ class BirdLogServiceImplTest {
         when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(existing));
         when(birdLogRepository.save(any(BirdLog.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateBirdLogRequest request = new UpdateBirdLogRequest(
+        UpdateBirdLogRequestDto request = new UpdateBirdLogRequestDto(
                 null, null, false, "Renamed",
                 LifeStage.ADULT, Gender.FEMALE, null, "updated note", 2.0, 2.0, "Some park");
 
-        BirdLogResponse response = birdLogService.update(userId, logId, request);
+        BirdLogResponseDto response = birdLogService.update(userId, logId, request);
 
         assertThat(response.customName()).isEqualTo("Renamed");
         assertThat(response.lifeStage()).isEqualTo(LifeStage.ADULT);

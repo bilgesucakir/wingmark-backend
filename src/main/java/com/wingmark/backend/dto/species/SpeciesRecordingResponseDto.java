@@ -1,6 +1,6 @@
 package com.wingmark.backend.dto.species;
 
-public record SpeciesRecordingResponse(
+public record SpeciesRecordingResponseDto(
         String id,
         String recordingUrl,
         String type,

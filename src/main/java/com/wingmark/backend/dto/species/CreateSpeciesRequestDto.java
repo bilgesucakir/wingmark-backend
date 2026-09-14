@@ -1,12 +1,10 @@
 package com.wingmark.backend.dto.species;
 
-import java.util.List;
-import java.util.UUID;
+import jakarta.validation.constraints.NotBlank;
 
-public record SpeciesResponse(
-        UUID id,
-        String commonName,
-        String scientificName,
+public record CreateSpeciesRequestDto(
+        @NotBlank String commonName,
+        @NotBlank String scientificName,
         String family,
         String order,
         String description,
@@ -15,7 +13,6 @@ public record SpeciesResponse(
         String habitat,
         String sizeDescription,
         String conservationStatus,
-        String nativeRange,
-        List<SpeciesImageResponse> images
+        String nativeRange
 ) {
 }

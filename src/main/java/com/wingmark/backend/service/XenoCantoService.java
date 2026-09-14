@@ -1,10 +1,12 @@
 package com.wingmark.backend.service;
 
-import com.wingmark.backend.dto.species.SpeciesRecordingResponse;
+import com.wingmark.backend.dto.species.SpeciesRecordingResponseDto;
 
 import java.util.List;
 
+/** Live proxy to Xeno-canto's free bird-sound recording API (requires XENO_CANTO_API_KEY). */
 public interface XenoCantoService {
 
-    List<SpeciesRecordingResponse> findRecordings(String scientificName);
+    /** Fetches call/song recordings for a species by scientific name, most-voted first. */
+    List<SpeciesRecordingResponseDto> findRecordings(String scientificName);
 }

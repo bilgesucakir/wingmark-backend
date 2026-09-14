@@ -1,27 +1,35 @@
 package com.wingmark.backend.service;
 
-import com.wingmark.backend.dto.species.CreateSpeciesImageRequest;
-import com.wingmark.backend.dto.species.CreateSpeciesRequest;
-import com.wingmark.backend.dto.species.SpeciesImageResponse;
-import com.wingmark.backend.dto.species.SpeciesResponse;
-import com.wingmark.backend.dto.species.UpdateSpeciesRequest;
+import com.wingmark.backend.dto.species.CreateSpeciesImageRequestDto;
+import com.wingmark.backend.dto.species.CreateSpeciesRequestDto;
+import com.wingmark.backend.dto.species.SpeciesImageResponseDto;
+import com.wingmark.backend.dto.species.SpeciesResponseDto;
+import com.wingmark.backend.dto.species.UpdateSpeciesRequestDto;
 
 import java.util.List;
 import java.util.UUID;
 
+/** Manages the species guide: reference entries and their life-stage/gender images. */
 public interface SpeciesService {
 
-    List<SpeciesResponse> list(String search);
+    /** Returns every species in the guide, optionally filtered by a common-name substring. */
+    List<SpeciesResponseDto> getAll(String search);
 
-    SpeciesResponse get(UUID id);
+    /** Returns one species by id, including its reference images. */
+    SpeciesResponseDto getById(UUID id);
 
-    SpeciesResponse create(CreateSpeciesRequest request);
+    /** Admin-only: adds a new species to the guide. */
+    SpeciesResponseDto create(CreateSpeciesRequestDto request);
 
-    SpeciesResponse update(UUID id, UpdateSpeciesRequest request);
+    /** Admin-only: updates an existing species entry. */
+    SpeciesResponseDto update(UUID id, UpdateSpeciesRequestDto request);
 
+    /** Admin-only: removes a species (and its images) from the guide. */
     void delete(UUID id);
 
-    SpeciesImageResponse addImage(UUID speciesId, CreateSpeciesImageRequest request);
+    /** Admin-only: attaches a curated reference image (life stage + gender) to a species. */
+    SpeciesImageResponseDto addImage(UUID speciesId, CreateSpeciesImageRequestDto request);
 
+    /** Admin-only: removes one of a species' reference images. */
     void deleteImage(UUID speciesId, UUID imageId);
 }

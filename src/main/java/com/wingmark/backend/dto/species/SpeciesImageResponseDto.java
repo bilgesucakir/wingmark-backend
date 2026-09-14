@@ -5,7 +5,7 @@ import com.wingmark.backend.enums.LifeStageImage;
 
 import java.util.UUID;
 
-public record SpeciesImageResponse(
+public record SpeciesImageResponseDto(
         UUID id,
         LifeStageImage lifeStage,
         ImageGender gender,

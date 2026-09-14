@@ -5,7 +5,7 @@ import com.wingmark.backend.enums.BadgeTier;
 
 import java.util.UUID;
 
-public record BadgeResponse(
+public record BadgeResponseDto(
         UUID id,
         String name,
         String description,

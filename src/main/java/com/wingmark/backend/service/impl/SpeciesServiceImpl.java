@@ -1,10 +1,10 @@
 package com.wingmark.backend.service.impl;
 
-import com.wingmark.backend.dto.species.CreateSpeciesImageRequest;
-import com.wingmark.backend.dto.species.CreateSpeciesRequest;
-import com.wingmark.backend.dto.species.SpeciesImageResponse;
-import com.wingmark.backend.dto.species.SpeciesResponse;
-import com.wingmark.backend.dto.species.UpdateSpeciesRequest;
+import com.wingmark.backend.dto.species.CreateSpeciesImageRequestDto;
+import com.wingmark.backend.dto.species.CreateSpeciesRequestDto;
+import com.wingmark.backend.dto.species.SpeciesImageResponseDto;
+import com.wingmark.backend.dto.species.SpeciesResponseDto;
+import com.wingmark.backend.dto.species.UpdateSpeciesRequestDto;
 import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.entity.SpeciesImage;
 import com.wingmark.backend.exception.DuplicateResourceException;
@@ -28,7 +28,7 @@ public class SpeciesServiceImpl implements SpeciesService {
     private final SpeciesImageRepository speciesImageRepository;
 
     @Override
-    public List<SpeciesResponse> list(String search) {
+    public List<SpeciesResponseDto> getAll(String search) {
         List<Species> species = StringUtils.hasText(search)
                 ? speciesRepository.findByCommonNameContainingIgnoreCase(search)
                 : speciesRepository.findAll();
@@ -36,13 +36,13 @@ public class SpeciesServiceImpl implements SpeciesService {
     }
 
     @Override
-    public SpeciesResponse get(UUID id) {
+    public SpeciesResponseDto getById(UUID id) {
         return toResponse(findSpecies(id));
     }
 
     @Override
     @Transactional
-    public SpeciesResponse create(CreateSpeciesRequest request) {
+    public SpeciesResponseDto create(CreateSpeciesRequestDto request) {
         if (speciesRepository.existsByScientificNameIgnoreCase(request.scientificName())) {
             throw new DuplicateResourceException("A species with this scientific name already exists");
         }
@@ -66,7 +66,7 @@ public class SpeciesServiceImpl implements SpeciesService {
 
     @Override
     @Transactional
-    public SpeciesResponse update(UUID id, UpdateSpeciesRequest request) {
+    public SpeciesResponseDto update(UUID id, UpdateSpeciesRequestDto request) {
         Species species = findSpecies(id);
 
         if (!species.getScientificName().equalsIgnoreCase(request.scientificName())
@@ -101,7 +101,7 @@ public class SpeciesServiceImpl implements SpeciesService {
 
     @Override
     @Transactional
-    public SpeciesImageResponse addImage(UUID speciesId, CreateSpeciesImageRequest request) {
+    public SpeciesImageResponseDto addImage(UUID speciesId, CreateSpeciesImageRequestDto request) {
         if (!speciesRepository.existsById(speciesId)) {
             throw ResourceNotFoundException.of("Species", speciesId);
         }
@@ -136,12 +136,12 @@ public class SpeciesServiceImpl implements SpeciesService {
                 .orElseThrow(() -> ResourceNotFoundException.of("Species", id));
     }
 
-    private SpeciesResponse toResponse(Species species) {
-        List<SpeciesImageResponse> images = speciesImageRepository.findBySpeciesId(species.getId()).stream()
+    private SpeciesResponseDto toResponse(Species species) {
+        List<SpeciesImageResponseDto> images = speciesImageRepository.findBySpeciesId(species.getId()).stream()
                 .map(this::toImageResponse)
                 .toList();
 
-        return new SpeciesResponse(
+        return new SpeciesResponseDto(
                 species.getId(),
                 species.getCommonName(),
                 species.getScientificName(),
@@ -158,8 +158,8 @@ public class SpeciesServiceImpl implements SpeciesService {
         );
     }
 
-    private SpeciesImageResponse toImageResponse(SpeciesImage image) {
-        return new SpeciesImageResponse(
+    private SpeciesImageResponseDto toImageResponse(SpeciesImage image) {
+        return new SpeciesImageResponseDto(
                 image.getId(),
                 image.getLifeStage(),
                 image.getGender(),

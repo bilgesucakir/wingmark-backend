@@ -1,5 +1,6 @@
 package com.wingmark.backend.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,6 +8,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Base64;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -45,16 +49,21 @@ class AuthControllerTest {
                 .andReturn().getResponse().getContentAsString();
 
         String accessToken = objectMapper.readTree(registerResponse).get("accessToken").asText();
+        UUID userId = extractUserId(accessToken);
 
         // Without a token, the profile endpoint must reject the request.
-        mockMvc.perform(get("/api/users/me"))
+        mockMvc.perform(get("/api/users/" + userId))
                 .andExpect(status().isUnauthorized());
 
         // With the token from registration, it must succeed and reflect the new user.
-        mockMvc.perform(get("/api/users/me").header("Authorization", "Bearer " + accessToken))
+        mockMvc.perform(get("/api/users/" + userId).header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(email))
                 .andExpect(jsonPath("$.username").value(username));
+
+        // Another user's id must not be accessible, even with a valid token of one's own.
+        mockMvc.perform(get("/api/users/" + UUID.randomUUID()).header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isNotFound());
 
         // Logging in again with the same credentials must also succeed.
         String loginBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
@@ -97,5 +106,12 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.message").value("Invalid credentials"));
+    }
+
+    private UUID extractUserId(String accessToken) throws Exception {
+        String payloadSegment = accessToken.split("\\.")[1];
+        byte[] payloadBytes = Base64.getUrlDecoder().decode(payloadSegment);
+        JsonNode payload = objectMapper.readTree(payloadBytes);
+        return UUID.fromString(payload.get("sub").asText());
     }
 }

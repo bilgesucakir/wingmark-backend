@@ -1,9 +1,9 @@
 package com.wingmark.backend.service.impl;
 
-import com.wingmark.backend.dto.user.SettingsResponse;
-import com.wingmark.backend.dto.user.UpdateProfileRequest;
-import com.wingmark.backend.dto.user.UpdateSettingsRequest;
-import com.wingmark.backend.dto.user.UserProfileResponse;
+import com.wingmark.backend.dto.user.SettingsResponseDto;
+import com.wingmark.backend.dto.user.UpdateProfileRequestDto;
+import com.wingmark.backend.dto.user.UpdateSettingsRequestDto;
+import com.wingmark.backend.dto.user.UserProfileResponseDto;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.entity.UserSettings;
 import com.wingmark.backend.exception.ResourceNotFoundException;
@@ -26,13 +26,13 @@ public class UserServiceImpl implements UserService {
     private final SpeciesRepository speciesRepository;
 
     @Override
-    public UserProfileResponse getProfile(UUID userId) {
+    public UserProfileResponseDto getProfile(UUID userId) {
         return toResponse(findUser(userId));
     }
 
     @Override
     @Transactional
-    public UserProfileResponse updateProfile(UUID userId, UpdateProfileRequest request) {
+    public UserProfileResponseDto updateProfile(UUID userId, UpdateProfileRequestDto request) {
         User user = findUser(userId);
 
         if (request.favoriteSpeciesId() != null && !speciesRepository.existsById(request.favoriteSpeciesId())) {
@@ -48,19 +48,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public SettingsResponse getSettings(UUID userId) {
+    public SettingsResponseDto getSettings(UUID userId) {
         UserSettings settings = findSettings(userId);
-        return new SettingsResponse(settings.getUnitPreference(), settings.getLocale());
+        return new SettingsResponseDto(settings.getUnitPreference(), settings.getLocale());
     }
 
     @Override
     @Transactional
-    public SettingsResponse updateSettings(UUID userId, UpdateSettingsRequest request) {
+    public SettingsResponseDto updateSettings(UUID userId, UpdateSettingsRequestDto request) {
         UserSettings settings = findSettings(userId);
         settings.setUnitPreference(request.unitPreference());
         settings.setLocale(request.locale());
         userSettingsRepository.save(settings);
-        return new SettingsResponse(settings.getUnitPreference(), settings.getLocale());
+        return new SettingsResponseDto(settings.getUnitPreference(), settings.getLocale());
     }
 
     private User findUser(UUID userId) {
@@ -73,8 +73,8 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> ResourceNotFoundException.of("UserSettings", userId));
     }
 
-    private UserProfileResponse toResponse(User user) {
-        return new UserProfileResponse(
+    private UserProfileResponseDto toResponse(User user) {
+        return new UserProfileResponseDto(
                 user.getId(),
                 user.getEmail(),
                 user.getUsername(),
