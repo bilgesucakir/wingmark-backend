@@ -1,5 +1,6 @@
 package com.wingmark.backend.service;
 
+import com.wingmark.backend.dto.admin.AdminUpdateUserRequestDto;
 import com.wingmark.backend.dto.user.SettingsResponseDto;
 import com.wingmark.backend.dto.user.UpdateProfileRequestDto;
 import com.wingmark.backend.dto.user.UpdateSettingsRequestDto;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -112,5 +114,59 @@ class UserServiceImplTest {
 
         assertThat(response.unitPreference()).isEqualTo(UnitPreference.IMPERIAL);
         assertThat(response.locale()).isEqualTo("en-US");
+    }
+
+    @Test
+    void getAllUsersReturnsEveryUserMapped() {
+        User a = User.builder().id(UUID.randomUUID()).email("a@example.com").role(Role.USER).build();
+        User b = User.builder().id(UUID.randomUUID()).email("b@example.com").role(Role.ADMIN).build();
+        when(userRepository.findAll()).thenReturn(List.of(a, b));
+
+        List<UserProfileResponseDto> response = userService.getAllUsers();
+
+        assertThat(response).hasSize(2);
+        assertThat(response).extracting(UserProfileResponseDto::email)
+                .containsExactlyInAnyOrder("a@example.com", "b@example.com");
+    }
+
+    @Test
+    void adminUpdateUserOverwritesNameRoleAndVerifiedFlag() {
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true);
+
+        UserProfileResponseDto response = userService.adminUpdateUser(userId, request);
+
+        assertThat(response.firstName()).isEqualTo("First");
+        assertThat(response.role()).isEqualTo(Role.ADMIN);
+        assertThat(response.emailVerified()).isTrue();
+    }
+
+    @Test
+    void adminUpdateUserThrowsWhenUserMissing() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true);
+
+        assertThatThrownBy(() -> userService.adminUpdateUser(userId, request))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deleteUserThrowsWhenMissing() {
+        when(userRepository.existsById(userId)).thenReturn(false);
+
+        assertThatThrownBy(() -> userService.deleteUser(userId)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deleteUserRemovesExistingUser() {
+        when(userRepository.existsById(userId)).thenReturn(true);
+
+        userService.deleteUser(userId);
+
+        org.mockito.Mockito.verify(userRepository).deleteById(userId);
     }
 }

@@ -197,9 +197,37 @@ All endpoints are prefixed with `/api`. 🔒 = requires `Authorization: Bearer <
   crowd-sourced photo needs a human to check it's actually a good, correctly-labeled
   picture before it goes in the guide.
 
+## Exploratory notes
+
+Not decided, not integrated — just findings worth keeping so they aren't re-derived
+later. `BirdLog` already has `detectedSpeciesId`/`detectionConfidence` columns reserved
+for this, but no detection service exists yet.
+
+### Auto species detection from photo — model evaluation (2026-09-15)
+
+Tested [`chriamue/bird-species-classifier`](https://huggingface.co/chriamue/bird-species-classifier)
+on Hugging Face (EfficientNet, 525 classes, ~96.8% reported validation accuracy) as a
+candidate for auto-suggesting a species from a bird-log photo. Might be used for that
+eventually — **not decided yet**.
+
+- Tested against 4 photos: 2x Pacific Parrotlet, 1x African Goose, 1x sparrow. The
+  sparrow classified correctly; both parrotlets and the goose did not.
+- Misclassifications are a **dataset-coverage** issue, not a bug: the model's full
+  525-label list doesn't include "Pacific Parrotlet" or "African Goose" at all (it has
+  things like Alexandrine Parakeet, Golden Parakeet, African Pygmy Goose, Egyptian
+  Goose, Snow Goose, etc.), so on those photos it silently falls back to the
+  nearest-looking known class (Alexandrine Parakeet, a swan-type guess) instead of
+  reporting "unknown." Sparrows worked because sparrow species are actually in the
+  training set.
+- A `NotOpenSSLWarning` surfaced during testing but is unrelated to accuracy — it's a
+  LibreSSL-vs-OpenSSL mismatch in `urllib3`'s HTTPS layer on macOS, fixed by pinning
+  `urllib3<2`, and doesn't touch model inference.
+- Takeaway: this model is solid *within* its known 525 species, but has no
+  out-of-vocabulary/"unknown" fallback — it always returns its closest guess. If this
+  model is adopted, that needs to be handled explicitly (e.g. a confidence threshold, or
+  restricting suggestions to species already in Wingmark's own guide) rather than
+  trusting the raw top-1 label.
+
 ## TODO
 
 - English / Turkish language support (i18n)
-- Basic admin panel (static HTML/CSS/JS, no framework needed): log in, search species,
-  browse `photo-candidates` results visually, and save the chosen one via
-  `POST /{id}/images` — replaces guessing at photo URLs/filenames by hand

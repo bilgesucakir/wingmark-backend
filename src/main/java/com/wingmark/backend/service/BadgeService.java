@@ -2,6 +2,7 @@ package com.wingmark.backend.service;
 
 import com.wingmark.backend.dto.badge.BadgeResponseDto;
 import com.wingmark.backend.dto.badge.CreateBadgeRequestDto;
+import com.wingmark.backend.dto.badge.UpdateBadgeRequestDto;
 import com.wingmark.backend.dto.badge.UserBadgeResponseDto;
 
 import java.util.List;
@@ -18,6 +19,9 @@ public interface BadgeService {
 
     /** Admin-only: adds a new badge definition to the catalog. */
     BadgeResponseDto create(CreateBadgeRequestDto request);
+
+    /** Admin-only: updates an existing badge definition. */
+    BadgeResponseDto update(UUID badgeId, UpdateBadgeRequestDto request);
 
     /** Admin-only: removes a badge definition (and any users' progress toward it). */
     void delete(UUID badgeId);
