@@ -2,6 +2,7 @@ package com.wingmark.backend.service.impl;
 
 import com.wingmark.backend.dto.badge.BadgeResponseDto;
 import com.wingmark.backend.dto.badge.CreateBadgeRequestDto;
+import com.wingmark.backend.dto.badge.UpdateBadgeRequestDto;
 import com.wingmark.backend.dto.badge.UserBadgeResponseDto;
 import com.wingmark.backend.entity.Badge;
 import com.wingmark.backend.entity.BirdLog;
@@ -73,6 +74,21 @@ public class BadgeServiceImpl implements BadgeService {
                 .criteriaMetadata(request.criteriaMetadata())
                 .tier(request.tier())
                 .build();
+        return toResponse(badgeRepository.save(badge));
+    }
+
+    @Override
+    @Transactional
+    public BadgeResponseDto update(UUID badgeId, UpdateBadgeRequestDto request) {
+        Badge badge = badgeRepository.findById(badgeId)
+                .orElseThrow(() -> ResourceNotFoundException.of("Badge", badgeId));
+        badge.setName(request.name());
+        badge.setDescription(request.description());
+        badge.setIcon(request.icon());
+        badge.setCriteriaType(request.criteriaType());
+        badge.setCriteriaValue(request.criteriaValue());
+        badge.setCriteriaMetadata(request.criteriaMetadata());
+        badge.setTier(request.tier());
         return toResponse(badgeRepository.save(badge));
     }
 

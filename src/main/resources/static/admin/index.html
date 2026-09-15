@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wingmark Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="topbar">
+    <h1>Wingmark Admin</h1>
+    <div class="who">
+      <span id="who-email"></span>
+      <button class="secondary" id="logout-btn">Log out</button>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-section="overview">All</button>
+    <button class="tab-btn" data-section="species">Species</button>
+    <button class="tab-btn" data-section="users">Users</button>
+    <button class="tab-btn" data-section="badges">Badges</button>
+  </nav>
+
+  <div class="container">
+    <div id="global-msg"></div>
+
+    <!-- ============ Overview ============ -->
+    <section id="section-overview" class="section">
+      <div class="panel">
+        <div class="panel-header"><h2>Overview</h2></div>
+        <div class="stat-grid" id="stat-grid">
+          <div class="stat-card" data-goto="species">
+            <div class="stat-value" id="stat-species">–</div>
+            <div class="stat-label">Species</div>
+          </div>
+          <div class="stat-card" data-goto="users">
+            <div class="stat-value" id="stat-users">–</div>
+            <div class="stat-label">Users</div>
+          </div>
+          <div class="stat-card" data-goto="badges">
+            <div class="stat-value" id="stat-badges">–</div>
+            <div class="stat-label">Badges</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Species ============ -->
+    <section id="section-species" class="section hidden">
+      <div class="panel" id="list-panel">
+        <div class="panel-header">
+          <h2>Species</h2>
+          <button class="primary" id="new-species-btn">+ New species</button>
+        </div>
+        <div class="search-bar">
+          <input type="text" id="search-input" placeholder="Filter by common name…" />
+        </div>
+        <div id="species-list-msg"></div>
+        <ul class="species-list" id="species-list"></ul>
+      </div>
+
+      <!-- Species form (create/edit) -->
+      <div class="panel hidden" id="form-panel">
+        <div class="panel-header">
+          <h2 id="form-title">New species</h2>
+          <button class="secondary" id="cancel-form-btn">Back to list</button>
+        </div>
+        <div id="form-msg"></div>
+        <form id="species-form">
+          <div class="grid-2">
+            <div class="field">
+              <label for="commonName">Common name *</label>
+              <input type="text" id="commonName" required />
+            </div>
+            <div class="field">
+              <label for="scientificName">Scientific name *</label>
+              <input type="text" id="scientificName" required />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="family">Family</label>
+              <input type="text" id="family" />
+            </div>
+            <div class="field">
+              <label for="order">Order</label>
+              <input type="text" id="order" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="description">Description</label>
+            <textarea id="description"></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="lifespan">Lifespan</label>
+              <input type="text" id="lifespan" />
+            </div>
+            <div class="field">
+              <label for="diet">Diet</label>
+              <input type="text" id="diet" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="habitat">Habitat</label>
+              <input type="text" id="habitat" />
+            </div>
+            <div class="field">
+              <label for="sizeDescription">Size</label>
+              <input type="text" id="sizeDescription" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="conservationStatus">Conservation status</label>
+              <input type="text" id="conservationStatus" />
+            </div>
+            <div class="field">
+              <label for="nativeRange">Native range</label>
+              <input type="text" id="nativeRange" />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="primary" id="save-species-btn">Save species</button>
+            <button type="button" class="danger hidden" id="delete-species-btn">Delete species</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Images (only once a species is saved/selected) -->
+      <div class="panel hidden" id="images-panel">
+        <div class="panel-header">
+          <h2>Reference images</h2>
+        </div>
+
+        <div id="images-msg"></div>
+        <div class="image-grid" id="image-grid"></div>
+
+        <h3 class="subheading">Upload a photo</h3>
+        <p class="muted">Upload a file, then tag it with a life stage/gender and attach it to this species.</p>
+        <div class="grid-2">
+          <div class="field">
+            <label for="upload-lifeStage">Life stage</label>
+            <select id="upload-lifeStage">
+              <option value="ADULT">Adult</option>
+              <option value="BABY">Baby</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="upload-gender">Gender</label>
+            <select id="upload-gender">
+              <option value="NOT_APPLICABLE">Not applicable</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="upload-caption">Caption</label>
+          <input type="text" id="upload-caption" placeholder="Optional caption" />
+        </div>
+        <div class="upload-row">
+          <input type="file" id="upload-file" accept="image/*" />
+          <button class="primary" id="upload-btn">Upload &amp; attach</button>
+        </div>
+        <p class="muted upload-row-label">Or attach an image by URL instead:</p>
+        <div class="upload-row">
+          <input type="url" id="image-url-input" placeholder="https://…" />
+          <button class="secondary" id="attach-url-btn">Attach URL</button>
+        </div>
+
+        <h3 class="subheading">Find candidate photos (iNaturalist)</h3>
+        <p class="muted">Search crowd-sourced observations, review license/attribution, then attach the best one.</p>
+        <div class="grid-2">
+          <div class="field">
+            <label for="candidate-lifeStage">Life stage</label>
+            <select id="candidate-lifeStage">
+              <option value="ADULT">Adult</option>
+              <option value="BABY">Baby</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="candidate-gender">Gender</label>
+            <select id="candidate-gender">
+              <option value="NOT_APPLICABLE">Not applicable</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+            </select>
+          </div>
+        </div>
+        <button class="secondary" id="search-candidates-btn">Search candidates</button>
+        <div id="candidates-msg"></div>
+        <div class="candidate-grid" id="candidate-grid"></div>
+      </div>
+    </section>
+
+    <!-- ============ Users ============ -->
+    <section id="section-users" class="section hidden">
+      <div class="panel" id="users-list-panel">
+        <div class="panel-header">
+          <h2>Users</h2>
+        </div>
+        <div class="search-bar">
+          <input type="text" id="users-search-input" placeholder="Filter by email or username…" />
+        </div>
+        <div id="users-list-msg"></div>
+        <div class="table-wrap">
+          <table class="data-table" id="users-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Verified</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel hidden" id="user-form-panel">
+        <div class="panel-header">
+          <h2>Edit user</h2>
+          <button class="secondary" id="cancel-user-form-btn">Back to list</button>
+        </div>
+        <div id="user-form-msg"></div>
+        <form id="user-form">
+          <div class="field">
+            <label>Email</label>
+            <input type="text" id="user-email" disabled />
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="user-firstName">First name</label>
+              <input type="text" id="user-firstName" />
+            </div>
+            <div class="field">
+              <label for="user-lastName">Last name</label>
+              <input type="text" id="user-lastName" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="user-role">Role</label>
+              <select id="user-role">
+                <option value="USER">User</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="user-emailVerified">Email verified</label>
+              <select id="user-emailVerified">
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="primary" id="save-user-btn">Save user</button>
+            <button type="button" class="danger" id="delete-user-btn">Delete user</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============ Badges ============ -->
+    <section id="section-badges" class="section hidden">
+      <div class="panel" id="badges-list-panel">
+        <div class="panel-header">
+          <h2>Badges</h2>
+          <button class="primary" id="new-badge-btn">+ New badge</button>
+        </div>
+        <div id="badges-list-msg"></div>
+        <ul class="species-list" id="badges-list"></ul>
+      </div>
+
+      <div class="panel hidden" id="badge-form-panel">
+        <div class="panel-header">
+          <h2 id="badge-form-title">New badge</h2>
+          <button class="secondary" id="cancel-badge-form-btn">Back to list</button>
+        </div>
+        <div id="badge-form-msg"></div>
+        <form id="badge-form">
+          <div class="field">
+            <label for="badge-name">Name *</label>
+            <input type="text" id="badge-name" required />
+          </div>
+          <div class="field">
+            <label for="badge-description">Description</label>
+            <textarea id="badge-description"></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="badge-icon">Icon (URL or identifier)</label>
+              <input type="text" id="badge-icon" />
+            </div>
+            <div class="field">
+              <label for="badge-tier">Tier</label>
+              <select id="badge-tier">
+                <option value="">None</option>
+                <option value="BRONZE">Bronze</option>
+                <option value="SILVER">Silver</option>
+                <option value="GOLD">Gold</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="badge-criteriaType">Criteria type *</label>
+              <select id="badge-criteriaType" required>
+                <option value="TOTAL_LOGS">Total logs</option>
+                <option value="UNIQUE_SPECIES">Unique species</option>
+                <option value="BABY_LOGS">Baby logs</option>
+                <option value="UNKNOWN_SPECIES_LOGS">Unknown species logs</option>
+                <option value="PET_LOGS">Pet logs</option>
+                <option value="SPECIES_IN_RADIUS">Species in radius</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="badge-criteriaValue">Criteria value (target) *</label>
+              <input type="text" id="badge-criteriaValue" required inputmode="numeric" placeholder="e.g. 10" />
+            </div>
+          </div>
+          <div class="field" id="radius-field-wrap">
+            <label for="badge-radiusMeters">Radius (meters) — only for "Species in radius"</label>
+            <input type="text" id="badge-radiusMeters" inputmode="numeric" placeholder="e.g. 5000" />
+          </div>
+          <div class="actions">
+            <button type="submit" class="primary" id="save-badge-btn">Save badge</button>
+            <button type="button" class="danger hidden" id="delete-badge-btn">Delete badge</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

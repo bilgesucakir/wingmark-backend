@@ -40,6 +40,7 @@ public class SecurityConfig {
             "/api/auth/forgot-password",
             "/api/auth/reset-password",
             "/uploads/**",
+            "/admin/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",

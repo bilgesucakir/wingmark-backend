@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wingmark Admin — Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <h1>Wingmark Admin</h1>
+    <p class="subtitle">Sign in with an admin account to manage the species guide.</p>
+
+    <div id="msg"></div>
+
+    <form id="login-form">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" required autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" required autocomplete="current-password" />
+      </div>
+      <div class="actions">
+        <button type="submit" class="primary" id="submit-btn">Sign in</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    if (Api.isAdminLoggedIn()) {
+      window.location.href = "index.html";
+    }
+
+    const form = document.getElementById("login-form");
+    const msg = document.getElementById("msg");
+    const submitBtn = document.getElementById("submit-btn");
+
+    function showError(text) {
+      msg.innerHTML = '<div class="msg error"></div>';
+      msg.querySelector(".msg").textContent = text;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.innerHTML = "";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Signing in…";
+      try {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        await Api.login(email, password);
+        window.location.href = "index.html";
+      } catch (err) {
+        showError(err.message || "Login failed.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Sign in";
+      }
+    });
+  </script>
+</body>
+</html>

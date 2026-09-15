@@ -2,6 +2,7 @@ package com.wingmark.backend.controller;
 
 import com.wingmark.backend.dto.badge.BadgeResponseDto;
 import com.wingmark.backend.dto.badge.CreateBadgeRequestDto;
+import com.wingmark.backend.dto.badge.UpdateBadgeRequestDto;
 import com.wingmark.backend.dto.badge.UserBadgeResponseDto;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.security.UserPrincipal;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,6 +65,14 @@ public class BadgeController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BadgeResponseDto> create(@Valid @RequestBody CreateBadgeRequestDto request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(badgeService.create(request));
+    }
+
+    /** Admin-only: updates an existing badge definition. */
+    @Operation(summary = "Update a badge", description = "Admin-only. Updates an existing badge definition.")
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BadgeResponseDto> update(@PathVariable UUID id, @Valid @RequestBody UpdateBadgeRequestDto request) {
+        return ResponseEntity.ok(badgeService.update(id, request));
     }
 
     /** Admin-only: removes a badge definition. */

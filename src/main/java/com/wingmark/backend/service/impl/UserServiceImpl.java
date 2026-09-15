@@ -1,5 +1,6 @@
 package com.wingmark.backend.service.impl;
 
+import com.wingmark.backend.dto.admin.AdminUpdateUserRequestDto;
 import com.wingmark.backend.dto.user.SettingsResponseDto;
 import com.wingmark.backend.dto.user.UpdateProfileRequestDto;
 import com.wingmark.backend.dto.user.UpdateSettingsRequestDto;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -61,6 +63,31 @@ public class UserServiceImpl implements UserService {
         settings.setLocale(request.locale());
         userSettingsRepository.save(settings);
         return new SettingsResponseDto(settings.getUnitPreference(), settings.getLocale());
+    }
+
+    @Override
+    public List<UserProfileResponseDto> getAllUsers() {
+        return userRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional
+    public UserProfileResponseDto adminUpdateUser(UUID userId, AdminUpdateUserRequestDto request) {
+        User user = findUser(userId);
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setRole(request.role());
+        user.setEmailVerified(request.emailVerified());
+        return toResponse(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(UUID userId) {
+        if (!userRepository.existsById(userId)) {
+            throw ResourceNotFoundException.of("User", userId);
+        }
+        userRepository.deleteById(userId);
     }
 
     private User findUser(UUID userId) {

@@ -1,10 +1,14 @@
 package com.wingmark.backend.service;
 
+import com.wingmark.backend.dto.badge.BadgeResponseDto;
+import com.wingmark.backend.dto.badge.UpdateBadgeRequestDto;
 import com.wingmark.backend.entity.Badge;
 import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.entity.UserBadge;
 import com.wingmark.backend.enums.BadgeCriteriaType;
+import com.wingmark.backend.enums.BadgeTier;
 import com.wingmark.backend.enums.LifeStage;
+import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.BadgeRepository;
 import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.UserBadgeRepository;
@@ -21,6 +25,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -142,5 +148,36 @@ class BadgeServiceImplTest {
         verify(userBadgeRepository).save(captor.capture());
         assertThat(captor.getValue().getProgress()).isEqualTo(2);
         assertThat(captor.getValue().getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void updatingAnExistingBadgeOverwritesItsFields() {
+        UUID badgeId = UUID.randomUUID();
+        Badge existing = Badge.builder()
+                .id(badgeId).name("Old name").criteriaType(BadgeCriteriaType.TOTAL_LOGS).criteriaValue(5)
+                .build();
+        when(badgeRepository.findById(badgeId)).thenReturn(Optional.of(existing));
+        when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateBadgeRequestDto request = new UpdateBadgeRequestDto(
+                "New name", "New description", "icon.png", BadgeCriteriaType.UNIQUE_SPECIES, 20, null, BadgeTier.GOLD);
+
+        BadgeResponseDto response = badgeService.update(badgeId, request);
+
+        assertThat(response.name()).isEqualTo("New name");
+        assertThat(response.criteriaType()).isEqualTo(BadgeCriteriaType.UNIQUE_SPECIES);
+        assertThat(response.criteriaValue()).isEqualTo(20);
+        assertThat(response.tier()).isEqualTo(BadgeTier.GOLD);
+    }
+
+    @Test
+    void updatingAMissingBadgeThrowsNotFound() {
+        UUID badgeId = UUID.randomUUID();
+        when(badgeRepository.findById(badgeId)).thenReturn(Optional.empty());
+
+        UpdateBadgeRequestDto request = new UpdateBadgeRequestDto(
+                "Name", null, null, BadgeCriteriaType.TOTAL_LOGS, 5, null, null);
+
+        assertThatThrownBy(() -> badgeService.update(badgeId, request)).isInstanceOf(ResourceNotFoundException.class);
     }
 }
