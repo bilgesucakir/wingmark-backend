@@ -219,9 +219,6 @@ eventually — **not decided yet**.
   nearest-looking known class (Alexandrine Parakeet, a swan-type guess) instead of
   reporting "unknown." Sparrows worked because sparrow species are actually in the
   training set.
-- A `NotOpenSSLWarning` surfaced during testing but is unrelated to accuracy — it's a
-  LibreSSL-vs-OpenSSL mismatch in `urllib3`'s HTTPS layer on macOS, fixed by pinning
-  `urllib3<2`, and doesn't touch model inference.
 - Takeaway: this model is solid *within* its known 525 species, but has no
   out-of-vocabulary/"unknown" fallback — it always returns its closest guess. If this
   model is adopted, that needs to be handled explicitly (e.g. a confidence threshold, or
