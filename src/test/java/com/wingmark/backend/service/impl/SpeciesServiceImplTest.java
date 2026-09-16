@@ -1,4 +1,4 @@
-package com.wingmark.backend.service;
+package com.wingmark.backend.service.impl;
 
 import com.wingmark.backend.dto.species.CreateSpeciesImageRequestDto;
 import com.wingmark.backend.dto.species.CreateSpeciesRequestDto;
@@ -13,7 +13,6 @@ import com.wingmark.backend.exception.DuplicateResourceException;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.SpeciesImageRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
-import com.wingmark.backend.service.impl.SpeciesServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

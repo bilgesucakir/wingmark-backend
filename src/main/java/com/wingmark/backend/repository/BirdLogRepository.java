@@ -42,4 +42,6 @@ public interface BirdLogRepository extends JpaRepository<BirdLog, UUID> {
     long countByUserIdAndLifeStage(UUID userId, com.wingmark.backend.enums.LifeStage lifeStage);
 
     List<BirdLog> findByUserIdAndSpeciesIdIsNotNullAndPetFalse(UUID userId);
+
+    List<BirdLog> findByUserIdAndPetFalse(UUID userId);
 }

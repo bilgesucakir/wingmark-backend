@@ -6,5 +6,6 @@ public enum BadgeCriteriaType {
     BABY_LOGS,
     UNKNOWN_SPECIES_LOGS,
     PET_LOGS,
-    SPECIES_IN_RADIUS
+    SPECIES_IN_RADIUS,
+    SIGHTINGS_IN_RADIUS
 }

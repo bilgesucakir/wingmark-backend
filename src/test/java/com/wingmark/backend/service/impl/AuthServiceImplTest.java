@@ -1,4 +1,4 @@
-package com.wingmark.backend.service;
+package com.wingmark.backend.service.impl;
 
 import com.wingmark.backend.dto.auth.AuthResponseDto;
 import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
@@ -17,12 +17,10 @@ import com.wingmark.backend.repository.RefreshTokenRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.security.JwtTokenProvider;
-import com.wingmark.backend.service.impl.AuthServiceImpl;
 import com.wingmark.backend.util.TokenHasher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

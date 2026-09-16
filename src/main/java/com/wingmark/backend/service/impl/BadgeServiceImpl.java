@@ -119,6 +119,7 @@ public class BadgeServiceImpl implements BadgeService {
             case UNKNOWN_SPECIES_LOGS -> (int) birdLogRepository.countByUserIdAndSpeciesIdIsNull(userId);
             case PET_LOGS -> (int) birdLogRepository.countByUserIdAndPetTrue(userId);
             case SPECIES_IN_RADIUS -> computeMaxSpeciesInRadius(userId, badge);
+            case SIGHTINGS_IN_RADIUS -> computeMaxSightingsInRadius(userId, badge);
         };
     }
 
@@ -138,6 +139,30 @@ public class BadgeServiceImpl implements BadgeService {
             maxDistinctSpecies = Math.max(maxDistinctSpecies, (int) distinctSpecies);
         }
         return maxDistinctSpecies;
+    }
+
+    /**
+     * Counts raw sightings rather than distinct species: every log
+     * is a candidate cluster center, and we take the densest cluster found so far.
+     * There is no fixed "home" location - each evaluation re-scans all of the user's logs, so
+     * the qualifying cluster can shift as new logs are added; a badge already earned keeps its
+     * earnedAt regardless (see upsertUserBadge), so moving away or deleting logs afterwards
+     * can lower progress but never revokes it.
+     */
+    private int computeMaxSightingsInRadius(UUID userId, Badge badge) {
+        double radiusMeters = extractRadiusMeters(badge.getCriteriaMetadata());
+        List<BirdLog> logs = birdLogRepository.findByUserIdAndPetFalse(userId);
+
+        int maxSightings = 0;
+        for (BirdLog center : logs) {
+            long sightingsInRange = logs.stream()
+                    .filter(other -> GeoUtils.distanceMeters(
+                            center.getLatitude(), center.getLongitude(),
+                            other.getLatitude(), other.getLongitude()) <= radiusMeters)
+                    .count();
+            maxSightings = Math.max(maxSightings, (int) sightingsInRange);
+        }
+        return maxSightings;
     }
 
     private double extractRadiusMeters(Map<String, Object> criteriaMetadata) {
