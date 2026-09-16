@@ -1,4 +1,4 @@
-package com.wingmark.backend.service;
+package com.wingmark.backend.service.impl;
 
 import com.wingmark.backend.dto.badge.BadgeResponseDto;
 import com.wingmark.backend.dto.badge.UpdateBadgeRequestDto;
@@ -12,7 +12,6 @@ import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.BadgeRepository;
 import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.UserBadgeRepository;
-import com.wingmark.backend.service.impl.BadgeServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -147,6 +146,40 @@ class BadgeServiceImplTest {
         ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
         verify(userBadgeRepository).save(captor.capture());
         assertThat(captor.getValue().getProgress()).isEqualTo(2);
+        assertThat(captor.getValue().getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void sightingsInRadiusCountsRawLogsNotDistinctSpecies() {
+        Badge badge = Badge.builder()
+                .id(UUID.randomUUID())
+                .criteriaType(BadgeCriteriaType.SIGHTINGS_IN_RADIUS)
+                .criteriaValue(3)
+                .criteriaMetadata(java.util.Map.of("radiusMeters", 2000))
+                .build();
+
+        UUID species = UUID.randomUUID();
+
+        // Three logs of the same species close together near (0,0); one far-away log near (10,10).
+        BirdLog logA = BirdLog.builder().userId(userId).speciesId(species).pet(false)
+                .latitude(0.0).longitude(0.0).build();
+        BirdLog logB = BirdLog.builder().userId(userId).speciesId(species).pet(false)
+                .latitude(0.001).longitude(0.001).build();
+        BirdLog logC = BirdLog.builder().userId(userId).speciesId(species).pet(false)
+                .latitude(0.002).longitude(0.0).build();
+        BirdLog logFar = BirdLog.builder().userId(userId).speciesId(species).pet(false)
+                .latitude(10.0).longitude(10.0).build();
+
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(birdLogRepository.findByUserIdAndPetFalse(userId))
+                .thenReturn(List.of(logA, logB, logC, logFar));
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        badgeService.evaluateForUser(userId);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isEqualTo(3);
         assertThat(captor.getValue().getEarnedAt()).isNotNull();
     }
 

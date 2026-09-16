@@ -1,4 +1,4 @@
-package com.wingmark.backend.service;
+package com.wingmark.backend.service.impl;
 
 import com.wingmark.backend.dto.admin.AdminUpdateUserRequestDto;
 import com.wingmark.backend.dto.user.SettingsResponseDto;
@@ -13,7 +13,6 @@ import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
-import com.wingmark.backend.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
