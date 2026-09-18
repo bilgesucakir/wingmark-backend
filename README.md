@@ -55,13 +55,13 @@ mvn test
 
 Uses **MongoDB**. By default it connects to a local instance at
 `mongodb://localhost:27017/wingmark` — you need Mongo running locally (or override
-`MONGODB_URI` to point elsewhere) for the app itself to start. Tests don't need this:
+`DB_CONNECTION_STRING` to point elsewhere) for the app itself to start. Tests don't need this:
 they spin up an embedded in-memory MongoDB automatically.
 
 To point at MongoDB Atlas (or any other instance), override this env var:
 
 ```
-MONGODB_URI=mongodb+srv://<user>:<password>@<cluster-host>/wingmark?retryWrites=true&w=majority
+DB_CONNECTION_STRING=mongodb+srv://<user>:<password>@<cluster-host>/wingmark?retryWrites=true&w=majority
 ```
 
 Entities map straight to collections (`users`, `bird_logs`, `species`, `species_images`,

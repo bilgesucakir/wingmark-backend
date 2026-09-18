@@ -115,7 +115,32 @@ public class BadgeServiceImpl implements BadgeService {
             case PET_LOGS -> (int) birdLogRepository.countByUserIdAndPetTrue(userId);
             case SPECIES_IN_RADIUS -> computeMaxSpeciesInRadius(userId, badge);
             case SIGHTINGS_IN_RADIUS -> computeMaxSightingsInRadius(userId, badge);
+            case SPECIES_LOGS -> computeSpeciesLogs(userId, badge);
         };
+    }
+
+    private int computeSpeciesLogs(UUID userId, Badge badge) {
+        UUID speciesId = extractSpeciesId(badge.getCriteriaMetadata());
+        if (speciesId == null) {
+            log.warn("Badge {} is SPECIES_LOGS but criteriaMetadata.speciesId is missing/invalid; progress stays 0", badge.getId());
+            return 0;
+        }
+        return (int) birdLogRepository.countByUserIdAndSpeciesId(userId, speciesId);
+    }
+
+    private UUID extractSpeciesId(Map<String, Object> criteriaMetadata) {
+        if (criteriaMetadata == null) {
+            return null;
+        }
+        Object speciesId = criteriaMetadata.get("speciesId");
+        if (speciesId == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(speciesId.toString());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private int computeMaxSpeciesInRadius(UUID userId, Badge badge) {
@@ -197,6 +222,7 @@ public class BadgeServiceImpl implements BadgeService {
                 badge.getIcon(),
                 badge.getCriteriaType(),
                 badge.getCriteriaValue(),
+                badge.getCriteriaMetadata(),
                 badge.getTier()
         );
     }
