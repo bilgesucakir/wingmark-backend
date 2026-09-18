@@ -126,6 +126,14 @@ All endpoints are prefixed with `/api`. 🔒 = requires `Authorization: Bearer <
 | GET    | `/settings`  | Get the caller's app settings                  |
 | PUT    | `/settings`  | Update the caller's app settings               |
 
+### Admin - Users (`/api/admin/users`) — 🛡️, all endpoints
+
+| Method | Path      | Description                                                              |
+|--------|-----------|-----------------------------------------------------------------------------|
+| GET    | ``        | Get every registered user account                                          |
+| PUT    | `/{id}`   | Update a user's name, role and email-verified flag                          |
+| DELETE | `/{id}`   | Delete a user account (an admin cannot delete their own account this way)   |
+
 ### Bird Logs (`/api/bird-logs`) — 🔒 unless noted
 
 | Method | Path              | Auth | Description                                                      |
