@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Promotes a freshly-registered test user to ADMIN directly via the repository (the
- * same way a real operator would via the H2 console) rather than exercising any
+ * same way a real operator would via mongosh/Compass) rather than exercising any
  * "become admin" API flow, since this app deliberately doesn't expose one.
  */
 @SpringBootTest

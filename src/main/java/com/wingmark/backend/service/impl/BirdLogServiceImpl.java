@@ -12,7 +12,6 @@ import com.wingmark.backend.service.BadgeService;
 import com.wingmark.backend.service.BirdLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -53,7 +52,6 @@ public class BirdLogServiceImpl implements BirdLogService {
     }
 
     @Override
-    @Transactional
     public BirdLogResponseDto create(UUID userId, CreateBirdLogRequestDto request) {
         validateSpecies(request.speciesId());
 
@@ -80,7 +78,6 @@ public class BirdLogServiceImpl implements BirdLogService {
     }
 
     @Override
-    @Transactional
     public BirdLogResponseDto update(UUID userId, UUID logId, UpdateBirdLogRequestDto request) {
         BirdLog log = findOwnedLog(userId, logId);
         validateSpecies(request.speciesId());
@@ -104,7 +101,6 @@ public class BirdLogServiceImpl implements BirdLogService {
     }
 
     @Override
-    @Transactional
     public void delete(UUID userId, UUID logId) {
         BirdLog log = findOwnedLog(userId, logId);
         birdLogRepository.delete(log);

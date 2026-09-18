@@ -1,17 +1,14 @@
 package com.wingmark.backend.entity;
 
 import com.wingmark.backend.enums.UnitPreference;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.experimental.SuperBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
@@ -20,15 +17,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@Entity
-@Table(name = "user_settings")
+@Document(collection = "user_settings")
 public class UserSettings extends BaseEntity {
 
-    @Column(nullable = false, unique = true)
+    @Indexed(unique = true)
     private UUID userId;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     @Builder.Default
     private UnitPreference unitPreference = UnitPreference.METRIC;
 

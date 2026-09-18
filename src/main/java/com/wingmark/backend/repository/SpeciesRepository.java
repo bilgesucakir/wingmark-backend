@@ -1,13 +1,13 @@
 package com.wingmark.backend.repository;
 
 import com.wingmark.backend.entity.Species;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface SpeciesRepository extends JpaRepository<Species, UUID> {
+public interface SpeciesRepository extends MongoRepository<Species, UUID> {
 
     Optional<Species> findByScientificNameIgnoreCase(String scientificName);
 

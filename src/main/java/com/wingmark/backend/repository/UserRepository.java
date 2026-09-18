@@ -1,12 +1,12 @@
 package com.wingmark.backend.repository;
 
 import com.wingmark.backend.entity.User;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 import java.util.UUID;
 
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends MongoRepository<User, UUID> {
 
     Optional<User> findByEmailIgnoreCase(String email);
 

@@ -14,7 +14,6 @@ import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +32,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public UserProfileResponseDto updateProfile(UUID userId, UpdateProfileRequestDto request) {
         User user = findUser(userId);
 
@@ -56,7 +54,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public SettingsResponseDto updateSettings(UUID userId, UpdateSettingsRequestDto request) {
         UserSettings settings = findSettings(userId);
         settings.setUnitPreference(request.unitPreference());
@@ -71,7 +68,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public UserProfileResponseDto adminUpdateUser(UUID userId, AdminUpdateUserRequestDto request) {
         User user = findUser(userId);
         user.setFirstName(request.firstName());
@@ -82,7 +78,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional
     public void deleteUser(UUID userId) {
         if (!userRepository.existsById(userId)) {
             throw ResourceNotFoundException.of("User", userId);

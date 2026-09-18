@@ -1,13 +1,12 @@
 package com.wingmark.backend.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -17,19 +16,17 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@Entity
-@Table(name = "refresh_tokens")
+@Document(collection = "refresh_tokens")
 public class RefreshToken extends BaseEntity {
 
-    @Column(nullable = false)
+    @Indexed
     private UUID userId;
 
-    @Column(nullable = false, unique = true)
+    @Indexed(unique = true)
     private String tokenHash;
 
     private String deviceInfo;
 
-    @Column(nullable = false)
     private Instant expiresAt;
 
     private Instant revokedAt;

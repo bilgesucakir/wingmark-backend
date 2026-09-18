@@ -1,17 +1,14 @@
 package com.wingmark.backend.entity;
 
 import com.wingmark.backend.enums.Role;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.experimental.SuperBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -21,17 +18,15 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@Entity
-@Table(name = "users")
+@Document(collection = "users")
 public class User extends BaseEntity {
 
-    @Column(nullable = false, unique = true)
+    @Indexed(unique = true)
     private String email;
 
-    @Column(nullable = false)
     private String passwordHash;
 
-    @Column(nullable = false, unique = true)
+    @Indexed(unique = true)
     private String username;
 
     private String firstName;
@@ -43,12 +38,9 @@ public class User extends BaseEntity {
 
     private UUID favoriteSpeciesId;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     @Builder.Default
     private Role role = Role.USER;
 
-    @Column(nullable = false)
     @Builder.Default
     private boolean emailVerified = false;
 
