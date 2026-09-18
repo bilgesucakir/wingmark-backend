@@ -70,16 +70,6 @@ plain UUID references between them (e.g. `BirdLog.userId`, `BirdLog.speciesId`) 
 than joins — the same shape the JPA entities had, so no relation modeling was needed for
 the switch.
 
-### Seed data
-
-`DataSeeder` (an `ApplicationRunner`) seeds the `badges` and `species`/`species_images`
-collections on first startup, if they're empty:
-
-- 10 starter badges (total logs, unique species, baby logs, unknown-species logs, pet
-  logs, species-in-radius)
-- 3 example species (House Sparrow, European Robin, Mallard) with a few reference
-  images each
-
 ### Becoming an admin
 
 There's no self-service "become admin" flow by design — admin-only endpoints (species
@@ -126,6 +116,14 @@ All endpoints are prefixed with `/api`. 🔒 = requires `Authorization: Bearer <
 | GET    | `/settings`  | Get the caller's app settings                  |
 | PUT    | `/settings`  | Update the caller's app settings               |
 
+### Admin - Users (`/api/admin/users`) — 🛡️, all endpoints
+
+| Method | Path      | Description                                                              |
+|--------|-----------|-----------------------------------------------------------------------------|
+| GET    | ``        | Get every registered user account                                          |
+| PUT    | `/{id}`   | Update a user's name, role and email-verified flag                          |
+| DELETE | `/{id}`   | Delete a user account (an admin cannot delete their own account this way)   |
+
 ### Bird Logs (`/api/bird-logs`) — 🔒 unless noted
 
 | Method | Path              | Auth | Description                                                      |
@@ -161,9 +159,30 @@ All endpoints are prefixed with `/api`. 🔒 = requires `Authorization: Bearer <
 | GET    | `/catalog`        |      | Get every badge definition (name, icon, criteria)                    |
 | GET    | `/user/{userId}`  | 🔒*  | Get every badge with this user's progress/earned status              |
 | POST   | ``                | 🛡️  | Create a new badge definition                                        |
+| PUT    | `/{id}`           | 🛡️  | Update an existing badge definition                                  |
 | DELETE | `/{id}`           | 🛡️  | Delete a badge definition                                            |
 
 \* `userId` must be the caller's own id.
+
+#### Badge criteria types
+
+A badge's `criteriaType` decides how its progress is computed against a user's bird
+logs; `criteriaValue` is the target the progress must reach to be earned. A few types
+also need extra parameters in `criteriaMetadata`:
+
+| Criteria type          | Progress = ...                                          | `criteriaMetadata` |
+|-------------------------|----------------------------------------------------------|---------------------|
+| `TOTAL_LOGS`             | Total bird logs                                           | —                    |
+| `UNIQUE_SPECIES`         | Distinct species logged                                    | —                    |
+| `BABY_LOGS`              | Logs with life stage `BABY`                                | —                    |
+| `UNKNOWN_SPECIES_LOGS`   | Logs with no species selected                               | —                    |
+| `PET_LOGS`               | Logs marked as a pet                                        | —                    |
+| `SPECIES_IN_RADIUS`      | Max distinct species clustered within a radius               | `{ "radiusMeters": <number> }` (default 5000) |
+| `SIGHTINGS_IN_RADIUS`    | Max raw sightings (any species) clustered within a radius     | `{ "radiusMeters": <number> }` (default 5000) |
+| `SPECIES_LOGS`           | Logs of one specific species                                 | `{ "speciesId": "<uuid>" }` |
+
+The admin panel's badge form exposes all of these, including the species picker for
+`SPECIES_LOGS` and the radius field for the two `*_IN_RADIUS` types.
 
 ### Uploads (`/api/uploads`) — 🔒
 

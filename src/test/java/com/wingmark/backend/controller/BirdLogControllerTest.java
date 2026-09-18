@@ -2,6 +2,9 @@ package com.wingmark.backend.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wingmark.backend.entity.Badge;
+import com.wingmark.backend.enums.BadgeCriteriaType;
+import com.wingmark.backend.repository.BadgeRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -27,6 +30,9 @@ class BirdLogControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private BadgeRepository badgeRepository;
 
     private String registerAndGetToken(String label) throws Exception {
         String suffix = label + "-" + System.nanoTime();
@@ -126,6 +132,12 @@ class BirdLogControllerTest {
 
     @Test
     void loggingAPetEarnsThePetBadge() throws Exception {
+        badgeRepository.save(Badge.builder()
+                .name("Proud Pet Parent")
+                .criteriaType(BadgeCriteriaType.PET_LOGS)
+                .criteriaValue(1)
+                .build());
+
         String token = registerAndGetToken("petowner");
 
         String logBody = objectMapper.writeValueAsString(new HashMap<>() {{
@@ -147,5 +159,43 @@ class BirdLogControllerTest {
         mockMvc.perform(get("/api/badges/user/" + userId).header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.badgeName == 'Proud Pet Parent')].earned").value(org.hamcrest.Matchers.hasItem(true)));
+    }
+
+    @Test
+    void malformedJsonBodyReturnsBadRequestNotServerError() throws Exception {
+        String token = registerAndGetToken("malformed");
+
+        mockMvc.perform(post("/api/bird-logs")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"pet\": false \"lifeStage\": \"ADULT\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void unmappedPathReturnsNotFoundNotServerError() throws Exception {
+        String token = registerAndGetToken("unmapped");
+
+        mockMvc.perform(get("/api/logs").header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void invalidUuidPathVariableReturnsBadRequestNotServerError() throws Exception {
+        String token = registerAndGetToken("baduuid");
+
+        mockMvc.perform(get("/api/bird-logs/not-a-real-uuid").header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void missingRequiredQueryParamReturnsBadRequestNotServerError() throws Exception {
+        String token = registerAndGetToken("missingparam");
+
+        mockMvc.perform(get("/api/bird-logs/location")
+                        .header("Authorization", "Bearer " + token)
+                        .param("minLat", "0").param("maxLat", "1").param("minLng", "0"))
+                // maxLng deliberately omitted
+                .andExpect(status().isBadRequest());
     }
 }
