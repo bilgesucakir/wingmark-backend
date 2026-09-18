@@ -161,9 +161,30 @@ All endpoints are prefixed with `/api`. 🔒 = requires `Authorization: Bearer <
 | GET    | `/catalog`        |      | Get every badge definition (name, icon, criteria)                    |
 | GET    | `/user/{userId}`  | 🔒*  | Get every badge with this user's progress/earned status              |
 | POST   | ``                | 🛡️  | Create a new badge definition                                        |
+| PUT    | `/{id}`           | 🛡️  | Update an existing badge definition                                  |
 | DELETE | `/{id}`           | 🛡️  | Delete a badge definition                                            |
 
 \* `userId` must be the caller's own id.
+
+#### Badge criteria types
+
+A badge's `criteriaType` decides how its progress is computed against a user's bird
+logs; `criteriaValue` is the target the progress must reach to be earned. A few types
+also need extra parameters in `criteriaMetadata`:
+
+| Criteria type          | Progress = ...                                          | `criteriaMetadata` |
+|-------------------------|----------------------------------------------------------|---------------------|
+| `TOTAL_LOGS`             | Total bird logs                                           | —                    |
+| `UNIQUE_SPECIES`         | Distinct species logged                                    | —                    |
+| `BABY_LOGS`              | Logs with life stage `BABY`                                | —                    |
+| `UNKNOWN_SPECIES_LOGS`   | Logs with no species selected                               | —                    |
+| `PET_LOGS`               | Logs marked as a pet                                        | —                    |
+| `SPECIES_IN_RADIUS`      | Max distinct species clustered within a radius               | `{ "radiusMeters": <number> }` (default 5000) |
+| `SIGHTINGS_IN_RADIUS`    | Max raw sightings (any species) clustered within a radius     | `{ "radiusMeters": <number> }` (default 5000) |
+| `SPECIES_LOGS`           | Logs of one specific species                                 | `{ "speciesId": "<uuid>" }` |
+
+The admin panel's badge form exposes all of these, including the species picker for
+`SPECIES_LOGS` and the radius field for the two `*_IN_RADIUS` types.
 
 ### Uploads (`/api/uploads`) — 🔒
 
