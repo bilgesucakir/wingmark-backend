@@ -70,16 +70,6 @@ plain UUID references between them (e.g. `BirdLog.userId`, `BirdLog.speciesId`) 
 than joins — the same shape the JPA entities had, so no relation modeling was needed for
 the switch.
 
-### Seed data
-
-`DataSeeder` (an `ApplicationRunner`) seeds the `badges` and `species`/`species_images`
-collections on first startup, if they're empty:
-
-- 10 starter badges (total logs, unique species, baby logs, unknown-species logs, pet
-  logs, species-in-radius)
-- 3 example species (House Sparrow, European Robin, Mallard) with a few reference
-  images each
-
 ### Becoming an admin
 
 There's no self-service "become admin" flow by design — admin-only endpoints (species

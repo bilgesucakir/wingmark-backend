@@ -1,8 +1,10 @@
 package com.wingmark.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.enums.Role;
+import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,9 @@ class SpeciesControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SpeciesRepository speciesRepository;
 
     private String shortId() {
         return Long.toString(System.nanoTime() % 1_000_000);
@@ -93,6 +98,11 @@ class SpeciesControllerTest {
 
     @Test
     void guideEndpointsArePubliclyReadable() throws Exception {
+        speciesRepository.save(Species.builder()
+                .commonName("House Sparrow")
+                .scientificName("Passer domesticus " + System.nanoTime())
+                .build());
+
         mockMvc.perform(get("/api/species"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
