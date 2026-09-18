@@ -14,7 +14,6 @@ import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.service.SpeciesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -41,7 +40,6 @@ public class SpeciesServiceImpl implements SpeciesService {
     }
 
     @Override
-    @Transactional
     public SpeciesResponseDto create(CreateSpeciesRequestDto request) {
         if (speciesRepository.existsByScientificNameIgnoreCase(request.scientificName())) {
             throw new DuplicateResourceException("A species with this scientific name already exists");
@@ -65,7 +63,6 @@ public class SpeciesServiceImpl implements SpeciesService {
     }
 
     @Override
-    @Transactional
     public SpeciesResponseDto update(UUID id, UpdateSpeciesRequestDto request) {
         Species species = findSpecies(id);
 
@@ -90,7 +87,6 @@ public class SpeciesServiceImpl implements SpeciesService {
     }
 
     @Override
-    @Transactional
     public void delete(UUID id) {
         if (!speciesRepository.existsById(id)) {
             throw ResourceNotFoundException.of("Species", id);
@@ -100,7 +96,6 @@ public class SpeciesServiceImpl implements SpeciesService {
     }
 
     @Override
-    @Transactional
     public SpeciesImageResponseDto addImage(UUID speciesId, CreateSpeciesImageRequestDto request) {
         if (!speciesRepository.existsById(speciesId)) {
             throw ResourceNotFoundException.of("Species", speciesId);
@@ -119,7 +114,6 @@ public class SpeciesServiceImpl implements SpeciesService {
     }
 
     @Override
-    @Transactional
     public void deleteImage(UUID speciesId, UUID imageId) {
         SpeciesImage image = speciesImageRepository.findById(imageId)
                 .orElseThrow(() -> ResourceNotFoundException.of("SpeciesImage", imageId));

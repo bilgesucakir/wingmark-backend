@@ -25,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -43,7 +42,6 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    @Transactional
     public AuthResponseDto register(RegisterRequestDto request) {
         if (userRepository.existsByEmailIgnoreCase(request.email())) {
             throw new DuplicateResourceException("An account with this email already exists");
@@ -71,7 +69,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
     public AuthResponseDto login(LoginRequestDto request) {
         User user = userRepository.findByEmailIgnoreCase(request.email())
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
@@ -87,7 +84,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
     public AuthResponseDto refresh(String rawRefreshToken) {
         String hash = TokenHasher.sha256(rawRefreshToken);
         RefreshToken stored = refreshTokenRepository.findByTokenHash(hash)
@@ -107,7 +103,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
     public void logout(String rawRefreshToken) {
         String hash = TokenHasher.sha256(rawRefreshToken);
         refreshTokenRepository.findByTokenHash(hash).ifPresent(token -> {
@@ -117,13 +112,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
     public void logoutAll(UUID userId) {
         refreshTokenRepository.revokeAllForUser(userId, Instant.now());
     }
 
     @Override
-    @Transactional
     public void forgotPassword(ForgotPasswordRequestDto request) {
         userRepository.findByEmailIgnoreCase(request.email()).ifPresent(user -> {
             String rawToken = RandomTokenGenerator.generate();
@@ -143,7 +136,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
     public void resetPassword(ResetPasswordRequestDto request) {
         String hash = TokenHasher.sha256(request.token());
         PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(hash)

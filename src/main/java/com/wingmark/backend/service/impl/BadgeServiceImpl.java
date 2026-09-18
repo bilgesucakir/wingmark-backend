@@ -17,7 +17,6 @@ import com.wingmark.backend.util.GeoUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -63,7 +62,6 @@ public class BadgeServiceImpl implements BadgeService {
     }
 
     @Override
-    @Transactional
     public BadgeResponseDto create(CreateBadgeRequestDto request) {
         Badge badge = Badge.builder()
                 .name(request.name())
@@ -78,7 +76,6 @@ public class BadgeServiceImpl implements BadgeService {
     }
 
     @Override
-    @Transactional
     public BadgeResponseDto update(UUID badgeId, UpdateBadgeRequestDto request) {
         Badge badge = badgeRepository.findById(badgeId)
                 .orElseThrow(() -> ResourceNotFoundException.of("Badge", badgeId));
@@ -93,7 +90,6 @@ public class BadgeServiceImpl implements BadgeService {
     }
 
     @Override
-    @Transactional
     public void delete(UUID badgeId) {
         if (!badgeRepository.existsById(badgeId)) {
             throw ResourceNotFoundException.of("Badge", badgeId);
@@ -102,7 +98,6 @@ public class BadgeServiceImpl implements BadgeService {
     }
 
     @Override
-    @Transactional
     public void evaluateForUser(UUID userId) {
         List<Badge> badges = badgeRepository.findAll();
         for (Badge badge : badges) {

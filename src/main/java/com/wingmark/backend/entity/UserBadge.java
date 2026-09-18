@@ -1,14 +1,12 @@
 package com.wingmark.backend.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -18,14 +16,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@Entity
-@Table(name = "user_badges", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "badge_id"}))
+@Document(collection = "user_badges")
+@CompoundIndex(name = "user_badge_unique", def = "{'userId': 1, 'badgeId': 1}", unique = true)
 public class UserBadge extends BaseEntity {
 
-    @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(name = "badge_id", nullable = false)
     private UUID badgeId;
 
     /** Null until the badge's criteria have actually been met. */

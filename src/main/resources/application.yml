@@ -1,29 +1,25 @@
 spring:
   application:
     name: wingmark-backend
-  datasource:
-    url: ${DB_URL:jdbc:h2:mem:wingmark;MODE=PostgreSQL;DB_CLOSE_DELAY=-1}
-    username: ${DB_USERNAME:sa}
-    password: ${DB_PASSWORD:}
-    driver-class-name: ${DB_DRIVER:org.h2.Driver}
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: false
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/wingmark}
+      # Without this, @Indexed/@CompoundIndex on the entities (unique email/username/
+      # scientificName/tokenHash etc.) are inert - Spring Data Mongo does not create
+      # indexes from annotations unless this is on.
+      auto-index-creation: true
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+
+# Only consulted when the test-scoped embedded-mongo dependency is on the classpath
+# (see the note at the bottom of this file); ignored otherwise.
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 8.0.4
 
 server:
   port: ${SERVER_PORT:8080}
@@ -50,7 +46,9 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-# Using an in-memory H2 database for now (zero setup, data resets on restart) since
-# the real database choice isn't decided yet. To switch later, override DB_URL/
-# DB_USERNAME/DB_PASSWORD/DB_DRIVER as env vars - the Flyway migrations are written
-# to be compatible with both H2 and Postgres, so no migration rewrite is needed.
+# Defaults to a local MongoDB at mongodb://localhost:27017/wingmark. Point it at
+# MongoDB Atlas (or any other instance) by overriding MONGODB_URI, e.g.:
+#   MONGODB_URI=mongodb+srv://<user>:<password>@<cluster-host>/wingmark?retryWrites=true&w=majority
+#
+# Tests never need a running Mongo instance - an embedded in-memory instance
+# (de.flapdoodle.embed.mongo) is started automatically for the test classpath.

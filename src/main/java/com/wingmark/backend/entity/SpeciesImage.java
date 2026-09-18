@@ -2,16 +2,13 @@ package com.wingmark.backend.entity;
 
 import com.wingmark.backend.enums.ImageGender;
 import com.wingmark.backend.enums.LifeStageImage;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
@@ -20,22 +17,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@Entity
-@Table(name = "species_images")
+@Document(collection = "species_images")
 public class SpeciesImage extends BaseEntity {
 
-    @Column(nullable = false)
+    @Indexed
     private UUID speciesId;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private LifeStageImage lifeStage;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private ImageGender gender;
 
-    @Column(nullable = false)
     private String imageUrl;
 
     private String caption;

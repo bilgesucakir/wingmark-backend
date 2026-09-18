@@ -1,15 +1,16 @@
 package com.wingmark.backend.repository;
 
 import com.wingmark.backend.entity.BirdLog;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import com.wingmark.backend.enums.LifeStage;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface BirdLogRepository extends JpaRepository<BirdLog, UUID> {
+public interface BirdLogRepository extends MongoRepository<BirdLog, UUID>, BirdLogRepositoryCustom {
 
     /** Admin-only use: every log across every user. There is no cross-user viewing feature for regular users. */
     List<BirdLog> findAllByOrderByObservedAtDesc();
@@ -18,12 +19,7 @@ public interface BirdLogRepository extends JpaRepository<BirdLog, UUID> {
 
     Optional<BirdLog> findByIdAndUserId(UUID id, UUID userId);
 
-    @Query("""
-            select b from BirdLog b
-            where b.userId = :userId
-              and b.latitude between :minLat and :maxLat
-              and b.longitude between :minLng and :maxLng
-            """)
+    @Query("{ 'userId': ?0, 'latitude': { $gte: ?1, $lte: ?2 }, 'longitude': { $gte: ?3, $lte: ?4 } }")
     List<BirdLog> findWithinBounds(@Param("userId") UUID userId,
                                     @Param("minLat") double minLat,
                                     @Param("maxLat") double maxLat,
@@ -36,10 +32,7 @@ public interface BirdLogRepository extends JpaRepository<BirdLog, UUID> {
 
     long countByUserIdAndSpeciesIdIsNull(UUID userId);
 
-    @Query("select count(distinct b.speciesId) from BirdLog b where b.userId = :userId and b.speciesId is not null and b.pet = false")
-    long countDistinctSpeciesByUserId(@Param("userId") UUID userId);
-
-    long countByUserIdAndLifeStage(UUID userId, com.wingmark.backend.enums.LifeStage lifeStage);
+    long countByUserIdAndLifeStage(UUID userId, LifeStage lifeStage);
 
     List<BirdLog> findByUserIdAndSpeciesIdIsNotNullAndPetFalse(UUID userId);
 

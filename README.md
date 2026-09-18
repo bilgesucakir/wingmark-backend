@@ -9,8 +9,8 @@ go. Personal-only for now: every user sees just their own logs, never anyone els
 
 - Java 21, Spring Boot 3.3.4
 - Spring Web MVC + Spring Security (JWT, stateless)
-- Spring Data JPA (Hibernate) + Flyway migrations
-- H2 in-memory database by default — **temporary**, see [Database](#database)
+- Spring Data MongoDB
+- MongoDB (local instance by default, or point it at MongoDB Atlas) — see [Database](#database)
 - springdoc-openapi (Swagger UI)
 - Lombok
 - Xeno-canto API v3 (bird sound recordings) and iNaturalist API (photo curation)
@@ -53,44 +53,32 @@ mvn test
 
 ## Database
 
-> **⚠️ Temporary**: this project is currently wired to an **in-memory H2 database** for
-> local development convenience only. This is a deliberate, temporary choice while the
-> service's scope and feature set are still being worked out — **it will be switched to
-> a real database later**, once that's settled. Don't treat H2 as the intended
-> production setup.
+Uses **MongoDB**. By default it connects to a local instance at
+`mongodb://localhost:27017/wingmark` — you need Mongo running locally (or override
+`MONGODB_URI` to point elsewhere) for the app itself to start. Tests don't need this:
+they spin up an embedded in-memory MongoDB automatically.
 
-Defaults to an **in-memory H2 database** (`jdbc:h2:mem:wingmark`) — zero setup, but all
-data resets every time the app restarts.
-
-To switch to Postgres (or anything else) later, override these env vars — no code or
-migration changes needed, since the Flyway migrations are written in cross-compatible
-SQL:
+To point at MongoDB Atlas (or any other instance), override this env var:
 
 ```
-DB_URL=jdbc:postgresql://localhost:5432/wingmark
-DB_USERNAME=wingmark
-DB_PASSWORD=...
-DB_DRIVER=org.postgresql.Driver
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster-host>/wingmark?retryWrites=true&w=majority
 ```
 
-### Browsing the database
-
-The H2 web console is available at `http://localhost:8080/h2-console` while the app is
-running:
-
-- JDBC URL: `jdbc:h2:mem:wingmark`
-- User: `sa`
-- Password: (blank)
+Entities map straight to collections (`users`, `bird_logs`, `species`, `species_images`,
+`badges`, `user_badges`, `refresh_tokens`, `password_reset_tokens`, `user_settings`) with
+plain UUID references between them (e.g. `BirdLog.userId`, `BirdLog.speciesId`) rather
+than joins — the same shape the JPA entities had, so no relation modeling was needed for
+the switch.
 
 ### Seed data
 
-Three migrations run automatically on startup:
+`DataSeeder` (an `ApplicationRunner`) seeds the `badges` and `species`/`species_images`
+collections on first startup, if they're empty:
 
-- `V1__init.sql` — schema
-- `V2__seed_badges.sql` — 10 starter badges (total logs, unique species, baby logs,
-  unknown-species logs, pet logs, species-in-radius)
-- `V3__seed_species.sql` — 3 example species (House Sparrow, European Robin, Mallard)
-  with a few reference images each
+- 10 starter badges (total logs, unique species, baby logs, unknown-species logs, pet
+  logs, species-in-radius)
+- 3 example species (House Sparrow, European Robin, Mallard) with a few reference
+  images each
 
 ### Becoming an admin
 
@@ -99,9 +87,10 @@ and badge catalog management, photo curation) are meant to be operated by whoeve
 the backend, not by app users. To promote an account:
 
 1. Register/log in normally to create the account.
-2. Open the H2 console (see above) and run:
-   ```sql
-   UPDATE USERS SET ROLE='ADMIN' WHERE EMAIL='you@example.com';
+2. Connect to the database (e.g. `mongosh "mongodb://localhost:27017/wingmark"`, or
+   MongoDB Compass/Atlas UI) and run:
+   ```js
+   db.users.updateOne({ email: "you@example.com" }, { $set: { role: "ADMIN" } })
    ```
 3. Log in again — the role is baked into the JWT at login time, so you need a fresh
    token after the change.
