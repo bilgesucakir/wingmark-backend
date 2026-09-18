@@ -7,5 +7,7 @@ public enum BadgeCriteriaType {
     UNKNOWN_SPECIES_LOGS,
     PET_LOGS,
     SPECIES_IN_RADIUS,
-    SIGHTINGS_IN_RADIUS
+    SIGHTINGS_IN_RADIUS,
+    /** Log one specific species (criteriaMetadata.speciesId) criteriaValue times. */
+    SPECIES_LOGS
 }

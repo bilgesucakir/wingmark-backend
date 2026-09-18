@@ -3,7 +3,7 @@ spring:
     name: wingmark-backend
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/wingmark}
+      uri: ${DB_CONNECTION_STRING:mongodb://localhost:27017/wingmark}
       # Without this, @Indexed/@CompoundIndex on the entities (unique email/username/
       # scientificName/tokenHash etc.) are inert - Spring Data Mongo does not create
       # indexes from annotations unless this is on.
@@ -47,8 +47,8 @@ springdoc:
     path: /swagger-ui.html
 
 # Defaults to a local MongoDB at mongodb://localhost:27017/wingmark. Point it at
-# MongoDB Atlas (or any other instance) by overriding MONGODB_URI, e.g.:
-#   MONGODB_URI=mongodb+srv://<user>:<password>@<cluster-host>/wingmark?retryWrites=true&w=majority
+# MongoDB Atlas (or any other instance) by overriding DB_CONNECTION_STRING, e.g.:
+#   DB_CONNECTION_STRING=mongodb+srv://<user>:<password>@<cluster-host>/wingmark?retryWrites=true&w=majority
 #
 # Tests never need a running Mongo instance - an embedded in-memory instance
 # (de.flapdoodle.embed.mongo) is started automatically for the test classpath.

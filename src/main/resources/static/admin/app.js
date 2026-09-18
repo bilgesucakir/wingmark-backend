@@ -543,14 +543,39 @@ const badgeForm = document.getElementById("badge-form");
 const cancelBadgeFormBtn = document.getElementById("cancel-badge-form-btn");
 const deleteBadgeBtn = document.getElementById("delete-badge-btn");
 const radiusFieldWrap = document.getElementById("radius-field-wrap");
+const speciesFieldWrap = document.getElementById("species-field-wrap");
+const badgeSpeciesSelect = document.getElementById("badge-speciesId");
 const badgeCriteriaTypeSelect = document.getElementById("badge-criteriaType");
 
 let currentBadgeId = null;
+let badgeSpeciesOptionsLoaded = false;
+
+const RADIUS_CRITERIA_TYPES = ["SPECIES_IN_RADIUS", "SIGHTINGS_IN_RADIUS"];
 
 function toggleRadiusField() {
-  radiusFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "SPECIES_IN_RADIUS");
+  radiusFieldWrap.classList.toggle("hidden", !RADIUS_CRITERIA_TYPES.includes(badgeCriteriaTypeSelect.value));
+  speciesFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "SPECIES_LOGS");
 }
 badgeCriteriaTypeSelect.addEventListener("change", toggleRadiusField);
+
+async function ensureBadgeSpeciesOptionsLoaded() {
+  if (badgeSpeciesOptionsLoaded) return;
+  try {
+    const species = await Api.request("/api/species");
+    species
+      .slice()
+      .sort((a, b) => a.commonName.localeCompare(b.commonName))
+      .forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = s.commonName;
+        badgeSpeciesSelect.appendChild(opt);
+      });
+    badgeSpeciesOptionsLoaded = true;
+  } catch (err) {
+    showMsg(badgeFormMsg, "Failed to load species list: " + err.message, "error");
+  }
+}
 
 async function loadBadgesList() {
   showMsg(badgesListMsg, "", "");
@@ -603,12 +628,13 @@ newBadgeBtn.addEventListener("click", () => {
   showMsg(badgeFormMsg, "", "");
   badgeForm.reset();
   toggleRadiusField();
+  ensureBadgeSpeciesOptionsLoaded();
   showBadgeFormView();
 });
 
 cancelBadgeFormBtn.addEventListener("click", showBadgesListView);
 
-function openBadgeForm(badge) {
+async function openBadgeForm(badge) {
   currentBadgeId = badge.id;
   badgeFormTitle.textContent = "Edit badge";
   deleteBadgeBtn.classList.remove("hidden");
@@ -621,6 +647,8 @@ function openBadgeForm(badge) {
   document.getElementById("badge-criteriaValue").value = badge.criteriaValue;
   document.getElementById("badge-radiusMeters").value =
     (badge.criteriaMetadata && badge.criteriaMetadata.radiusMeters) || "";
+  await ensureBadgeSpeciesOptionsLoaded();
+  badgeSpeciesSelect.value = (badge.criteriaMetadata && badge.criteriaMetadata.speciesId) || "";
   toggleRadiusField();
   showBadgeFormView();
 }
@@ -630,9 +658,12 @@ function readBadgeFormPayload() {
   const criteriaValue = parseInt(document.getElementById("badge-criteriaValue").value, 10);
   const tier = document.getElementById("badge-tier").value || null;
   let criteriaMetadata = null;
-  if (criteriaType === "SPECIES_IN_RADIUS") {
+  if (RADIUS_CRITERIA_TYPES.includes(criteriaType)) {
     const radius = parseFloat(document.getElementById("badge-radiusMeters").value);
     if (!isNaN(radius)) criteriaMetadata = { radiusMeters: radius };
+  } else if (criteriaType === "SPECIES_LOGS") {
+    const speciesId = badgeSpeciesSelect.value;
+    if (speciesId) criteriaMetadata = { speciesId };
   }
   return {
     name: document.getElementById("badge-name").value.trim(),

@@ -184,6 +184,48 @@ class BadgeServiceImplTest {
     }
 
     @Test
+    void speciesLogsCountsOnlyLogsOfTheConfiguredSpecies() {
+        UUID targetSpecies = UUID.randomUUID();
+        Badge badge = Badge.builder()
+                .id(UUID.randomUUID())
+                .criteriaType(BadgeCriteriaType.SPECIES_LOGS)
+                .criteriaValue(3)
+                .criteriaMetadata(java.util.Map.of("speciesId", targetSpecies.toString()))
+                .build();
+
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(birdLogRepository.countByUserIdAndSpeciesId(userId, targetSpecies)).thenReturn(3L);
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        badgeService.evaluateForUser(userId);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isEqualTo(3);
+        assertThat(captor.getValue().getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void speciesLogsWithMissingSpeciesIdStaysAtZeroProgressInsteadOfThrowing() {
+        Badge badge = Badge.builder()
+                .id(UUID.randomUUID())
+                .criteriaType(BadgeCriteriaType.SPECIES_LOGS)
+                .criteriaValue(3)
+                .criteriaMetadata(null)
+                .build();
+
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        badgeService.evaluateForUser(userId);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isEqualTo(0);
+        assertThat(captor.getValue().getEarnedAt()).isNull();
+    }
+
+    @Test
     void updatingAnExistingBadgeOverwritesItsFields() {
         UUID badgeId = UUID.randomUUID();
         Badge existing = Badge.builder()

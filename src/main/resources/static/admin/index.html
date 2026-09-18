@@ -319,6 +319,8 @@
                 <option value="UNKNOWN_SPECIES_LOGS">Unknown species logs</option>
                 <option value="PET_LOGS">Pet logs</option>
                 <option value="SPECIES_IN_RADIUS">Species in radius</option>
+                <option value="SIGHTINGS_IN_RADIUS">Sightings in radius</option>
+                <option value="SPECIES_LOGS">Specific species logs</option>
               </select>
             </div>
             <div class="field">
@@ -327,8 +329,14 @@
             </div>
           </div>
           <div class="field" id="radius-field-wrap">
-            <label for="badge-radiusMeters">Radius (meters) — only for "Species in radius"</label>
+            <label for="badge-radiusMeters">Radius (meters) — only for "Species in radius" / "Sightings in radius"</label>
             <input type="text" id="badge-radiusMeters" inputmode="numeric" placeholder="e.g. 5000" />
+          </div>
+          <div class="field" id="species-field-wrap">
+            <label for="badge-speciesId">Species — only for "Specific species logs"</label>
+            <select id="badge-speciesId">
+              <option value="">Select a species…</option>
+            </select>
           </div>
           <div class="actions">
             <button type="submit" class="primary" id="save-badge-btn">Save badge</button>
