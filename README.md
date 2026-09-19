@@ -116,11 +116,16 @@ All endpoints are prefixed with `/api`. 🔒 = requires `Authorization: Bearer <
 | POST   | `/forgot-password`            |      | Issue a password-reset token (if the email exists)                        |
 | POST   | `/reset-password`             |      | Consume a reset token to set a new password                               |
 | GET    | `/verify-email?token=`        |      | Consumes the link from the verification email (opened in a browser, not called by the app) |
-| POST   | `/resend-verification-email`  | 🔒  | Re-sends the verification email; no-ops if already verified               |
+| POST   | `/resend-verification-email`  |      | Re-sends the verification email for a given address; no-ops if unknown/already verified |
 
 Registration still returns a usable token pair immediately (so the app can show a
 "check your email" screen right after signup), but a subsequent `/login` is rejected
-with 403 until that account's email is verified.
+with 403 until that account's email is verified. The verification token expires after
+24h; `resend-verification-email` is deliberately unauthenticated (same shape as
+`forgot-password`, taking just an email) rather than requiring a token, since an
+unverified account that lost its session (app reinstalled, storage cleared, or its
+refresh token itself expired/was revoked before the link was used) has no other way to
+prove it owns the address and get back in.
 
 ### Users (`/api/users/{userId}`) — 🔒, `userId` must be the caller's own id
 

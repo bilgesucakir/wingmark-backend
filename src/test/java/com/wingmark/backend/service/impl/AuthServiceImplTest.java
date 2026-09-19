@@ -5,6 +5,7 @@ import com.wingmark.backend.dto.auth.AuthResponseDto;
 import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
+import com.wingmark.backend.dto.auth.ResendVerificationEmailRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 import com.wingmark.backend.entity.EmailVerificationToken;
 import com.wingmark.backend.entity.PasswordResetToken;
@@ -350,22 +351,29 @@ class AuthServiceImplTest {
 
     @Test
     void resendVerificationEmailNoOpsWhenAlreadyVerified() {
-        UUID userId = UUID.randomUUID();
-        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).emailVerified(true).build();
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(true).build();
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
 
-        authService.resendVerificationEmail(userId);
+        authService.resendVerificationEmail(new ResendVerificationEmailRequestDto("user@example.com"));
 
         verify(emailService, org.mockito.Mockito.never()).sendVerificationEmail(any(), any());
     }
 
     @Test
-    void resendVerificationEmailIssuesFreshTokenWhenUnverified() {
-        UUID userId = UUID.randomUUID();
-        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).emailVerified(false).build();
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    void resendVerificationEmailSilentlyNoOpsForUnknownEmail() {
+        when(userRepository.findByEmailIgnoreCase("nobody@example.com")).thenReturn(Optional.empty());
 
-        authService.resendVerificationEmail(userId);
+        authService.resendVerificationEmail(new ResendVerificationEmailRequestDto("nobody@example.com"));
+
+        verify(emailVerificationTokenRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    void resendVerificationEmailIssuesFreshTokenWhenUnverified() {
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+
+        authService.resendVerificationEmail(new ResendVerificationEmailRequestDto("user@example.com"));
 
         verify(emailVerificationTokenRepository).save(any(EmailVerificationToken.class));
         verify(emailService).sendVerificationEmail(org.mockito.ArgumentMatchers.eq("user@example.com"), any());

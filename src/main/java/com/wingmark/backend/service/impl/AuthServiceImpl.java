@@ -5,6 +5,7 @@ import com.wingmark.backend.dto.auth.AuthResponseDto;
 import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
+import com.wingmark.backend.dto.auth.ResendVerificationEmailRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 import com.wingmark.backend.entity.EmailVerificationToken;
 import com.wingmark.backend.entity.PasswordResetToken;
@@ -197,15 +198,12 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void resendVerificationEmail(UUID userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new InvalidTokenException("Invalid or expired verification token"));
-
-        if (user.isEmailVerified()) {
-            return;
-        }
-
-        issueVerificationEmail(user);
+    public void resendVerificationEmail(ResendVerificationEmailRequestDto request) {
+        userRepository.findByEmailIgnoreCase(request.email())
+                .filter(user -> !user.isEmailVerified())
+                .ifPresent(this::issueVerificationEmail);
+        // Always return silently regardless of whether the email exists or is already
+        // verified, to avoid leaking which addresses have accounts (same as forgotPassword).
     }
 
     private void issueVerificationEmail(User user) {

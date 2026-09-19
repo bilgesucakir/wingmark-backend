@@ -5,6 +5,7 @@ import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RefreshTokenRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
+import com.wingmark.backend.dto.auth.ResendVerificationEmailRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 import com.wingmark.backend.security.UserPrincipal;
 import com.wingmark.backend.service.AuthService;
@@ -97,11 +98,18 @@ public class AuthController {
         return ResponseEntity.ok("<p>Your email is verified. You can close this page and log in.</p>");
     }
 
-    /** Issues and emails a fresh verification link for the caller; no-ops if already verified. */
-    @Operation(summary = "Resend verification email", description = "Issues and emails a fresh verification link for the caller. No-ops if the account is already verified.")
+    /**
+     * Issues and emails a fresh verification link for the given email, if an account exists
+     * and isn't already verified. Deliberately unauthenticated (like forgot-password) - an
+     * unverified account can't log in to prove ownership any other way, e.g. after losing its
+     * session (app reinstall, cleared storage) before the original link was used or before it
+     * expired. Always responds the same way to avoid revealing which emails are registered.
+     */
+    @Operation(summary = "Resend verification email", description = "Issues and emails a fresh verification link for the given email, if an account exists and isn't already verified. " +
+            "Always responds 202 regardless, to avoid revealing which emails are registered.")
     @PostMapping("/resend-verification-email")
-    public ResponseEntity<Void> resendVerificationEmail(@AuthenticationPrincipal UserPrincipal principal) {
-        authService.resendVerificationEmail(principal.getId());
+    public ResponseEntity<Void> resendVerificationEmail(@Valid @RequestBody ResendVerificationEmailRequestDto request) {
+        authService.resendVerificationEmail(request);
         return ResponseEntity.accepted().build();
     }
 }
