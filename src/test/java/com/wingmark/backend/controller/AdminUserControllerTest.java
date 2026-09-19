@@ -55,7 +55,11 @@ class AdminUserControllerTest {
                         .content(body))
                 .andExpect(status().isCreated());
 
+        // login() requires a verified email; mark it verified directly, the same way
+        // promoteAndLogin() promotes a role, since there's no email inbox to click through here.
         User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        user.setEmailVerified(true);
+        userRepository.save(user);
         return new Registered(user.getId().toString(), email, password, username);
     }
 

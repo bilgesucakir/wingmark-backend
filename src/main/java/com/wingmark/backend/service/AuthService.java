@@ -31,4 +31,10 @@ public interface AuthService {
 
     /** Consumes a password-reset token to set a new password; rejects a password identical to the current one. */
     void resetPassword(ResetPasswordRequestDto request);
+
+    /** Consumes an email-verification token, marking the owning account verified. */
+    void verifyEmail(String rawToken);
+
+    /** Issues and emails a fresh verification link for this user; no-ops if already verified. */
+    void resendVerificationEmail(UUID userId);
 }

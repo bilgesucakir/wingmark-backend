@@ -37,6 +37,15 @@ Everything else has a working default for local development.
 `.env` is loaded automatically at startup (via `spring-dotenv`) and is gitignored —
 never commit it.
 
+Without `SMTP_HOST`/`SMTP_USERNAME`/`SMTP_PASSWORD` set, registration still works but
+the verification email fails to send silently (logged as an error, with the raw link
+included so you can still click through it locally) - see
+[`EmailServiceImpl`](src/main/java/com/wingmark/backend/service/impl/EmailServiceImpl.java).
+Any SMTP provider works (a Gmail app password, Mailtrap/Ethereal for testing,
+SendGrid/Mailgun/SES's SMTP relay, etc). Also set `APP_BASE_URL` to wherever this
+backend is actually reachable (defaults to `http://localhost:8080`) - it's baked into
+the verification link.
+
 ### Run it
 
 ```bash
@@ -95,17 +104,23 @@ the app is running (raw OpenAPI JSON at `/v3/api-docs`).
 All endpoints are prefixed with `/api`. 🔒 = requires `Authorization: Bearer <token>`.
 🛡️ = requires the caller's account to have the `ADMIN` role (also requires 🔒).
 
-### Auth (`/api/auth`) — all public
+### Auth (`/api/auth`)
 
-| Method | Path                    | Description                                      |
-|--------|-------------------------|---------------------------------------------------|
-| POST   | `/register`             | Create an account, returns a token pair            |
-| POST   | `/login`                | Log in, returns a fresh token pair                 |
-| POST   | `/refresh`              | Exchange a refresh token for a new token pair       |
-| POST   | `/logout`               | Revoke one refresh token                           |
-| POST   | `/logout-all`           | 🔒 Revoke every refresh token for the caller        |
-| POST   | `/forgot-password`      | Issue a password-reset token (if the email exists)  |
-| POST   | `/reset-password`       | Consume a reset token to set a new password         |
+| Method | Path                          | Auth | Description                                                          |
+|--------|-------------------------------|:----:|-------------------------------------------------------------------------|
+| POST   | `/register`                   |      | Create an account, returns a token pair, and emails a verification link  |
+| POST   | `/login`                      |      | Log in, returns a fresh token pair. Rejected (403) until the email is verified |
+| POST   | `/refresh`                    |      | Exchange a refresh token for a new token pair                            |
+| POST   | `/logout`                     |      | Revoke one refresh token                                                 |
+| POST   | `/logout-all`                 | 🔒  | Revoke every refresh token for the caller                                |
+| POST   | `/forgot-password`            |      | Issue a password-reset token (if the email exists)                        |
+| POST   | `/reset-password`             |      | Consume a reset token to set a new password                               |
+| GET    | `/verify-email?token=`        |      | Consumes the link from the verification email (opened in a browser, not called by the app) |
+| POST   | `/resend-verification-email`  | 🔒  | Re-sends the verification email; no-ops if already verified               |
+
+Registration still returns a usable token pair immediately (so the app can show a
+"check your email" screen right after signup), but a subsequent `/login` is rejected
+with 403 until that account's email is verified.
 
 ### Users (`/api/users/{userId}`) — 🔒, `userId` must be the caller's own id
 

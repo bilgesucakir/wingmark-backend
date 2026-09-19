@@ -1,10 +1,12 @@
 package com.wingmark.backend.service.impl;
 
+import com.wingmark.backend.config.AppProperties;
 import com.wingmark.backend.dto.auth.AuthResponseDto;
 import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
+import com.wingmark.backend.entity.EmailVerificationToken;
 import com.wingmark.backend.entity.PasswordResetToken;
 import com.wingmark.backend.entity.RefreshToken;
 import com.wingmark.backend.entity.User;
@@ -13,12 +15,15 @@ import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.exception.DuplicateResourceException;
 import com.wingmark.backend.exception.InvalidCredentialsException;
 import com.wingmark.backend.exception.InvalidTokenException;
+import com.wingmark.backend.exception.UnverifiedEmailException;
+import com.wingmark.backend.repository.EmailVerificationTokenRepository;
 import com.wingmark.backend.repository.PasswordResetTokenRepository;
 import com.wingmark.backend.repository.RefreshTokenRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.security.JwtTokenProvider;
 import com.wingmark.backend.service.AuthService;
+import com.wingmark.backend.service.EmailService;
 import com.wingmark.backend.util.RandomTokenGenerator;
 import com.wingmark.backend.util.TokenHasher;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +43,11 @@ public class AuthServiceImpl implements AuthService {
     private final UserSettingsRepository userSettingsRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailService emailService;
+    private final AppProperties appProperties;
 
     @Override
     public AuthResponseDto register(RegisterRequestDto request) {
@@ -65,6 +73,8 @@ public class AuthServiceImpl implements AuthService {
                 .userId(user.getId())
                 .build());
 
+        issueVerificationEmail(user);
+
         return issueTokens(user);
     }
 
@@ -75,6 +85,11 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new InvalidCredentialsException("Invalid email or password");
+        }
+
+        if (!user.isEmailVerified()) {
+            throw new UnverifiedEmailException("Please verify your email before logging in - check your inbox, " +
+                    "or request a new link via POST /api/auth/resend-verification-email");
         }
 
         user.setLastLoginAt(Instant.now());
@@ -159,6 +174,51 @@ public class AuthServiceImpl implements AuthService {
         passwordResetTokenRepository.save(resetToken);
 
         refreshTokenRepository.revokeAllForUser(user.getId(), Instant.now());
+    }
+
+    @Override
+    public void verifyEmail(String rawToken) {
+        String hash = TokenHasher.sha256(rawToken);
+        EmailVerificationToken verificationToken = emailVerificationTokenRepository.findByTokenHash(hash)
+                .orElseThrow(() -> new InvalidTokenException("Invalid or expired verification token"));
+
+        if (!verificationToken.isActive()) {
+            throw new InvalidTokenException("Invalid or expired verification token");
+        }
+
+        User user = userRepository.findById(verificationToken.getUserId())
+                .orElseThrow(() -> new InvalidTokenException("Invalid or expired verification token"));
+
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        verificationToken.setUsedAt(Instant.now());
+        emailVerificationTokenRepository.save(verificationToken);
+    }
+
+    @Override
+    public void resendVerificationEmail(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidTokenException("Invalid or expired verification token"));
+
+        if (user.isEmailVerified()) {
+            return;
+        }
+
+        issueVerificationEmail(user);
+    }
+
+    private void issueVerificationEmail(User user) {
+        String rawToken = RandomTokenGenerator.generate();
+        EmailVerificationToken verificationToken = EmailVerificationToken.builder()
+                .userId(user.getId())
+                .tokenHash(TokenHasher.sha256(rawToken))
+                .expiresAt(Instant.now().plusSeconds(86400))
+                .build();
+        emailVerificationTokenRepository.save(verificationToken);
+
+        String verifyUrl = appProperties.baseUrl() + "/api/auth/verify-email?token=" + rawToken;
+        emailService.sendVerificationEmail(user.getEmail(), verifyUrl);
     }
 
     private AuthResponseDto issueTokens(User user) {

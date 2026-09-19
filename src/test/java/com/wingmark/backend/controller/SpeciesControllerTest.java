@@ -82,6 +82,7 @@ class SpeciesControllerTest {
 
         User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
         user.setRole(Role.ADMIN);
+        user.setEmailVerified(true);
         userRepository.save(user);
 
         String loginBody = objectMapper.writeValueAsString(new HashMap<>() {{

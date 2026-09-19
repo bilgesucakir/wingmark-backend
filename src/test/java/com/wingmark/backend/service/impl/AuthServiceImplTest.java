@@ -1,10 +1,12 @@
 package com.wingmark.backend.service.impl;
 
+import com.wingmark.backend.config.AppProperties;
 import com.wingmark.backend.dto.auth.AuthResponseDto;
 import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
+import com.wingmark.backend.entity.EmailVerificationToken;
 import com.wingmark.backend.entity.PasswordResetToken;
 import com.wingmark.backend.entity.RefreshToken;
 import com.wingmark.backend.entity.User;
@@ -12,11 +14,14 @@ import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.exception.DuplicateResourceException;
 import com.wingmark.backend.exception.InvalidCredentialsException;
 import com.wingmark.backend.exception.InvalidTokenException;
+import com.wingmark.backend.exception.UnverifiedEmailException;
+import com.wingmark.backend.repository.EmailVerificationTokenRepository;
 import com.wingmark.backend.repository.PasswordResetTokenRepository;
 import com.wingmark.backend.repository.RefreshTokenRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.security.JwtTokenProvider;
+import com.wingmark.backend.service.EmailService;
 import com.wingmark.backend.util.TokenHasher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,9 +53,14 @@ class AuthServiceImplTest {
     @Mock
     private PasswordResetTokenRepository passwordResetTokenRepository;
     @Mock
+    private EmailVerificationTokenRepository emailVerificationTokenRepository;
+    @Mock
     private JwtTokenProvider jwtTokenProvider;
+    @Mock
+    private EmailService emailService;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final AppProperties appProperties = new AppProperties("http://localhost:8080");
 
     private AuthServiceImpl authService;
 
@@ -58,7 +68,8 @@ class AuthServiceImplTest {
     void setUp() {
         authService = new AuthServiceImpl(
                 userRepository, userSettingsRepository, refreshTokenRepository,
-                passwordResetTokenRepository, passwordEncoder, jwtTokenProvider);
+                passwordResetTokenRepository, emailVerificationTokenRepository,
+                passwordEncoder, jwtTokenProvider, emailService, appProperties);
     }
 
     @Test
@@ -104,6 +115,8 @@ class AuthServiceImplTest {
         verify(userRepository).save(any(User.class));
         verify(userSettingsRepository).save(any());
         verify(refreshTokenRepository).save(any(RefreshToken.class));
+        verify(emailVerificationTokenRepository).save(any(EmailVerificationToken.class));
+        verify(emailService).sendVerificationEmail(org.mockito.ArgumentMatchers.eq("fresh@example.com"), any());
     }
 
     @Test
@@ -141,6 +154,7 @@ class AuthServiceImplTest {
                 .passwordHash(passwordEncoder.encode("correct-password"))
                 .username("someuser")
                 .role(Role.USER)
+                .emailVerified(true)
                 .build();
         when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -151,6 +165,24 @@ class AuthServiceImplTest {
         AuthResponseDto response = authService.login(new LoginRequestDto("user@example.com", "correct-password"));
 
         assertThat(response.accessToken()).isEqualTo("access-token");
+    }
+
+    @Test
+    void loginRejectsUnverifiedEmail() {
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .email("unverified@example.com")
+                .passwordHash(passwordEncoder.encode("correct-password"))
+                .username("unverifieduser")
+                .role(Role.USER)
+                .emailVerified(false)
+                .build();
+        when(userRepository.findByEmailIgnoreCase("unverified@example.com")).thenReturn(Optional.of(user));
+
+        LoginRequestDto request = new LoginRequestDto("unverified@example.com", "correct-password");
+
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(UnverifiedEmailException.class);
     }
 
     @Test
@@ -278,5 +310,64 @@ class AuthServiceImplTest {
         assertThat(passwordEncoder.matches("brand-new-password1", user.getPasswordHash())).isTrue();
         assertThat(resetToken.getUsedAt()).isNotNull();
         verify(refreshTokenRepository).revokeAllForUser(org.mockito.ArgumentMatchers.eq(userId), any());
+    }
+
+    @Test
+    void verifyEmailRejectsExpiredToken() {
+        EmailVerificationToken expired = EmailVerificationToken.builder()
+                .userId(UUID.randomUUID())
+                .tokenHash(TokenHasher.sha256("verify-token"))
+                .expiresAt(Instant.now().minusSeconds(60))
+                .build();
+        when(emailVerificationTokenRepository.findByTokenHash(TokenHasher.sha256("verify-token")))
+                .thenReturn(Optional.of(expired));
+
+        assertThatThrownBy(() -> authService.verifyEmail("verify-token"))
+                .isInstanceOf(InvalidTokenException.class);
+    }
+
+    @Test
+    void verifyEmailMarksUserVerifiedAndConsumesToken() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        EmailVerificationToken token = EmailVerificationToken.builder()
+                .userId(userId)
+                .tokenHash(TokenHasher.sha256("verify-token"))
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .build();
+
+        when(emailVerificationTokenRepository.findByTokenHash(TokenHasher.sha256("verify-token")))
+                .thenReturn(Optional.of(token));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        authService.verifyEmail("verify-token");
+
+        assertThat(user.isEmailVerified()).isTrue();
+        assertThat(token.getUsedAt()).isNotNull();
+        verify(userRepository).save(user);
+        verify(emailVerificationTokenRepository).save(token);
+    }
+
+    @Test
+    void resendVerificationEmailNoOpsWhenAlreadyVerified() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).emailVerified(true).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        authService.resendVerificationEmail(userId);
+
+        verify(emailService, org.mockito.Mockito.never()).sendVerificationEmail(any(), any());
+    }
+
+    @Test
+    void resendVerificationEmailIssuesFreshTokenWhenUnverified() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        authService.resendVerificationEmail(userId);
+
+        verify(emailVerificationTokenRepository).save(any(EmailVerificationToken.class));
+        verify(emailService).sendVerificationEmail(org.mockito.ArgumentMatchers.eq("user@example.com"), any());
     }
 }
