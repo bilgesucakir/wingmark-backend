@@ -74,10 +74,20 @@ so it always deploys as a container). To deploy:
    for any `sync: false` var from the blueprint, but confirm they're filled in):
    - `DB_CONNECTION_STRING` — required. Render has no managed MongoDB, so point this at
      an Atlas cluster (or any other reachable instance), same format as local dev.
+   - `SMTP_HOST` / `SMTP_USERNAME` / `SMTP_PASSWORD` / `MAIL_FROM` — required for real
+     accounts to work at all: registration silently fails to deliver the verification
+     email without these, and `login()` rejects unverified accounts, so **every new
+     user would be locked out with no visible error**. See "Configuration" above for
+     provider options; `MAIL_FROM` must be an address your provider is authorized to
+     send from.
    - `XENO_CANTO_API_KEY` — optional, only needed for the sound-recordings endpoint.
    - `JWT_SECRET` is generated automatically by Render on first deploy; everything else
-     (`UPLOAD_DIR`, port, JWT expirations) is already wired to sensible defaults in
-     `render.yaml`/`application.yml`.
+     (`UPLOAD_DIR`, `SMTP_PORT`, port, JWT expirations) is already wired to sensible
+     defaults in `render.yaml`/`application.yml`.
+4. After the first deploy, confirm the assigned URL matches `APP_BASE_URL` in
+   `render.yaml` (`https://wingmark-backend.onrender.com` by default) - Render appends
+   a random suffix if that name is already taken elsewhere. Update the env var in the
+   dashboard if it differs; it's baked into every verification-email link.
 
 The `/uploads/**` static route serves whatever `UPLOAD_DIR` points at, so on Render it
 reads from the mounted disk (`/data/uploads`) — without a disk, uploaded photos would be
