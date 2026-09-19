@@ -51,6 +51,29 @@ The app starts on `http://localhost:8080`.
 mvn test
 ```
 
+## Deploying (Render)
+
+A `render.yaml` [Blueprint](https://render.com/docs/blueprint-spec) is included at the repo
+root, building the app from the `Dockerfile` (Java isn't one of Render's native runtimes,
+so it always deploys as a container). To deploy:
+
+1. In the Render dashboard: **New > Blueprint**, point it at this repo/branch.
+2. Render reads `render.yaml` and creates one web service (`wingmark-backend`) with a
+   1GB persistent disk mounted at `/data` for uploaded photos, and a health check at
+   `/actuator/health`.
+3. Before the first deploy succeeds, set these env vars on the service (Render prompts
+   for any `sync: false` var from the blueprint, but confirm they're filled in):
+   - `DB_CONNECTION_STRING` — required. Render has no managed MongoDB, so point this at
+     an Atlas cluster (or any other reachable instance), same format as local dev.
+   - `XENO_CANTO_API_KEY` — optional, only needed for the sound-recordings endpoint.
+   - `JWT_SECRET` is generated automatically by Render on first deploy; everything else
+     (`UPLOAD_DIR`, port, JWT expirations) is already wired to sensible defaults in
+     `render.yaml`/`application.yml`.
+
+The `/uploads/**` static route serves whatever `UPLOAD_DIR` points at, so on Render it
+reads from the mounted disk (`/data/uploads`) — without a disk, uploaded photos would be
+wiped on every deploy/restart, since Render's container filesystem is otherwise ephemeral.
+
 ## Database
 
 Uses **MongoDB**. By default it connects to a local instance at
