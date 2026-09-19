@@ -14,12 +14,15 @@ import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.UserBadgeRepository;
 import com.wingmark.backend.service.BadgeService;
 import com.wingmark.backend.util.GeoUtils;
+import com.wingmark.backend.util.LocalizedTextResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -38,7 +41,7 @@ public class BadgeServiceImpl implements BadgeService {
     }
 
     @Override
-    public List<UserBadgeResponseDto> getByUserId(UUID userId) {
+    public List<UserBadgeResponseDto> getByUserId(UUID userId, Locale locale) {
         List<Badge> badges = badgeRepository.findAll();
         Map<UUID, UserBadge> earned = userBadgeRepository.findByUserId(userId).stream()
                 .collect(java.util.stream.Collectors.toMap(UserBadge::getBadgeId, ub -> ub));
@@ -50,7 +53,7 @@ public class BadgeServiceImpl implements BadgeService {
                     boolean isEarned = userBadge != null && userBadge.getEarnedAt() != null;
                     return new UserBadgeResponseDto(
                             badge.getId(),
-                            badge.getName(),
+                            LocalizedTextResolver.resolve(badge.getName(), locale),
                             badge.getIcon(),
                             isEarned,
                             isEarned ? userBadge.getEarnedAt() : null,
@@ -63,6 +66,8 @@ public class BadgeServiceImpl implements BadgeService {
 
     @Override
     public BadgeResponseDto create(CreateBadgeRequestDto request) {
+        validateName(request.name());
+
         Badge badge = Badge.builder()
                 .name(request.name())
                 .description(request.description())
@@ -77,6 +82,8 @@ public class BadgeServiceImpl implements BadgeService {
 
     @Override
     public BadgeResponseDto update(UUID badgeId, UpdateBadgeRequestDto request) {
+        validateName(request.name());
+
         Badge badge = badgeRepository.findById(badgeId)
                 .orElseThrow(() -> ResourceNotFoundException.of("Badge", badgeId));
         badge.setName(request.name());
@@ -103,6 +110,12 @@ public class BadgeServiceImpl implements BadgeService {
         for (Badge badge : badges) {
             int progress = computeProgress(userId, badge);
             upsertUserBadge(userId, badge, progress);
+        }
+    }
+
+    private void validateName(Map<String, String> name) {
+        if (!StringUtils.hasText(name.get("en"))) {
+            throw new IllegalArgumentException("name must include a non-blank 'en' translation");
         }
     }
 

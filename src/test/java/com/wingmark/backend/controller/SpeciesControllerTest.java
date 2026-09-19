@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -99,7 +100,7 @@ class SpeciesControllerTest {
     @Test
     void guideEndpointsArePubliclyReadable() throws Exception {
         speciesRepository.save(Species.builder()
-                .commonName("House Sparrow")
+                .commonName(Map.of("en", "House Sparrow"))
                 .scientificName("Passer domesticus " + System.nanoTime())
                 .build());
 
@@ -109,7 +110,7 @@ class SpeciesControllerTest {
 
         mockMvc.perform(get("/api/species?search=Sparrow"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].commonName").value("House Sparrow"));
+                .andExpect(jsonPath("$[0].commonName.en").value("House Sparrow"));
     }
 
     @Test
@@ -117,7 +118,7 @@ class SpeciesControllerTest {
         String userToken = registerAndGetToken("plainuser");
 
         String body = objectMapper.writeValueAsString(new HashMap<>() {{
-            put("commonName", "Test Bird");
+            put("commonName", Map.of("en", "Test Bird"));
             put("scientificName", "Testus birdus " + System.nanoTime());
         }});
 
@@ -141,7 +142,7 @@ class SpeciesControllerTest {
         String scientificName = "Testus createdus " + System.nanoTime();
 
         String createBody = objectMapper.writeValueAsString(new HashMap<>() {{
-            put("commonName", "Created Bird");
+            put("commonName", Map.of("en", "Created Bird"));
             put("scientificName", scientificName);
         }});
 
@@ -150,13 +151,13 @@ class SpeciesControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBody))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.commonName").value("Created Bird"))
+                .andExpect(jsonPath("$.commonName.en").value("Created Bird"))
                 .andReturn().getResponse().getContentAsString();
 
         String speciesId = objectMapper.readTree(createResponse).get("id").asText();
 
         String updateBody = objectMapper.writeValueAsString(new HashMap<>() {{
-            put("commonName", "Renamed Bird");
+            put("commonName", Map.of("en", "Renamed Bird"));
             put("scientificName", scientificName);
         }});
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/species/" + speciesId)
@@ -164,7 +165,7 @@ class SpeciesControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.commonName").value("Renamed Bird"));
+                .andExpect(jsonPath("$.commonName.en").value("Renamed Bird"));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/species/" + speciesId)
                         .header("Authorization", "Bearer " + adminToken))

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -47,19 +48,20 @@ public class BirdLogController {
     @Operation(summary = "Get all bird logs", description = "Admin-only. Returns every log across every user, most recently observed first.")
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<BirdLogResponseDto>> getAll() {
-        return ResponseEntity.ok(birdLogService.getAll());
+    public ResponseEntity<List<BirdLogResponseDto>> getAll(Locale locale) {
+        return ResponseEntity.ok(birdLogService.getAll(locale));
     }
 
     /** Returns all of the given user's own logs, most recently observed first. userId must match the authenticated caller. */
     @Operation(summary = "Get bird logs by user", description = "Returns all of this user's own logs, most recently observed first. userId must match the authenticated caller.")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<BirdLogResponseDto>> getByUserId(@AuthenticationPrincipal UserPrincipal principal,
-                                                                 @PathVariable UUID userId) {
+                                                                 @PathVariable UUID userId,
+                                                                 Locale locale) {
         if (!principal.getId().equals(userId)) {
             throw ResourceNotFoundException.of("User", userId);
         }
-        return ResponseEntity.ok(birdLogService.getByUserId(userId));
+        return ResponseEntity.ok(birdLogService.getByUserId(userId, locale));
     }
 
     /** Returns the caller's own logs whose coordinates fall within the given lat/lng box, for the map view. */
@@ -69,23 +71,25 @@ public class BirdLogController {
                                                                     @RequestParam double minLat,
                                                                     @RequestParam double maxLat,
                                                                     @RequestParam double minLng,
-                                                                    @RequestParam double maxLng) {
-        return ResponseEntity.ok(birdLogService.getByLocation(principal.getId(), minLat, maxLat, minLng, maxLng));
+                                                                    @RequestParam double maxLng,
+                                                                    Locale locale) {
+        return ResponseEntity.ok(birdLogService.getByLocation(principal.getId(), minLat, maxLat, minLng, maxLng, locale));
     }
 
     /** Returns one of the caller's own logs by id. */
     @Operation(summary = "Get bird log by id", description = "Returns one of the caller's own logs by id. 404 if it doesn't exist or belongs to someone else.")
     @GetMapping("/{id}")
-    public ResponseEntity<BirdLogResponseDto> getById(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
-        return ResponseEntity.ok(birdLogService.getById(principal.getId(), id));
+    public ResponseEntity<BirdLogResponseDto> getById(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id, Locale locale) {
+        return ResponseEntity.ok(birdLogService.getById(principal.getId(), id, locale));
     }
 
     /** Creates a new bird sighting log for the caller and re-evaluates their badge progress. */
     @Operation(summary = "Create a bird log", description = "Creates a new bird sighting log for the caller and re-evaluates their badge progress.")
     @PostMapping
     public ResponseEntity<BirdLogResponseDto> create(@AuthenticationPrincipal UserPrincipal principal,
-                                                    @Valid @RequestBody CreateBirdLogRequestDto request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(birdLogService.create(principal.getId(), request));
+                                                    @Valid @RequestBody CreateBirdLogRequestDto request,
+                                                    Locale locale) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(birdLogService.create(principal.getId(), request, locale));
     }
 
     /** Updates one of the caller's own bird logs and re-evaluates their badge progress. */
@@ -93,8 +97,9 @@ public class BirdLogController {
     @PutMapping("/{id}")
     public ResponseEntity<BirdLogResponseDto> update(@AuthenticationPrincipal UserPrincipal principal,
                                                     @PathVariable UUID id,
-                                                    @Valid @RequestBody UpdateBirdLogRequestDto request) {
-        return ResponseEntity.ok(birdLogService.update(principal.getId(), id, request));
+                                                    @Valid @RequestBody UpdateBirdLogRequestDto request,
+                                                    Locale locale) {
+        return ResponseEntity.ok(birdLogService.update(principal.getId(), id, request, locale));
     }
 
     /** Deletes one of the caller's own bird logs and re-evaluates their badge progress. */

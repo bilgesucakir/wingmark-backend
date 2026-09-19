@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -80,7 +81,7 @@ class BadgeControllerTest {
     @Test
     void updatingABadgeRequiresAdminRole() throws Exception {
         String body = objectMapper.writeValueAsString(new HashMap<>() {{
-            put("name", "Test Badge");
+            put("name", Map.of("en", "Test Badge"));
             put("criteriaType", "TOTAL_LOGS");
             put("criteriaValue", 5);
         }});
@@ -99,7 +100,7 @@ class BadgeControllerTest {
         String adminToken = registerLoginAsAdmin("badgeadmin");
 
         String createBody = objectMapper.writeValueAsString(new HashMap<>() {{
-            put("name", "Early Bird");
+            put("name", Map.of("en", "Early Bird"));
             put("criteriaType", "TOTAL_LOGS");
             put("criteriaValue", 1);
         }});
@@ -108,13 +109,13 @@ class BadgeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createBody))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Early Bird"))
+                .andExpect(jsonPath("$.name.en").value("Early Bird"))
                 .andReturn().getResponse().getContentAsString();
 
         String badgeId = objectMapper.readTree(createResponse).get("id").asText();
 
         String updateBody = objectMapper.writeValueAsString(new HashMap<>() {{
-            put("name", "Early Bird Renamed");
+            put("name", Map.of("en", "Early Bird Renamed"));
             put("criteriaType", "TOTAL_LOGS");
             put("criteriaValue", 3);
             put("tier", "SILVER");
@@ -124,7 +125,7 @@ class BadgeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Early Bird Renamed"))
+                .andExpect(jsonPath("$.name.en").value("Early Bird Renamed"))
                 .andExpect(jsonPath("$.criteriaValue").value(3))
                 .andExpect(jsonPath("$.tier").value("SILVER"));
 
