@@ -27,3 +27,26 @@ services:
       # Matches the disk mounted above, so uploaded photos survive deploys/restarts.
       - key: UPLOAD_DIR
         value: /data/uploads
+      # Required to actually deliver the registration-verification email - without
+      # these, users can register but never receive the link, and login() rejects
+      # unverified accounts (see EmailServiceImpl / README "Deploying"). Any SMTP
+      # provider works (SendGrid/Mailgun/SES's SMTP relay, etc); set the real values
+      # in the Render dashboard.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      # Must be an address your SMTP provider is authorized to send from (most
+      # providers reject an unverified sender domain).
+      - key: MAIL_FROM
+        sync: false
+      # This service's own public URL - baked into the verification email link.
+      # Matches Render's predictable https://<name>.onrender.com pattern for this
+      # service, but Render appends a random suffix if that name is already taken -
+      # confirm the actual assigned URL after first deploy and update this if it differs.
+      - key: APP_BASE_URL
+        value: https://wingmark-backend.onrender.com
