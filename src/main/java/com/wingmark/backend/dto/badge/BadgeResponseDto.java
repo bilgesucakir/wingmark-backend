@@ -8,8 +8,8 @@ import java.util.UUID;
 
 public record BadgeResponseDto(
         UUID id,
-        String name,
-        String description,
+        Map<String, String> name,
+        Map<String, String> description,
         String icon,
         BadgeCriteriaType criteriaType,
         Integer criteriaValue,

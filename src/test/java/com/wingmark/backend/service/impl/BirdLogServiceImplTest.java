@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,7 +55,7 @@ class BirdLogServiceImplTest {
                 speciesId, SpeciesStatus.CONFIDENT, false, "Tweety",
                 LifeStage.ADULT, Gender.MALE, null, null, 40.0, 29.0, null);
 
-        assertThatThrownBy(() -> birdLogService.create(userId, request))
+        assertThatThrownBy(() -> birdLogService.create(userId, request, Locale.ENGLISH))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -70,7 +71,7 @@ class BirdLogServiceImplTest {
                 null, null, false, null,
                 LifeStage.UNKNOWN, Gender.UNKNOWN, null, "not sure what this was", 40.0, 29.0, null);
 
-        BirdLogResponseDto response = birdLogService.create(userId, request);
+        BirdLogResponseDto response = birdLogService.create(userId, request, Locale.ENGLISH);
 
         assertThat(response.speciesId()).isNull();
         assertThat(response.speciesStatus()).isNull();
@@ -85,7 +86,7 @@ class BirdLogServiceImplTest {
                 null, null, true, "Pico",
                 LifeStage.ADULT, Gender.MALE, null, null, 10.0, 20.0, null);
 
-        birdLogService.create(userId, request);
+        birdLogService.create(userId, request, Locale.ENGLISH);
 
         verify(badgeService).evaluateForUser(userId);
     }
@@ -95,7 +96,7 @@ class BirdLogServiceImplTest {
         UUID logId = UUID.randomUUID();
         when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> birdLogService.getById(userId, logId))
+        assertThatThrownBy(() -> birdLogService.getById(userId, logId, Locale.ENGLISH))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -118,7 +119,7 @@ class BirdLogServiceImplTest {
                 null, null, false, "Renamed",
                 LifeStage.ADULT, Gender.FEMALE, null, "updated note", 2.0, 2.0, "Some park");
 
-        BirdLogResponseDto response = birdLogService.update(userId, logId, request);
+        BirdLogResponseDto response = birdLogService.update(userId, logId, request, Locale.ENGLISH);
 
         assertThat(response.customName()).isEqualTo("Renamed");
         assertThat(response.lifeStage()).isEqualTo(LifeStage.ADULT);

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /** Badge catalog and per-user badge progress/awards. */
@@ -52,11 +53,12 @@ public class BadgeController {
     @Operation(summary = "Get badges by user", description = "Returns every badge with this user's progress and earned status. userId must match the authenticated caller.")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<UserBadgeResponseDto>> getByUserId(@AuthenticationPrincipal UserPrincipal principal,
-                                                                    @PathVariable UUID userId) {
+                                                                    @PathVariable UUID userId,
+                                                                    Locale locale) {
         if (!principal.getId().equals(userId)) {
             throw ResourceNotFoundException.of("User", userId);
         }
-        return ResponseEntity.ok(badgeService.getByUserId(userId));
+        return ResponseEntity.ok(badgeService.getByUserId(userId, locale));
     }
 
     /** Admin-only: adds a new badge definition to the catalog. */

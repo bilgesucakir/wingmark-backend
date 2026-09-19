@@ -70,13 +70,17 @@
         <form id="species-form">
           <div class="grid-2">
             <div class="field">
-              <label for="commonName">Common name *</label>
-              <input type="text" id="commonName" required />
+              <label for="commonName-en">Common name (EN) *</label>
+              <input type="text" id="commonName-en" required />
             </div>
             <div class="field">
-              <label for="scientificName">Scientific name *</label>
-              <input type="text" id="scientificName" required />
+              <label for="commonName-tr">Common name (TR)</label>
+              <input type="text" id="commonName-tr" />
             </div>
+          </div>
+          <div class="field">
+            <label for="scientificName">Scientific name *</label>
+            <input type="text" id="scientificName" required />
           </div>
           <div class="grid-2">
             <div class="field">
@@ -88,38 +92,74 @@
               <input type="text" id="order" />
             </div>
           </div>
-          <div class="field">
-            <label for="description">Description</label>
-            <textarea id="description"></textarea>
-          </div>
           <div class="grid-2">
             <div class="field">
-              <label for="lifespan">Lifespan</label>
-              <input type="text" id="lifespan" />
+              <label for="description-en">Description (EN)</label>
+              <textarea id="description-en"></textarea>
             </div>
             <div class="field">
-              <label for="diet">Diet</label>
-              <input type="text" id="diet" />
+              <label for="description-tr">Description (TR)</label>
+              <textarea id="description-tr"></textarea>
             </div>
           </div>
           <div class="grid-2">
             <div class="field">
-              <label for="habitat">Habitat</label>
-              <input type="text" id="habitat" />
+              <label for="lifespan-en">Lifespan (EN)</label>
+              <input type="text" id="lifespan-en" />
             </div>
             <div class="field">
-              <label for="sizeDescription">Size</label>
-              <input type="text" id="sizeDescription" />
+              <label for="lifespan-tr">Lifespan (TR)</label>
+              <input type="text" id="lifespan-tr" />
             </div>
           </div>
           <div class="grid-2">
             <div class="field">
-              <label for="conservationStatus">Conservation status</label>
-              <input type="text" id="conservationStatus" />
+              <label for="diet-en">Diet (EN)</label>
+              <input type="text" id="diet-en" />
             </div>
             <div class="field">
-              <label for="nativeRange">Native range</label>
-              <input type="text" id="nativeRange" />
+              <label for="diet-tr">Diet (TR)</label>
+              <input type="text" id="diet-tr" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="habitat-en">Habitat (EN)</label>
+              <input type="text" id="habitat-en" />
+            </div>
+            <div class="field">
+              <label for="habitat-tr">Habitat (TR)</label>
+              <input type="text" id="habitat-tr" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="sizeDescription-en">Size (EN)</label>
+              <input type="text" id="sizeDescription-en" />
+            </div>
+            <div class="field">
+              <label for="sizeDescription-tr">Size (TR)</label>
+              <input type="text" id="sizeDescription-tr" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="conservationStatus-en">Conservation status (EN)</label>
+              <input type="text" id="conservationStatus-en" />
+            </div>
+            <div class="field">
+              <label for="conservationStatus-tr">Conservation status (TR)</label>
+              <input type="text" id="conservationStatus-tr" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="nativeRange-en">Native range (EN)</label>
+              <input type="text" id="nativeRange-en" />
+            </div>
+            <div class="field">
+              <label for="nativeRange-tr">Native range (TR)</label>
+              <input type="text" id="nativeRange-tr" />
             </div>
           </div>
           <div class="actions">
@@ -286,13 +326,25 @@
         </div>
         <div id="badge-form-msg"></div>
         <form id="badge-form">
-          <div class="field">
-            <label for="badge-name">Name *</label>
-            <input type="text" id="badge-name" required />
+          <div class="grid-2">
+            <div class="field">
+              <label for="badge-name-en">Name (EN) *</label>
+              <input type="text" id="badge-name-en" required />
+            </div>
+            <div class="field">
+              <label for="badge-name-tr">Name (TR)</label>
+              <input type="text" id="badge-name-tr" />
+            </div>
           </div>
-          <div class="field">
-            <label for="badge-description">Description</label>
-            <textarea id="badge-description"></textarea>
+          <div class="grid-2">
+            <div class="field">
+              <label for="badge-description-en">Description (EN)</label>
+              <textarea id="badge-description-en"></textarea>
+            </div>
+            <div class="field">
+              <label for="badge-description-tr">Description (TR)</label>
+              <textarea id="badge-description-tr"></textarea>
+            </div>
           </div>
           <div class="grid-2">
             <div class="field">

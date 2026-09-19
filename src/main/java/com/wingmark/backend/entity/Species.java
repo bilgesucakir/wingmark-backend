@@ -8,6 +8,8 @@ import lombok.Setter;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Map;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,7 +18,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "species")
 public class Species extends BaseEntity {
 
-    private String commonName;
+    /** Translations keyed by locale code, e.g. {"en": "Great Tit", "tr": "Büyük Baştankara"}. */
+    private Map<String, String> commonName;
 
     @Indexed(unique = true)
     private String scientificName;
@@ -25,17 +28,24 @@ public class Species extends BaseEntity {
 
     private String order;
 
-    private String description;
+    /** Translations keyed by locale code. */
+    private Map<String, String> description;
 
-    private String lifespan;
+    /** Translations keyed by locale code. */
+    private Map<String, String> lifespan;
 
-    private String diet;
+    /** Translations keyed by locale code. */
+    private Map<String, String> diet;
 
-    private String habitat;
+    /** Translations keyed by locale code. */
+    private Map<String, String> habitat;
 
-    private String sizeDescription;
+    /** Translations keyed by locale code. */
+    private Map<String, String> sizeDescription;
 
-    private String conservationStatus;
+    /** Translations keyed by locale code. */
+    private Map<String, String> conservationStatus;
 
-    private String nativeRange;
+    /** Translations keyed by locale code. */
+    private Map<String, String> nativeRange;
 }

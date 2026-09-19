@@ -10,11 +10,13 @@ import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.service.BadgeService;
 import com.wingmark.backend.service.BirdLogService;
+import com.wingmark.backend.util.LocalizedTextResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -26,33 +28,33 @@ public class BirdLogServiceImpl implements BirdLogService {
     private final BadgeService badgeService;
 
     @Override
-    public List<BirdLogResponseDto> getAll() {
+    public List<BirdLogResponseDto> getAll(Locale locale) {
         return birdLogRepository.findAllByOrderByObservedAtDesc().stream()
-                .map(this::toResponse)
+                .map(log -> toResponse(log, locale))
                 .toList();
     }
 
     @Override
-    public List<BirdLogResponseDto> getByUserId(UUID userId) {
+    public List<BirdLogResponseDto> getByUserId(UUID userId, Locale locale) {
         return birdLogRepository.findByUserIdOrderByObservedAtDesc(userId).stream()
-                .map(this::toResponse)
+                .map(log -> toResponse(log, locale))
                 .toList();
     }
 
     @Override
-    public BirdLogResponseDto getById(UUID userId, UUID logId) {
-        return toResponse(findOwnedLog(userId, logId));
+    public BirdLogResponseDto getById(UUID userId, UUID logId, Locale locale) {
+        return toResponse(findOwnedLog(userId, logId), locale);
     }
 
     @Override
-    public List<BirdLogResponseDto> getByLocation(UUID userId, double minLat, double maxLat, double minLng, double maxLng) {
+    public List<BirdLogResponseDto> getByLocation(UUID userId, double minLat, double maxLat, double minLng, double maxLng, Locale locale) {
         return birdLogRepository.findWithinBounds(userId, minLat, maxLat, minLng, maxLng).stream()
-                .map(this::toResponse)
+                .map(log -> toResponse(log, locale))
                 .toList();
     }
 
     @Override
-    public BirdLogResponseDto create(UUID userId, CreateBirdLogRequestDto request) {
+    public BirdLogResponseDto create(UUID userId, CreateBirdLogRequestDto request, Locale locale) {
         validateSpecies(request.speciesId());
 
         BirdLog log = BirdLog.builder()
@@ -74,11 +76,11 @@ public class BirdLogServiceImpl implements BirdLogService {
         log = birdLogRepository.save(log);
         badgeService.evaluateForUser(userId);
 
-        return toResponse(log);
+        return toResponse(log, locale);
     }
 
     @Override
-    public BirdLogResponseDto update(UUID userId, UUID logId, UpdateBirdLogRequestDto request) {
+    public BirdLogResponseDto update(UUID userId, UUID logId, UpdateBirdLogRequestDto request, Locale locale) {
         BirdLog log = findOwnedLog(userId, logId);
         validateSpecies(request.speciesId());
 
@@ -97,7 +99,7 @@ public class BirdLogServiceImpl implements BirdLogService {
         log = birdLogRepository.save(log);
         badgeService.evaluateForUser(userId);
 
-        return toResponse(log);
+        return toResponse(log, locale);
     }
 
     @Override
@@ -120,11 +122,11 @@ public class BirdLogServiceImpl implements BirdLogService {
                 .orElseThrow(() -> ResourceNotFoundException.of("BirdLog", logId));
     }
 
-    private BirdLogResponseDto toResponse(BirdLog log) {
+    private BirdLogResponseDto toResponse(BirdLog log, Locale locale) {
         String speciesCommonName = null;
         if (log.getSpeciesId() != null) {
             speciesCommonName = speciesRepository.findById(log.getSpeciesId())
-                    .map(Species::getCommonName)
+                    .map(species -> LocalizedTextResolver.resolve(species.getCommonName(), locale))
                     .orElse(null);
         }
 

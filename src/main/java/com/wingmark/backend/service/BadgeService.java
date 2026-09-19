@@ -6,6 +6,7 @@ import com.wingmark.backend.dto.badge.UpdateBadgeRequestDto;
 import com.wingmark.backend.dto.badge.UserBadgeResponseDto;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /** Manages the badge catalog and per-user badge progress/awards. */
@@ -14,8 +15,8 @@ public interface BadgeService {
     /** Returns every badge definition in the catalog. */
     List<BadgeResponseDto> getAll();
 
-    /** Returns every badge with this user's current progress and earned status. */
-    List<UserBadgeResponseDto> getByUserId(UUID userId);
+    /** Returns every badge with this user's current progress and earned status, with badgeName resolved to the given locale. */
+    List<UserBadgeResponseDto> getByUserId(UUID userId, Locale locale);
 
     /** Admin-only: adds a new badge definition to the catalog. */
     BadgeResponseDto create(CreateBadgeRequestDto request);

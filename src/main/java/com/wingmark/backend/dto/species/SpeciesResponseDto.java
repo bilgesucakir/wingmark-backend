@@ -1,21 +1,22 @@
 package com.wingmark.backend.dto.species;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public record SpeciesResponseDto(
         UUID id,
-        String commonName,
+        Map<String, String> commonName,
         String scientificName,
         String family,
         String order,
-        String description,
-        String lifespan,
-        String diet,
-        String habitat,
-        String sizeDescription,
-        String conservationStatus,
-        String nativeRange,
+        Map<String, String> description,
+        Map<String, String> lifespan,
+        Map<String, String> diet,
+        Map<String, String> habitat,
+        Map<String, String> sizeDescription,
+        Map<String, String> conservationStatus,
+        Map<String, String> nativeRange,
         List<SpeciesImageResponseDto> images
 ) {
 }
