@@ -1,0 +1,10 @@
+target/
+uploads/
+.env
+*.iml
+.idea/
+.vscode/
+.DS_Store
+*.log
+.git/
+README.md

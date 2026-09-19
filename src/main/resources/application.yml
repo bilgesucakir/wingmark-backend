@@ -33,10 +33,21 @@ de:
         version: 8.0.4
 
 server:
-  port: ${SERVER_PORT:8080}
+  # Render (and most PaaS platforms) assign the port to listen on via $PORT;
+  # SERVER_PORT remains the override for local/other environments.
+  port: ${PORT:${SERVER_PORT:8080}}
   error:
     include-message: always
     include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
 
 wingmark:
   jwt:
