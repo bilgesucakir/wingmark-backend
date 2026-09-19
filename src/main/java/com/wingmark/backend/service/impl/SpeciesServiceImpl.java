@@ -13,6 +13,8 @@ import com.wingmark.backend.repository.SpeciesImageRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.service.SpeciesService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -28,11 +30,11 @@ public class SpeciesServiceImpl implements SpeciesService {
     private final SpeciesImageRepository speciesImageRepository;
 
     @Override
-    public List<SpeciesResponseDto> getAll(String search) {
-        List<Species> species = StringUtils.hasText(search)
-                ? speciesRepository.findByCommonNameContainingIgnoreCase(search)
-                : speciesRepository.findAll();
-        return species.stream().map(this::toResponse).toList();
+    public Page<SpeciesResponseDto> getAll(String search, Pageable pageable) {
+        Page<Species> species = StringUtils.hasText(search)
+                ? speciesRepository.findByCommonNameContainingIgnoreCase(search, pageable)
+                : speciesRepository.findAll(pageable);
+        return species.map(this::toResponse);
     }
 
     @Override

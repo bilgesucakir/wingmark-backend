@@ -18,6 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Map;
@@ -48,22 +52,24 @@ class SpeciesServiceImplTest {
     @Test
     void getAllWithoutSearchReturnsEverySpecies() {
         Species species = Species.builder().id(UUID.randomUUID()).commonName(Map.of("en", "House Sparrow")).scientificName("Passer domesticus").build();
-        when(speciesRepository.findAll()).thenReturn(List.of(species));
+        Pageable pageable = PageRequest.of(0, 20);
+        when(speciesRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(species)));
         when(speciesImageRepository.findBySpeciesId(species.getId())).thenReturn(List.of());
 
-        List<SpeciesResponseDto> result = speciesService.getAll(null);
+        Page<SpeciesResponseDto> result = speciesService.getAll(null, pageable);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).commonName()).containsEntry("en", "House Sparrow");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).commonName()).containsEntry("en", "House Sparrow");
     }
 
     @Test
     void getAllWithSearchFiltersByCommonName() {
-        when(speciesRepository.findByCommonNameContainingIgnoreCase("sparrow")).thenReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 20);
+        when(speciesRepository.findByCommonNameContainingIgnoreCase("sparrow", pageable)).thenReturn(Page.empty());
 
-        speciesService.getAll("sparrow");
+        speciesService.getAll("sparrow", pageable);
 
-        verify(speciesRepository).findByCommonNameContainingIgnoreCase("sparrow");
+        verify(speciesRepository).findByCommonNameContainingIgnoreCase("sparrow", pageable);
     }
 
     @Test

@@ -107,11 +107,11 @@ class SpeciesControllerTest {
 
         mockMvc.perform(get("/api/species"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
 
         mockMvc.perform(get("/api/species?search=Sparrow"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].commonName.en").value("House Sparrow"));
+                .andExpect(jsonPath("$.content[0].commonName.en").value("House Sparrow"));
     }
 
     @Test

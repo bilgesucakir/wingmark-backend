@@ -195,7 +195,7 @@ prove it owns the address and get back in.
 
 | Method | Path                      | Auth | Description                                                                 |
 |--------|---------------------------|:----:|-------------------------------------------------------------------------------|
-| GET    | ``                        |      | Get all species, optional `?search=` by common name                            |
+| GET    | ``                        |      | Paginated species list (`?page=`/`?size=`/`?sort=`), optional `?search=` by common name; returns a Spring `Page` envelope (`content`, `totalPages`, `totalElements`, ...) |
 | GET    | `/{id}`                   |      | Get one species by id, with its reference images                               |
 | GET    | `/{id}/sound`             |      | Live-fetch call/song recordings from Xeno-canto                                |
 | POST   | ``                        | 🛡️  | Create a species                                                               |
