@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: wingmark-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    disk:
+      name: wingmark-uploads
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      # Render has no managed MongoDB - point this at an Atlas cluster (or any
+      # other reachable instance). Set the real value in the Render dashboard;
+      # it's intentionally left out of this file and git.
+      - key: DB_CONNECTION_STRING
+        sync: false
+      # Generated once by Render on first deploy and kept stable across deploys.
+      - key: JWT_SECRET
+        generateValue: true
+      # Optional - only needed for the bird-sound guide feature
+      # (https://xeno-canto.org/account). Leave blank to skip it.
+      - key: XENO_CANTO_API_KEY
+        sync: false
+      # Matches the disk mounted above, so uploaded photos survive deploys/restarts.
+      - key: UPLOAD_DIR
+        value: /data/uploads
