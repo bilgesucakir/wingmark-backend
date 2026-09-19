@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -41,6 +42,8 @@ public class SpeciesServiceImpl implements SpeciesService {
 
     @Override
     public SpeciesResponseDto create(CreateSpeciesRequestDto request) {
+        validateCommonName(request.commonName());
+
         if (speciesRepository.existsByScientificNameIgnoreCase(request.scientificName())) {
             throw new DuplicateResourceException("A species with this scientific name already exists");
         }
@@ -64,6 +67,8 @@ public class SpeciesServiceImpl implements SpeciesService {
 
     @Override
     public SpeciesResponseDto update(UUID id, UpdateSpeciesRequestDto request) {
+        validateCommonName(request.commonName());
+
         Species species = findSpecies(id);
 
         if (!species.getScientificName().equalsIgnoreCase(request.scientificName())
@@ -123,6 +128,12 @@ public class SpeciesServiceImpl implements SpeciesService {
         }
 
         speciesImageRepository.delete(image);
+    }
+
+    private void validateCommonName(Map<String, String> commonName) {
+        if (!StringUtils.hasText(commonName.get("en"))) {
+            throw new IllegalArgumentException("commonName must include a non-blank 'en' translation");
+        }
     }
 
     private Species findSpecies(UUID id) {

@@ -95,10 +95,30 @@ const searchCandidatesBtn = document.getElementById("search-candidates-btn");
 const candidateGrid = document.getElementById("candidate-grid");
 const candidatesMsg = document.getElementById("candidates-msg");
 
-const SPECIES_FIELDS = [
-  "commonName", "scientificName", "family", "order", "description",
-  "lifespan", "diet", "habitat", "sizeDescription", "conservationStatus", "nativeRange",
+const SPECIES_FIELDS = ["scientificName", "family", "order"];
+// Translated fields are edited as separate EN/TR inputs (e.g. "commonName-en") but
+// sent/received as a {"en": "...", "tr": "..."} map.
+const SPECIES_TRANSLATED_FIELDS = [
+  "commonName", "description", "lifespan", "diet", "habitat",
+  "sizeDescription", "conservationStatus", "nativeRange",
 ];
+
+function commonName(species) {
+  return (species && species.commonName && (species.commonName.en || species.commonName.tr)) || "";
+}
+
+function badgeName(badge) {
+  return (badge && badge.name && (badge.name.en || badge.name.tr)) || "";
+}
+
+function readTranslations(enFieldId, trFieldId) {
+  const en = document.getElementById(enFieldId).value.trim();
+  const tr = document.getElementById(trFieldId).value.trim();
+  const translations = {};
+  if (en) translations.en = en;
+  if (tr) translations.tr = tr;
+  return Object.keys(translations).length ? translations : null;
+}
 
 let currentSpeciesId = null;
 let debounceTimer = null;
@@ -129,7 +149,7 @@ function renderSpeciesList(species) {
     li.innerHTML =
       '<img class="species-thumb" src="' + escapeHtml(thumb) + '" onerror="this.style.visibility=\'hidden\'" />' +
       '<div class="species-info">' +
-      '<div class="common">' + escapeHtml(s.commonName) + "</div>" +
+      '<div class="common">' + escapeHtml(commonName(s)) + "</div>" +
       '<div class="scientific">' + escapeHtml(s.scientificName) + "</div>" +
       "</div>" +
       '<div class="row-actions"><button class="secondary edit-btn">Edit</button></div>';
@@ -159,6 +179,11 @@ function showSpeciesFormView() {
 function fillSpeciesForm(species) {
   SPECIES_FIELDS.forEach((f) => {
     document.getElementById(f).value = (species && species[f]) || "";
+  });
+  SPECIES_TRANSLATED_FIELDS.forEach((f) => {
+    const translations = (species && species[f]) || {};
+    document.getElementById(f + "-en").value = translations.en || "";
+    document.getElementById(f + "-tr").value = translations.tr || "";
   });
 }
 
@@ -198,6 +223,9 @@ function readSpeciesFormPayload() {
   SPECIES_FIELDS.forEach((f) => {
     const val = document.getElementById(f).value.trim();
     payload[f] = val === "" ? null : val;
+  });
+  SPECIES_TRANSLATED_FIELDS.forEach((f) => {
+    payload[f] = readTranslations(f + "-en", f + "-tr");
   });
   return payload;
 }
@@ -564,11 +592,11 @@ async function ensureBadgeSpeciesOptionsLoaded() {
     const species = await Api.request("/api/species");
     species
       .slice()
-      .sort((a, b) => a.commonName.localeCompare(b.commonName))
+      .sort((a, b) => commonName(a).localeCompare(commonName(b)))
       .forEach((s) => {
         const opt = document.createElement("option");
         opt.value = s.id;
-        opt.textContent = s.commonName;
+        opt.textContent = commonName(s);
         badgeSpeciesSelect.appendChild(opt);
       });
     badgeSpeciesOptionsLoaded = true;
@@ -600,7 +628,7 @@ function renderBadgesList(badges) {
     li.className = "species-row";
     li.innerHTML =
       '<div class="species-info">' +
-      '<div class="common">' + escapeHtml(b.name) + (b.tier ? " · " + escapeHtml(b.tier) : "") + "</div>" +
+      '<div class="common">' + escapeHtml(badgeName(b)) + (b.tier ? " · " + escapeHtml(b.tier) : "") + "</div>" +
       '<div class="scientific">' + escapeHtml(b.criteriaType) + " ≥ " + escapeHtml(String(b.criteriaValue)) + "</div>" +
       "</div>" +
       '<div class="row-actions"><button class="secondary edit-badge-btn">Edit</button></div>';
@@ -639,8 +667,10 @@ async function openBadgeForm(badge) {
   badgeFormTitle.textContent = "Edit badge";
   deleteBadgeBtn.classList.remove("hidden");
   showMsg(badgeFormMsg, "", "");
-  document.getElementById("badge-name").value = badge.name || "";
-  document.getElementById("badge-description").value = badge.description || "";
+  document.getElementById("badge-name-en").value = (badge.name && badge.name.en) || "";
+  document.getElementById("badge-name-tr").value = (badge.name && badge.name.tr) || "";
+  document.getElementById("badge-description-en").value = (badge.description && badge.description.en) || "";
+  document.getElementById("badge-description-tr").value = (badge.description && badge.description.tr) || "";
   document.getElementById("badge-icon").value = badge.icon || "";
   document.getElementById("badge-tier").value = badge.tier || "";
   document.getElementById("badge-criteriaType").value = badge.criteriaType;
@@ -666,8 +696,8 @@ function readBadgeFormPayload() {
     if (speciesId) criteriaMetadata = { speciesId };
   }
   return {
-    name: document.getElementById("badge-name").value.trim(),
-    description: document.getElementById("badge-description").value.trim() || null,
+    name: readTranslations("badge-name-en", "badge-name-tr"),
+    description: readTranslations("badge-description-en", "badge-description-tr"),
     icon: document.getElementById("badge-icon").value.trim() || null,
     criteriaType,
     criteriaValue,

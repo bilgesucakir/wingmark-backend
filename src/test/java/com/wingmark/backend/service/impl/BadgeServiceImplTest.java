@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -229,17 +230,17 @@ class BadgeServiceImplTest {
     void updatingAnExistingBadgeOverwritesItsFields() {
         UUID badgeId = UUID.randomUUID();
         Badge existing = Badge.builder()
-                .id(badgeId).name("Old name").criteriaType(BadgeCriteriaType.TOTAL_LOGS).criteriaValue(5)
+                .id(badgeId).name(Map.of("en", "Old name")).criteriaType(BadgeCriteriaType.TOTAL_LOGS).criteriaValue(5)
                 .build();
         when(badgeRepository.findById(badgeId)).thenReturn(Optional.of(existing));
         when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateBadgeRequestDto request = new UpdateBadgeRequestDto(
-                "New name", "New description", "icon.png", BadgeCriteriaType.UNIQUE_SPECIES, 20, null, BadgeTier.GOLD);
+                Map.of("en", "New name"), Map.of("en", "New description"), "icon.png", BadgeCriteriaType.UNIQUE_SPECIES, 20, null, BadgeTier.GOLD);
 
         BadgeResponseDto response = badgeService.update(badgeId, request);
 
-        assertThat(response.name()).isEqualTo("New name");
+        assertThat(response.name()).containsEntry("en", "New name");
         assertThat(response.criteriaType()).isEqualTo(BadgeCriteriaType.UNIQUE_SPECIES);
         assertThat(response.criteriaValue()).isEqualTo(20);
         assertThat(response.tier()).isEqualTo(BadgeTier.GOLD);
@@ -251,7 +252,7 @@ class BadgeServiceImplTest {
         when(badgeRepository.findById(badgeId)).thenReturn(Optional.empty());
 
         UpdateBadgeRequestDto request = new UpdateBadgeRequestDto(
-                "Name", null, null, BadgeCriteriaType.TOTAL_LOGS, 5, null, null);
+                Map.of("en", "Name"), null, null, BadgeCriteriaType.TOTAL_LOGS, 5, null, null);
 
         assertThatThrownBy(() -> badgeService.update(badgeId, request)).isInstanceOf(ResourceNotFoundException.class);
     }

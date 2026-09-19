@@ -19,9 +19,11 @@ import java.util.Map;
 @Document(collection = "badges")
 public class Badge extends BaseEntity {
 
-    private String name;
+    /** Translations keyed by locale code, e.g. {"en": "First Flight", "tr": "İlk Uçuş"}. */
+    private Map<String, String> name;
 
-    private String description;
+    /** Translations keyed by locale code. */
+    private Map<String, String> description;
 
     private String icon;
 

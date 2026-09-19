@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -133,7 +134,7 @@ class BirdLogControllerTest {
     @Test
     void loggingAPetEarnsThePetBadge() throws Exception {
         badgeRepository.save(Badge.builder()
-                .name("Proud Pet Parent")
+                .name(Map.of("en", "Proud Pet Parent"))
                 .criteriaType(BadgeCriteriaType.PET_LOGS)
                 .criteriaValue(1)
                 .build());
