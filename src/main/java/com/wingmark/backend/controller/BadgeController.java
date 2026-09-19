@@ -46,16 +46,17 @@ public class BadgeController {
 
     /**
      * Returns every badge with the given user's current progress and earned status.
-     * This app has no concept of viewing another user's badges, so a userId that isn't
-     * the caller's own is treated as not found - consistent with UserController and
-     * BirdLogController's ownership scoping - to avoid confirming other ids exist.
+     * Regular users have no concept of viewing another user's badges, so a userId
+     * that isn't the caller's own is treated as not found - consistent with
+     * UserController and BirdLogController's ownership scoping - to avoid confirming
+     * other ids exist. Admins are exempt, for the admin panel's user detail view.
      */
-    @Operation(summary = "Get badges by user", description = "Returns every badge with this user's progress and earned status. userId must match the authenticated caller.")
+    @Operation(summary = "Get badges by user", description = "Returns every badge with this user's progress and earned status. userId must match the authenticated caller, unless the caller is an admin.")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<UserBadgeResponseDto>> getByUserId(@AuthenticationPrincipal UserPrincipal principal,
                                                                     @PathVariable UUID userId,
                                                                     Locale locale) {
-        if (!principal.getId().equals(userId)) {
+        if (!principal.getId().equals(userId) && !principal.isAdmin()) {
             throw ResourceNotFoundException.of("User", userId);
         }
         return ResponseEntity.ok(badgeService.getByUserId(userId, locale));

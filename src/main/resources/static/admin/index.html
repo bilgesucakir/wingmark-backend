@@ -20,6 +20,7 @@
     <button class="tab-btn" data-section="species">Species</button>
     <button class="tab-btn" data-section="users">Users</button>
     <button class="tab-btn" data-section="badges">Badges</button>
+    <button class="tab-btn" data-section="logs">Logs</button>
   </nav>
 
   <div class="container">
@@ -41,6 +42,10 @@
           <div class="stat-card" data-goto="badges">
             <div class="stat-value" id="stat-badges">–</div>
             <div class="stat-label">Badges</div>
+          </div>
+          <div class="stat-card" data-goto="logs">
+            <div class="stat-value" id="stat-logs">–</div>
+            <div class="stat-label">Logs</div>
           </div>
         </div>
       </div>
@@ -263,6 +268,35 @@
         </div>
       </div>
 
+      <!-- User detail: this user's bird logs and badge progress -->
+      <div class="panel hidden" id="user-detail-panel">
+        <div class="panel-header">
+          <h2 id="user-detail-title">User details</h2>
+          <button class="secondary" id="cancel-user-detail-btn">Back to list</button>
+        </div>
+        <div id="user-detail-msg"></div>
+
+        <h3 class="subheading">Badges</h3>
+        <ul class="species-list" id="user-detail-badges"></ul>
+
+        <h3 class="subheading">Bird logs</h3>
+        <div class="table-wrap">
+          <table class="data-table" id="user-detail-logs-table">
+            <thead>
+              <tr>
+                <th>Species</th>
+                <th>Life stage</th>
+                <th>Gender</th>
+                <th>Pet</th>
+                <th>Observed</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody id="user-detail-logs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="panel hidden" id="user-form-panel">
         <div class="panel-header">
           <h2>Edit user</h2>
@@ -395,6 +429,35 @@
             <button type="button" class="danger hidden" id="delete-badge-btn">Delete badge</button>
           </div>
         </form>
+      </div>
+    </section>
+
+    <!-- ============ Logs (all users, admin-only) ============ -->
+    <section id="section-logs" class="section hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Bird logs</h2>
+        </div>
+        <div class="search-bar">
+          <input type="text" id="logs-search-input" placeholder="Filter by user email or species…" />
+        </div>
+        <div id="logs-list-msg"></div>
+        <div class="table-wrap">
+          <table class="data-table" id="logs-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Species</th>
+                <th>Life stage</th>
+                <th>Gender</th>
+                <th>Pet</th>
+                <th>Observed</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody id="logs-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
   </div>

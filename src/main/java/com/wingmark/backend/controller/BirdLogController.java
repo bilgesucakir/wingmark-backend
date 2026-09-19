@@ -52,13 +52,13 @@ public class BirdLogController {
         return ResponseEntity.ok(birdLogService.getAll(locale));
     }
 
-    /** Returns all of the given user's own logs, most recently observed first. userId must match the authenticated caller. */
-    @Operation(summary = "Get bird logs by user", description = "Returns all of this user's own logs, most recently observed first. userId must match the authenticated caller.")
+    /** Returns all of the given user's own logs, most recently observed first. userId must match the authenticated caller, unless the caller is an admin. */
+    @Operation(summary = "Get bird logs by user", description = "Returns all of this user's own logs, most recently observed first. userId must match the authenticated caller, unless the caller is an admin (used by the admin panel's user detail view).")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<BirdLogResponseDto>> getByUserId(@AuthenticationPrincipal UserPrincipal principal,
                                                                  @PathVariable UUID userId,
                                                                  Locale locale) {
-        if (!principal.getId().equals(userId)) {
+        if (!principal.getId().equals(userId) && !principal.isAdmin()) {
             throw ResourceNotFoundException.of("User", userId);
         }
         return ResponseEntity.ok(birdLogService.getByUserId(userId, locale));

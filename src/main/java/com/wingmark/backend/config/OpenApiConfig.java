@@ -2,6 +2,7 @@ package com.wingmark.backend.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,13 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI openApi() {
         return new OpenAPI()
+                .info(new Info()
+                        .title("Wingmark API")
+                        .description("Backend API for Wingmark, a personal bird-logging app. Log a bird sighting " +
+                                "(photo, species, life stage, gender, location, notes), browse it on a map, look it " +
+                                "up in a species guide with photos and live call/song recordings, and earn badges " +
+                                "as you go. Personal-only for now: every user sees just their own logs.")
+                        .version("v1"))
                 .components(new Components().addSecuritySchemes(BEARER_SCHEME,
                         new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)

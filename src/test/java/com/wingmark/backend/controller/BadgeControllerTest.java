@@ -1,5 +1,6 @@
 package com.wingmark.backend.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.enums.Role;
@@ -11,8 +12,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -70,6 +73,30 @@ class BadgeControllerTest {
                 .andReturn().getResponse().getContentAsString();
 
         return objectMapper.readTree(loginResponse).get("accessToken").asText();
+    }
+
+    private String registerAndGetToken(String label) throws Exception {
+        String id = shortId();
+        String body = objectMapper.writeValueAsString(new HashMap<>() {{
+            put("email", label + "-" + id + "@example.com");
+            put("password", "password1");
+            put("username", label + id);
+        }});
+
+        String response = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readTree(response).get("accessToken").asText();
+    }
+
+    private UUID extractUserId(String accessToken) throws Exception {
+        String payloadSegment = accessToken.split("\\.")[1];
+        byte[] payloadBytes = Base64.getUrlDecoder().decode(payloadSegment);
+        JsonNode payload = objectMapper.readTree(payloadBytes);
+        return UUID.fromString(payload.get("sub").asText());
     }
 
     @Test
@@ -133,5 +160,28 @@ class BadgeControllerTest {
         mockMvc.perform(delete("/api/badges/" + badgeId)
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void regularUserCannotViewAnotherUsersBadgeProgress() throws Exception {
+        String ownerToken = registerAndGetToken("badgeowner");
+        String intruderToken = registerAndGetToken("badgeintruder");
+        UUID ownerId = extractUserId(ownerToken);
+
+        mockMvc.perform(get("/api/badges/user/" + ownerId).header("Authorization", "Bearer " + intruderToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void adminCanViewAnotherUsersBadgeProgress() throws Exception {
+        String ownerToken = registerAndGetToken("badgeowner2");
+        UUID ownerId = extractUserId(ownerToken);
+        String adminToken = registerLoginAsAdmin("badgesadmin");
+
+        // Admins are exempt from the ownership check - used by the admin panel's
+        // per-user detail view.
+        mockMvc.perform(get("/api/badges/user/" + ownerId).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
     }
 }

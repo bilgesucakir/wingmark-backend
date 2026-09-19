@@ -29,6 +29,7 @@ const sections = {
   species: document.getElementById("section-species"),
   users: document.getElementById("section-users"),
   badges: document.getElementById("section-badges"),
+  logs: document.getElementById("section-logs"),
 };
 
 function goToSection(name) {
@@ -39,6 +40,7 @@ function goToSection(name) {
   if (name === "species") loadSpeciesList(document.getElementById("search-input").value.trim());
   if (name === "users") loadUsersList();
   if (name === "badges") loadBadgesList();
+  if (name === "logs") loadLogsList();
 }
 
 tabButtons.forEach((btn) => btn.addEventListener("click", () => goToSection(btn.dataset.section)));
@@ -55,15 +57,18 @@ async function loadOverview() {
   document.getElementById("stat-species").textContent = "…";
   document.getElementById("stat-users").textContent = "…";
   document.getElementById("stat-badges").textContent = "…";
+  document.getElementById("stat-logs").textContent = "…";
   try {
-    const [species, users, badges] = await Promise.all([
-      Api.request("/api/species"),
+    const [species, users, badges, logs] = await Promise.all([
+      Api.request("/api/species?size=1"),
       Api.request("/api/admin/users"),
       Api.request("/api/badges/catalog"),
+      Api.request("/api/bird-logs"),
     ]);
-    document.getElementById("stat-species").textContent = species.length;
+    document.getElementById("stat-species").textContent = species.totalElements;
     document.getElementById("stat-users").textContent = users.length;
     document.getElementById("stat-badges").textContent = badges.length;
+    document.getElementById("stat-logs").textContent = logs.length;
   } catch (err) {
     showMsg(document.getElementById("global-msg"), err.message, "error");
   }
@@ -127,9 +132,11 @@ async function loadSpeciesList(search) {
   showMsg(speciesListMsg, "", "");
   speciesListEl.innerHTML = '<li class="muted">Loading…</li>';
   try {
-    const query = search ? "?search=" + encodeURIComponent(search) : "";
-    const species = await Api.request("/api/species" + query);
-    renderSpeciesList(species);
+    // size=500: the admin list shows the whole catalog at once rather than paginating,
+    // unlike the app's own species-guide endpoint.
+    const query = "?size=500" + (search ? "&search=" + encodeURIComponent(search) : "");
+    const page = await Api.request("/api/species" + query);
+    renderSpeciesList(page.content);
   } catch (err) {
     speciesListEl.innerHTML = "";
     showMsg(speciesListMsg, err.message, "error");
@@ -444,6 +451,13 @@ const userFormMsg = document.getElementById("user-form-msg");
 const cancelUserFormBtn = document.getElementById("cancel-user-form-btn");
 const deleteUserBtn = document.getElementById("delete-user-btn");
 
+const userDetailPanel = document.getElementById("user-detail-panel");
+const userDetailTitle = document.getElementById("user-detail-title");
+const userDetailMsg = document.getElementById("user-detail-msg");
+const userDetailBadgesEl = document.getElementById("user-detail-badges");
+const userDetailLogsTbody = document.getElementById("user-detail-logs-tbody");
+const cancelUserDetailBtn = document.getElementById("cancel-user-detail-btn");
+
 let allUsers = [];
 let currentUserId = null;
 let usersDebounceTimer = null;
@@ -484,7 +498,9 @@ function renderUsersList(filterText) {
       "<td>" + escapeHtml(fullName) + "</td>" +
       '<td><span class="' + roleClass + '">' + escapeHtml(u.role) + "</span></td>" +
       "<td>" + (u.emailVerified ? "Yes" : "No") + "</td>" +
-      '<td><button class="secondary edit-user-btn">Edit</button></td>';
+      '<td class="row-actions"><button class="secondary details-user-btn">Details</button>' +
+      '<button class="secondary edit-user-btn">Edit</button></td>';
+    tr.querySelector(".details-user-btn").addEventListener("click", () => openUserDetail(u));
     tr.querySelector(".edit-user-btn").addEventListener("click", () => openUserForm(u));
     usersTbody.appendChild(tr);
   });
@@ -504,17 +520,82 @@ function openUserForm(user) {
   document.getElementById("user-role").value = user.role;
   document.getElementById("user-emailVerified").value = String(!!user.emailVerified);
   usersListPanel.classList.add("hidden");
+  userDetailPanel.classList.add("hidden");
   userFormPanel.classList.remove("hidden");
 }
 
 function showUsersListView() {
   currentUserId = null;
   userFormPanel.classList.add("hidden");
+  userDetailPanel.classList.add("hidden");
   usersListPanel.classList.remove("hidden");
   loadUsersList();
 }
 
 cancelUserFormBtn.addEventListener("click", showUsersListView);
+cancelUserDetailBtn.addEventListener("click", showUsersListView);
+
+function formatDate(iso) {
+  return iso ? new Date(iso).toLocaleString() : "—";
+}
+
+function renderUserDetailBadges(badges) {
+  if (!badges.length) {
+    userDetailBadgesEl.innerHTML = '<li class="muted">No badges defined yet.</li>';
+    return;
+  }
+  userDetailBadgesEl.innerHTML = "";
+  badges.forEach((b) => {
+    const li = document.createElement("li");
+    li.className = "species-row";
+    const status = b.earned
+      ? '<span class="badge-tag admin">Earned ' + escapeHtml(formatDate(b.earnedAt)) + "</span>"
+      : '<span class="badge-tag">' + b.progress + " / " + b.targetValue + "</span>";
+    li.innerHTML =
+      '<div class="species-info"><div class="common">' + escapeHtml(b.badgeName) + "</div></div>" +
+      '<div class="row-actions">' + status + "</div>";
+    userDetailBadgesEl.appendChild(li);
+  });
+}
+
+function renderUserDetailLogs(logs) {
+  if (!logs.length) {
+    userDetailLogsTbody.innerHTML = '<tr><td colspan="6" class="muted">No bird logs yet.</td></tr>';
+    return;
+  }
+  userDetailLogsTbody.innerHTML = "";
+  logs.forEach((log) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + escapeHtml(log.speciesCommonName || "Unknown") + "</td>" +
+      "<td>" + escapeHtml(log.lifeStage) + "</td>" +
+      "<td>" + escapeHtml(log.gender) + "</td>" +
+      "<td>" + (log.pet ? "Yes" : "No") + "</td>" +
+      "<td>" + escapeHtml(formatDate(log.observedAt)) + "</td>" +
+      "<td>" + escapeHtml(log.note || "") + "</td>";
+    userDetailLogsTbody.appendChild(tr);
+  });
+}
+
+async function openUserDetail(user) {
+  currentUserId = user.id;
+  userDetailTitle.textContent = (user.email || "") + " — details";
+  showMsg(userDetailMsg, "", "");
+  userDetailBadgesEl.innerHTML = '<li class="muted">Loading…</li>';
+  userDetailLogsTbody.innerHTML = '<tr><td colspan="6" class="muted">Loading…</td></tr>';
+  usersListPanel.classList.add("hidden");
+  userDetailPanel.classList.remove("hidden");
+  try {
+    const [logs, badges] = await Promise.all([
+      Api.request("/api/bird-logs/user/" + user.id),
+      Api.request("/api/badges/user/" + user.id),
+    ]);
+    renderUserDetailLogs(logs);
+    renderUserDetailBadges(badges);
+  } catch (err) {
+    showMsg(userDetailMsg, err.message, "error");
+  }
+}
 
 userForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -589,8 +670,8 @@ badgeCriteriaTypeSelect.addEventListener("change", toggleRadiusField);
 async function ensureBadgeSpeciesOptionsLoaded() {
   if (badgeSpeciesOptionsLoaded) return;
   try {
-    const species = await Api.request("/api/species");
-    species
+    const page = await Api.request("/api/species?size=500");
+    page.content
       .slice()
       .sort((a, b) => commonName(a).localeCompare(commonName(b)))
       .forEach((s) => {
@@ -744,6 +825,74 @@ deleteBadgeBtn.addEventListener("click", async () => {
   } catch (err) {
     showMsg(badgeFormMsg, err.message, "error");
   }
+});
+
+/* =====================================================================
+ * Logs (all users, admin-only)
+ * ===================================================================== */
+
+const logsListMsg = document.getElementById("logs-list-msg");
+const logsTbody = document.getElementById("logs-tbody");
+const logsSearchInput = document.getElementById("logs-search-input");
+
+let allLogs = [];
+let logsUsersById = {};
+let logsDebounceTimer = null;
+
+async function loadLogsList() {
+  showMsg(logsListMsg, "", "");
+  logsTbody.innerHTML = '<tr><td colspan="7" class="muted">Loading…</td></tr>';
+  try {
+    const [logs, users] = await Promise.all([
+      Api.request("/api/bird-logs"),
+      Api.request("/api/admin/users"),
+    ]);
+    allLogs = logs;
+    logsUsersById = {};
+    users.forEach((u) => { logsUsersById[u.id] = u; });
+    renderLogsList(logsSearchInput.value.trim());
+  } catch (err) {
+    logsTbody.innerHTML = "";
+    showMsg(logsListMsg, err.message, "error");
+  }
+}
+
+function renderLogsList(filterText) {
+  const filter = (filterText || "").toLowerCase();
+  const filtered = !filter
+    ? allLogs
+    : allLogs.filter((log) => {
+        const user = logsUsersById[log.userId];
+        return (
+          (user && (user.email || "").toLowerCase().includes(filter)) ||
+          (log.speciesCommonName || "").toLowerCase().includes(filter)
+        );
+      });
+
+  if (!filtered.length) {
+    logsTbody.innerHTML = '<tr><td colspan="7" class="muted">No bird logs found.</td></tr>';
+    return;
+  }
+
+  logsTbody.innerHTML = "";
+  filtered.forEach((log) => {
+    const user = logsUsersById[log.userId];
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + escapeHtml((user && user.email) || log.userId) + "</td>" +
+      "<td>" + escapeHtml(log.speciesCommonName || "Unknown") + "</td>" +
+      "<td>" + escapeHtml(log.lifeStage) + "</td>" +
+      "<td>" + escapeHtml(log.gender) + "</td>" +
+      "<td>" + (log.pet ? "Yes" : "No") + "</td>" +
+      "<td>" + escapeHtml(formatDate(log.observedAt)) + "</td>" +
+      "<td>" + escapeHtml(log.note || "") + "</td>";
+    logsTbody.appendChild(tr);
+  });
+}
+
+logsSearchInput.addEventListener("input", () => {
+  clearTimeout(logsDebounceTimer);
+  logsDebounceTimer = setTimeout(() => renderLogsList(logsSearchInput.value.trim()), 200);
 });
 
 /* =====================================================================

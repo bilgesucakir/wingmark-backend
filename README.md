@@ -184,14 +184,14 @@ prove it owns the address and get back in.
 | Method | Path              | Auth | Description                                                      |
 |--------|-------------------|:----:|--------------------------------------------------------------------|
 | GET    | ``                | 🛡️  | Get every log across every user (there's no per-user viewing feature for this yet, so it's admin-only for now) |
-| GET    | `/user/{userId}`  | 🔒*  | Get all of this user's own logs, most recent first                  |
+| GET    | `/user/{userId}`  | 🔒*  | Get all of this user's own logs, most recent first (admins can pass any user's id, for the admin panel's user detail view) |
 | GET    | `/location`       |      | Get the caller's logs within a lat/lng box (`minLat/maxLat/minLng/maxLng`), for the map view |
 | GET    | `/{id}`           |      | Get one of the caller's logs by id                                  |
 | POST   | ``                |      | Create a log (re-evaluates badge progress)                          |
 | PUT    | `/{id}`           |      | Update a log (re-evaluates badge progress)                          |
 | DELETE | `/{id}`           |      | Delete a log (re-evaluates badge progress)                          |
 
-\* `userId` must be the caller's own id.
+\* `userId` must be the caller's own id, unless the caller is an admin.
 
 ### Species guide (`/api/species`)
 
@@ -212,12 +212,12 @@ prove it owns the address and get back in.
 | Method | Path              | Auth | Description                                                     |
 |--------|-------------------|:----:|---------------------------------------------------------------------|
 | GET    | `/catalog`        |      | Get every badge definition (name, icon, criteria)                    |
-| GET    | `/user/{userId}`  | 🔒*  | Get every badge with this user's progress/earned status              |
+| GET    | `/user/{userId}`  | 🔒*  | Get every badge with this user's progress/earned status (admins can pass any user's id) |
 | POST   | ``                | 🛡️  | Create a new badge definition                                        |
 | PUT    | `/{id}`           | 🛡️  | Update an existing badge definition                                  |
 | DELETE | `/{id}`           | 🛡️  | Delete a badge definition                                            |
 
-\* `userId` must be the caller's own id.
+\* `userId` must be the caller's own id, unless the caller is an admin.
 
 #### Badge criteria types
 

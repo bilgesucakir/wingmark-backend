@@ -3,8 +3,11 @@ package com.wingmark.backend.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wingmark.backend.entity.Badge;
+import com.wingmark.backend.entity.User;
 import com.wingmark.backend.enums.BadgeCriteriaType;
+import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.repository.BadgeRepository;
+import com.wingmark.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -34,6 +37,41 @@ class BirdLogControllerTest {
 
     @Autowired
     private BadgeRepository badgeRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private String registerLoginAsAdmin(String label) throws Exception {
+        String suffix = label + "-" + System.nanoTime();
+        String email = suffix + "@example.com";
+        String password = "password1";
+        String body = objectMapper.writeValueAsString(new HashMap<>() {{
+            put("email", email);
+            put("password", password);
+            put("username", "user" + suffix.replace("-", ""));
+        }});
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
+
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        user.setRole(Role.ADMIN);
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        String loginBody = objectMapper.writeValueAsString(new HashMap<>() {{
+            put("email", email);
+            put("password", password);
+        }});
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readTree(loginResponse).get("accessToken").asText();
+    }
 
     private String registerAndGetToken(String label) throws Exception {
         String suffix = label + "-" + System.nanoTime();
@@ -129,6 +167,39 @@ class BirdLogControllerTest {
         // The plain "get all" endpoint is admin-only - a regular user is forbidden.
         mockMvc.perform(get("/api/bird-logs").header("Authorization", "Bearer " + intruderToken))
                 .andExpect(status().isForbidden());
+
+        // A regular (non-admin) user still can't list the owner's logs by userId either.
+        UUID ownerId = extractUserId(ownerToken);
+        mockMvc.perform(get("/api/bird-logs/user/" + ownerId).header("Authorization", "Bearer " + intruderToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void adminCanViewAnotherUsersBirdLogsByUserId() throws Exception {
+        String ownerToken = registerAndGetToken("logowner");
+        UUID ownerId = extractUserId(ownerToken);
+
+        String logBody = objectMapper.writeValueAsString(new HashMap<>() {{
+            put("pet", false);
+            put("lifeStage", "ADULT");
+            put("gender", "MALE");
+            put("note", "Admin-visible log");
+            put("latitude", 1.0);
+            put("longitude", 1.0);
+        }});
+        mockMvc.perform(post("/api/bird-logs")
+                        .header("Authorization", "Bearer " + ownerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(logBody))
+                .andExpect(status().isCreated());
+
+        String adminToken = registerLoginAsAdmin("logsadmin");
+
+        // Admins are exempt from the ownership check - used by the admin panel's
+        // per-user detail view.
+        mockMvc.perform(get("/api/bird-logs/user/" + ownerId).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.note == 'Admin-visible log')]").exists());
     }
 
     @Test
