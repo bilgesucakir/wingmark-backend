@@ -50,6 +50,7 @@ public class XenoCantoServiceImpl implements XenoCantoService {
             }
 
             return response.recordings().stream()
+                    .limit(5)
                     .map(this::toResponse)
                     .toList();
         } catch (ExternalServiceException ex) {

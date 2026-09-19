@@ -16,6 +16,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -46,11 +49,13 @@ public class SpeciesController {
     private final XenoCantoService xenoCantoService;
     private final INaturalistService iNaturalistService;
 
-    /** Returns every species in the guide, optionally filtered by a common-name substring. Public. */
-    @Operation(summary = "Get all species", description = "Returns every species in the guide, optionally filtered by a common-name substring. Public endpoint.")
+    /** Returns a page of species in the guide, optionally filtered by a common-name substring. Public. */
+    @Operation(summary = "Get all species", description = "Returns a page of species in the guide, optionally filtered by a common-name substring (?search=), " +
+            "paginated via the standard ?page=/?size=/?sort= params. Public endpoint.")
     @GetMapping
-    public ResponseEntity<List<SpeciesResponseDto>> getAll(@RequestParam(required = false) String search) {
-        return ResponseEntity.ok(speciesService.getAll(search));
+    public ResponseEntity<Page<SpeciesResponseDto>> getAll(@RequestParam(required = false) String search,
+                                                            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(speciesService.getAll(search, pageable));
     }
 
     /** Returns one species by id, including its reference images. Public. */
