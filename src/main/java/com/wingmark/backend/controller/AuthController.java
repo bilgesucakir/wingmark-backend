@@ -5,6 +5,7 @@ import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RefreshTokenRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
+import com.wingmark.backend.dto.auth.ResendVerificationEmailRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 import com.wingmark.backend.security.UserPrincipal;
 import com.wingmark.backend.service.AuthService;
@@ -13,11 +14,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Registration, login, token refresh/logout, and password reset. All public - no token required. */
@@ -81,5 +85,31 @@ public class AuthController {
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequestDto request) {
         authService.resetPassword(request);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Consumes the token from the verification email link. Plain HTML rather than JSON,
+     * since this is opened directly in a browser from an email client, not called by the app.
+     */
+    @Operation(summary = "Verify email", description = "Consumes an email-verification token (from the link sent at registration) and marks the account verified.")
+    @GetMapping(value = "/verify-email", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> verifyEmail(@RequestParam String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity.ok("<p>Your email is verified. You can close this page and log in.</p>");
+    }
+
+    /**
+     * Issues and emails a fresh verification link for the given email, if an account exists
+     * and isn't already verified. Deliberately unauthenticated (like forgot-password) - an
+     * unverified account can't log in to prove ownership any other way, e.g. after losing its
+     * session (app reinstall, cleared storage) before the original link was used or before it
+     * expired. Always responds the same way to avoid revealing which emails are registered.
+     */
+    @Operation(summary = "Resend verification email", description = "Issues and emails a fresh verification link for the given email, if an account exists and isn't already verified. " +
+            "Always responds 202 regardless, to avoid revealing which emails are registered.")
+    @PostMapping("/resend-verification-email")
+    public ResponseEntity<Void> resendVerificationEmail(@Valid @RequestBody ResendVerificationEmailRequestDto request) {
+        authService.resendVerificationEmail(request);
+        return ResponseEntity.accepted().build();
     }
 }

@@ -4,6 +4,7 @@ import com.wingmark.backend.dto.auth.AuthResponseDto;
 import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
+import com.wingmark.backend.dto.auth.ResendVerificationEmailRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 
 import java.util.UUID;
@@ -31,4 +32,15 @@ public interface AuthService {
 
     /** Consumes a password-reset token to set a new password; rejects a password identical to the current one. */
     void resetPassword(ResetPasswordRequestDto request);
+
+    /** Consumes an email-verification token, marking the owning account verified. */
+    void verifyEmail(String rawToken);
+
+    /**
+     * Issues and emails a fresh verification link for the given email, if an account exists
+     * and isn't already verified (silently no-ops otherwise, like forgotPassword - this stays
+     * unauthenticated on purpose, since an unverified account can't log in to prove ownership
+     * any other way, e.g. after losing its session before the original link was used).
+     */
+    void resendVerificationEmail(ResendVerificationEmailRequestDto request);
 }

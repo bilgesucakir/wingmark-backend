@@ -2,6 +2,11 @@ package com.wingmark.backend.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wingmark.backend.entity.EmailVerificationToken;
+import com.wingmark.backend.entity.User;
+import com.wingmark.backend.repository.EmailVerificationTokenRepository;
+import com.wingmark.backend.repository.UserRepository;
+import com.wingmark.backend.util.TokenHasher;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -9,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -26,6 +32,12 @@ class AuthControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
     @Test
     void fullRegisterLoginAccessProtectedResourceFlow() throws Exception {
@@ -65,7 +77,60 @@ class AuthControllerTest {
         mockMvc.perform(get("/api/users/" + UUID.randomUUID()).header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isNotFound());
 
-        // Logging in again with the same credentials must also succeed.
+        String loginBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
+            put("email", email);
+            put("password", "password1");
+        }});
+
+        // A freshly-registered account hasn't clicked the verification link yet, so
+        // logging in again (e.g. reopening the app on a new device) must be rejected.
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isForbidden());
+
+        // Verify the account the same way an admin would confirm a role change - directly
+        // via the repository - since there's no inbox to click a real email link from here.
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        // Logging in again now succeeds.
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").exists());
+    }
+
+    @Test
+    void verifyEmailEndpointMarksAccountVerifiedAndUnblocksLogin() throws Exception {
+        String email = "verify-" + System.nanoTime() + "@example.com";
+        String username = "verifyuser" + System.nanoTime();
+
+        String registerBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
+            put("email", email);
+            put("password", "password1");
+            put("username", username);
+        }});
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody))
+                .andExpect(status().isCreated());
+
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+
+        // register() already issued a real verification token/email in the background;
+        // this test plants its own known token instead of trying to intercept that one.
+        emailVerificationTokenRepository.save(EmailVerificationToken.builder()
+                .userId(user.getId())
+                .tokenHash(TokenHasher.sha256("known-verification-token"))
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .build());
+
+        mockMvc.perform(get("/api/auth/verify-email").param("token", "known-verification-token"))
+                .andExpect(status().isOk());
+
         String loginBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
             put("email", email);
             put("password", "password1");
