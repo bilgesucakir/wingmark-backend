@@ -48,6 +48,14 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    # spring-boot-starter-mail auto-registers a health check that live-tests the SMTP
+    # connection on every /actuator/health call. That would make the whole app's health
+    # (and therefore Render's deploy/restart decisions) depend on the mail provider being
+    # reachable right now - wrong, since EmailServiceImpl already treats a failed send as
+    # non-fatal (logged, not thrown). Health should reflect "can this app serve requests".
+    mail:
+      enabled: false
 
 wingmark:
   jwt:
