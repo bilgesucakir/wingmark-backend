@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /** Admin-only account management: list, edit and delete any user. */
@@ -36,16 +37,17 @@ public class AdminUserController {
     /** Admin-only: returns every registered user. */
     @Operation(summary = "Get all users", description = "Admin-only. Returns every registered user account.")
     @GetMapping
-    public ResponseEntity<List<UserProfileResponseDto>> getAll() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<List<UserProfileResponseDto>> getAll(Locale locale) {
+        return ResponseEntity.ok(userService.getAllUsers(locale));
     }
 
     /** Admin-only: updates a user's name, role and email-verified flag. */
     @Operation(summary = "Update a user", description = "Admin-only. Updates a user's name, role and email-verified flag.")
     @PutMapping("/{id}")
     public ResponseEntity<UserProfileResponseDto> update(@PathVariable UUID id,
-                                                           @Valid @RequestBody AdminUpdateUserRequestDto request) {
-        return ResponseEntity.ok(userService.adminUpdateUser(id, request));
+                                                           @Valid @RequestBody AdminUpdateUserRequestDto request,
+                                                           Locale locale) {
+        return ResponseEntity.ok(userService.adminUpdateUser(id, request, locale));
     }
 
     /**

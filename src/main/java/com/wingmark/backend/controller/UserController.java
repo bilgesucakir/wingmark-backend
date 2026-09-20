@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -40,9 +41,10 @@ public class UserController {
     @Operation(summary = "Get profile", description = "Returns the caller's own profile. userId must match the authenticated caller.")
     @GetMapping
     public ResponseEntity<UserProfileResponseDto> getProfile(@AuthenticationPrincipal UserPrincipal principal,
-                                                              @PathVariable UUID userId) {
+                                                              @PathVariable UUID userId,
+                                                              Locale locale) {
         requireSelf(principal, userId);
-        return ResponseEntity.ok(userService.getProfile(userId));
+        return ResponseEntity.ok(userService.getProfile(userId, locale));
     }
 
     /** Updates the caller's own profile (name, profile picture, favorite species). */
@@ -50,9 +52,10 @@ public class UserController {
     @PutMapping
     public ResponseEntity<UserProfileResponseDto> updateProfile(@AuthenticationPrincipal UserPrincipal principal,
                                                                   @PathVariable UUID userId,
-                                                                  @Valid @RequestBody UpdateProfileRequestDto request) {
+                                                                  @Valid @RequestBody UpdateProfileRequestDto request,
+                                                                  Locale locale) {
         requireSelf(principal, userId);
-        return ResponseEntity.ok(userService.updateProfile(userId, request));
+        return ResponseEntity.ok(userService.updateProfile(userId, request, locale));
     }
 
     /** Returns the caller's own app settings (unit preference, locale). */

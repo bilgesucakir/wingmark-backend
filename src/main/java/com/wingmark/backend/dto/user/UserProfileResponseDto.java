@@ -13,6 +13,7 @@ public record UserProfileResponseDto(
         String lastName,
         String profilePicture,
         UUID favoriteSpeciesId,
+        String favoriteSpeciesName,
         Role role,
         boolean emailVerified,
         Instant createdAt
