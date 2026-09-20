@@ -30,6 +30,7 @@ const sections = {
   users: document.getElementById("section-users"),
   badges: document.getElementById("section-badges"),
   logs: document.getElementById("section-logs"),
+  metrics: document.getElementById("section-metrics"),
 };
 
 function goToSection(name) {
@@ -41,6 +42,7 @@ function goToSection(name) {
   if (name === "users") loadUsersList();
   if (name === "badges") loadBadgesList();
   if (name === "logs") loadLogsList();
+  if (name === "metrics") loadMetrics();
 }
 
 tabButtons.forEach((btn) => btn.addEventListener("click", () => goToSection(btn.dataset.section)));
@@ -65,7 +67,7 @@ async function loadOverview() {
       Api.request("/api/badges/catalog"),
       Api.request("/api/bird-logs"),
     ]);
-    document.getElementById("stat-species").textContent = species.totalElements;
+    document.getElementById("stat-species").textContent = species.page.totalElements;
     document.getElementById("stat-users").textContent = users.length;
     document.getElementById("stat-badges").textContent = badges.length;
     document.getElementById("stat-logs").textContent = logs.length;
@@ -114,6 +116,27 @@ function commonName(species) {
 
 function badgeName(badge) {
   return (badge && badge.name && (badge.name.en || badge.name.tr)) || "";
+}
+
+/* Shared species list, cached across the badge form and the user-edit form so each
+ * only fetches /api/species once per page load rather than duplicating the request. */
+let speciesOptionsCache = null;
+
+async function getSpeciesOptions() {
+  if (!speciesOptionsCache) {
+    const page = await Api.request("/api/species?size=500");
+    speciesOptionsCache = page.content.slice().sort((a, b) => commonName(a).localeCompare(commonName(b)));
+  }
+  return speciesOptionsCache;
+}
+
+function populateSpeciesSelect(selectEl, options) {
+  options.forEach((s) => {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = commonName(s);
+    selectEl.appendChild(opt);
+  });
 }
 
 function readTranslations(enFieldId, trFieldId) {
@@ -450,6 +473,18 @@ const userForm = document.getElementById("user-form");
 const userFormMsg = document.getElementById("user-form-msg");
 const cancelUserFormBtn = document.getElementById("cancel-user-form-btn");
 const deleteUserBtn = document.getElementById("delete-user-btn");
+const userFavoriteSpeciesSelect = document.getElementById("user-favoriteSpeciesId");
+let userSpeciesOptionsLoaded = false;
+
+async function ensureUserSpeciesOptionsLoaded() {
+  if (userSpeciesOptionsLoaded) return;
+  try {
+    populateSpeciesSelect(userFavoriteSpeciesSelect, await getSpeciesOptions());
+    userSpeciesOptionsLoaded = true;
+  } catch (err) {
+    showMsg(userFormMsg, "Failed to load species list: " + err.message, "error");
+  }
+}
 
 const userDetailPanel = document.getElementById("user-detail-panel");
 const userDetailTitle = document.getElementById("user-detail-title");
@@ -511,7 +546,7 @@ usersSearchInput.addEventListener("input", () => {
   usersDebounceTimer = setTimeout(() => renderUsersList(usersSearchInput.value.trim()), 200);
 });
 
-function openUserForm(user) {
+async function openUserForm(user) {
   currentUserId = user.id;
   showMsg(userFormMsg, "", "");
   document.getElementById("user-email").value = user.email;
@@ -519,6 +554,8 @@ function openUserForm(user) {
   document.getElementById("user-lastName").value = user.lastName || "";
   document.getElementById("user-role").value = user.role;
   document.getElementById("user-emailVerified").value = String(!!user.emailVerified);
+  await ensureUserSpeciesOptionsLoaded();
+  userFavoriteSpeciesSelect.value = user.favoriteSpeciesId || "";
   usersListPanel.classList.add("hidden");
   userDetailPanel.classList.add("hidden");
   userFormPanel.classList.remove("hidden");
@@ -581,6 +618,7 @@ async function openUserDetail(user) {
   currentUserId = user.id;
   userDetailTitle.textContent = (user.email || "") + " — details";
   showMsg(userDetailMsg, "", "");
+  document.getElementById("user-detail-favorite-species").textContent = user.favoriteSpeciesName || "None set";
   userDetailBadgesEl.innerHTML = '<li class="muted">Loading…</li>';
   userDetailLogsTbody.innerHTML = '<tr><td colspan="6" class="muted">Loading…</td></tr>';
   usersListPanel.classList.add("hidden");
@@ -609,6 +647,7 @@ userForm.addEventListener("submit", async (e) => {
       lastName: document.getElementById("user-lastName").value.trim() || null,
       role: document.getElementById("user-role").value,
       emailVerified: document.getElementById("user-emailVerified").value === "true",
+      favoriteSpeciesId: userFavoriteSpeciesSelect.value || null,
     };
     await Api.request("/api/admin/users/" + currentUserId, {
       method: "PUT",
@@ -670,16 +709,7 @@ badgeCriteriaTypeSelect.addEventListener("change", toggleRadiusField);
 async function ensureBadgeSpeciesOptionsLoaded() {
   if (badgeSpeciesOptionsLoaded) return;
   try {
-    const page = await Api.request("/api/species?size=500");
-    page.content
-      .slice()
-      .sort((a, b) => commonName(a).localeCompare(commonName(b)))
-      .forEach((s) => {
-        const opt = document.createElement("option");
-        opt.value = s.id;
-        opt.textContent = commonName(s);
-        badgeSpeciesSelect.appendChild(opt);
-      });
+    populateSpeciesSelect(badgeSpeciesSelect, await getSpeciesOptions());
     badgeSpeciesOptionsLoaded = true;
   } catch (err) {
     showMsg(badgeFormMsg, "Failed to load species list: " + err.message, "error");
@@ -894,6 +924,67 @@ logsSearchInput.addEventListener("input", () => {
   clearTimeout(logsDebounceTimer);
   logsDebounceTimer = setTimeout(() => renderLogsList(logsSearchInput.value.trim()), 200);
 });
+
+/* =====================================================================
+ * Metrics
+ * ===================================================================== */
+
+const metricsMsg = document.getElementById("metrics-msg");
+const metricsCalculatedAt = document.getElementById("metrics-calculated-at");
+const reloadMetricsBtn = document.getElementById("reload-metrics-btn");
+const metricsFavoriteSpeciesEl = document.getElementById("metrics-favorite-species");
+const metricsBadgeCompletionsEl = document.getElementById("metrics-badge-completions");
+const metricsTopRegionsEl = document.getElementById("metrics-top-regions");
+const metricsLocaleUsageEl = document.getElementById("metrics-locale-usage");
+
+// Region labels are "{lat}, {lng}" coordinate-grid cells (~11km per side), computed
+// server-side from latitude/longitude - not the free-text locationName field, which
+// users can fill with anything ("home", "konum1") and so can't be grouped meaningfully.
+const LOCALE_LABELS = { en: "English", tr: "Turkish", unset: "Not set" };
+
+function renderBarChart(container, items, labelFn, valueFn) {
+  if (!items.length) {
+    container.innerHTML = '<p class="muted">No data yet.</p>';
+    return;
+  }
+  const maxValue = Math.max(...items.map(valueFn), 1);
+  container.innerHTML = "";
+  items.forEach((item) => {
+    const value = valueFn(item);
+    const label = labelFn(item);
+    const pct = Math.max(Math.round((value / maxValue) * 100), 2);
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML =
+      '<div class="bar-label" title="' + escapeHtml(label) + '">' + escapeHtml(label) + "</div>" +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="bar-value">' + value + "</div>";
+    container.appendChild(row);
+  });
+}
+
+async function loadMetrics() {
+  showMsg(metricsMsg, "", "");
+  metricsCalculatedAt.textContent = "Calculating…";
+  try {
+    const metrics = await Api.request("/api/admin/metrics");
+    metricsCalculatedAt.textContent =
+      "Calculated " + formatDate(metrics.calculatedAt) + " · " + metrics.totalUsers + " total users";
+    renderBarChart(metricsFavoriteSpeciesEl, metrics.favoriteSpecies,
+      (m) => m.speciesName || "Unknown species", (m) => m.userCount);
+    renderBarChart(metricsBadgeCompletionsEl, metrics.badgeCompletions,
+      (m) => m.badgeName, (m) => m.earnedCount);
+    renderBarChart(metricsTopRegionsEl, metrics.topRegions,
+      (m) => m.region, (m) => m.logCount);
+    renderBarChart(metricsLocaleUsageEl, metrics.localeUsage,
+      (m) => LOCALE_LABELS[m.locale] || m.locale.toUpperCase(), (m) => m.userCount);
+  } catch (err) {
+    metricsCalculatedAt.textContent = "";
+    showMsg(metricsMsg, err.message, "error");
+  }
+}
+
+reloadMetricsBtn.addEventListener("click", loadMetrics);
 
 /* =====================================================================
  * Init

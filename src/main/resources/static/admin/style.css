@@ -378,3 +378,45 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .upload-row input[type=file] { flex: 1; font-size: 13px; }
+
+/* ---------- Metrics bar charts ---------- */
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar-label {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar-track {
+  background: #eceeed;
+  border-radius: 4px;
+  height: 16px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  background: var(--primary);
+  height: 100%;
+  border-radius: 4px;
+  min-width: 2px;
+}
+
+.bar-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: right;
+}
+
+@media (max-width: 560px) {
+  .bar-row { grid-template-columns: 90px 1fr 36px; }
+}

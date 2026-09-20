@@ -73,10 +73,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserProfileResponseDto adminUpdateUser(UUID userId, AdminUpdateUserRequestDto request, Locale locale) {
         User user = findUser(userId);
+
+        if (request.favoriteSpeciesId() != null && !speciesRepository.existsById(request.favoriteSpeciesId())) {
+            throw ResourceNotFoundException.of("Species", request.favoriteSpeciesId());
+        }
+
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setRole(request.role());
         user.setEmailVerified(request.emailVerified());
+        user.setFavoriteSpeciesId(request.favoriteSpeciesId());
         return toResponse(userRepository.save(user), locale);
     }
 

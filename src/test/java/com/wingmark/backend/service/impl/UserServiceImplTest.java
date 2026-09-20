@@ -152,7 +152,7 @@ class UserServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true);
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true, null);
 
         UserProfileResponseDto response = userService.adminUpdateUser(userId, request, Locale.ENGLISH);
 
@@ -162,10 +162,38 @@ class UserServiceImplTest {
     }
 
     @Test
+    void adminUpdateUserSetsFavoriteSpeciesWhenValid() {
+        UUID speciesId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(speciesRepository.existsById(speciesId)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.USER, true, speciesId);
+
+        UserProfileResponseDto response = userService.adminUpdateUser(userId, request, Locale.ENGLISH);
+
+        assertThat(response.favoriteSpeciesId()).isEqualTo(speciesId);
+    }
+
+    @Test
+    void adminUpdateUserRejectsUnknownFavoriteSpecies() {
+        UUID speciesId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(speciesRepository.existsById(speciesId)).thenReturn(false);
+
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.USER, true, speciesId);
+
+        assertThatThrownBy(() -> userService.adminUpdateUser(userId, request, Locale.ENGLISH))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
     void adminUpdateUserThrowsWhenUserMissing() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true);
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true, null);
 
         assertThatThrownBy(() -> userService.adminUpdateUser(userId, request, Locale.ENGLISH))
                 .isInstanceOf(ResourceNotFoundException.class);
