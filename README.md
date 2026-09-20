@@ -139,6 +139,27 @@ Deployed: <https://wingmark-backend.onrender.com/swagger-ui.html>
 All endpoints are prefixed with `/api`. 🔒 = requires `Authorization: Bearer <token>`.
 🛡️ = requires the caller's account to have the `ADMIN` role (also requires 🔒).
 
+Every table below is followed by a collapsible **Examples** block with the actual
+request body (where one exists) and response body, as real JSON. Fields shown as
+`null` are legitimately optional; UUIDs/tokens/timestamps in the examples are
+placeholders, not real values.
+
+Any error response (4xx/5xx) uses this shape, regardless of endpoint:
+
+```json
+{
+  "timestamp": "2026-09-20T08:12:45Z",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Species 9c858901-8a57-4791-81fe-4c455b099bc9 not found",
+  "path": "/api/species/9c858901-8a57-4791-81fe-4c455b099bc9",
+  "validationErrors": null
+}
+```
+
+`validationErrors` is only populated for request-body validation failures (400), as a
+`{"fieldName": "message"}` map.
+
 ### Auth (`/api/auth`)
 
 | Method | Path                          | Auth | Description                                                          |
@@ -162,6 +183,96 @@ unverified account that lost its session (app reinstalled, storage cleared, or i
 refresh token itself expired/was revoked before the link was used) has no other way to
 prove it owns the address and get back in.
 
+<details>
+<summary><strong>Examples</strong></summary>
+
+**POST `/register`** → `201 Created`
+
+Request:
+```json
+{
+  "email": "amelia@example.com",
+  "password": "correcthorse8",
+  "username": "amelia_birds",
+  "firstName": "Amelia",
+  "lastName": "Rivera"
+}
+```
+
+Response:
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIz...",
+  "refreshToken": "8f14e45fceea167a5a36dedd4bea2543",
+  "expiresInMs": 900000
+}
+```
+
+**POST `/login`** → `200 OK`
+
+Request:
+```json
+{
+  "email": "amelia@example.com",
+  "password": "correcthorse8"
+}
+```
+
+Response: same shape as `/register`.
+
+**POST `/refresh`** → `200 OK`
+
+Request:
+```json
+{ "refreshToken": "8f14e45fceea167a5a36dedd4bea2543" }
+```
+
+Response: same shape as `/register` (a new token pair, old refresh token revoked).
+
+**POST `/logout`** → `204 No Content`
+
+Request: same body as `/refresh`. No response body.
+
+**POST `/logout-all`** → `204 No Content`. No request body, no response body.
+
+**POST `/forgot-password`** → `202 Accepted`
+
+Request:
+```json
+{ "email": "amelia@example.com" }
+```
+
+No response body.
+
+**POST `/reset-password`** → `204 No Content`
+
+Request:
+```json
+{
+  "token": "b1946ac92492d2347c6235b4d2611184",
+  "newPassword": "newSecret9"
+}
+```
+
+No response body.
+
+**GET `/verify-email?token=b1946ac9...`** → `200 OK`, `Content-Type: text/html`. No
+JSON - it's an HTML page meant to be opened directly from the email link:
+```html
+<p>Your email is verified. You can close this page and log in.</p>
+```
+
+**POST `/resend-verification-email`** → `202 Accepted`
+
+Request:
+```json
+{ "email": "amelia@example.com" }
+```
+
+No response body.
+
+</details>
+
 ### Users (`/api/users/{userId}`) — 🔒, `userId` must be the caller's own id
 
 | Method | Path         | Description                                  |
@@ -171,13 +282,159 @@ prove it owns the address and get back in.
 | GET    | `/settings`  | Get the caller's app settings                  |
 | PUT    | `/settings`  | Update the caller's app settings               |
 
+`favoriteSpeciesName` is resolved server-side from `Accept-Language` on every request
+(same mechanism as `speciesCommonName` on bird logs) - it is not stored, only
+`favoriteSpeciesId` is.
+
+<details>
+<summary><strong>Examples</strong></summary>
+
+**GET `` (profile)** → `200 OK`
+
+No request body.
+
+```json
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "email": "amelia@example.com",
+  "username": "amelia_birds",
+  "firstName": "Amelia",
+  "lastName": "Rivera",
+  "profilePicture": "avatar-3",
+  "favoriteSpeciesId": "9c858901-8a57-4791-81fe-4c455b099bc9",
+  "favoriteSpeciesName": "House Sparrow",
+  "role": "USER",
+  "emailVerified": true,
+  "createdAt": "2026-01-14T10:32:00Z"
+}
+```
+
+**PUT `` (update profile)** → `200 OK`
+
+Request:
+```json
+{
+  "firstName": "Amelia",
+  "lastName": "Rivera",
+  "profilePicture": "avatar-3",
+  "favoriteSpeciesId": "9c858901-8a57-4791-81fe-4c455b099bc9"
+}
+```
+
+Response: same shape as GET above.
+
+**GET `/settings`** → `200 OK`
+
+No request body.
+
+```json
+{ "unitPreference": "METRIC", "locale": "en" }
+```
+
+**PUT `/settings`** → `200 OK`
+
+Request:
+```json
+{ "unitPreference": "IMPERIAL", "locale": "en" }
+```
+
+Response: same shape as GET above.
+
+</details>
+
 ### Admin - Users (`/api/admin/users`) — 🛡️, all endpoints
 
 | Method | Path      | Description                                                              |
 |--------|-----------|-----------------------------------------------------------------------------|
 | GET    | ``        | Get every registered user account                                          |
-| PUT    | `/{id}`   | Update a user's name, role and email-verified flag                          |
+| PUT    | `/{id}`   | Update a user's name, role, email-verified flag, and favorite species       |
 | DELETE | `/{id}`   | Delete a user account (an admin cannot delete their own account this way)   |
+
+<details>
+<summary><strong>Examples</strong></summary>
+
+**GET ``** → `200 OK`. No request body.
+
+```json
+[
+  {
+    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "email": "amelia@example.com",
+    "username": "amelia_birds",
+    "firstName": "Amelia",
+    "lastName": "Rivera",
+    "profilePicture": "avatar-3",
+    "favoriteSpeciesId": "9c858901-8a57-4791-81fe-4c455b099bc9",
+    "favoriteSpeciesName": "House Sparrow",
+    "role": "USER",
+    "emailVerified": true,
+    "createdAt": "2026-01-14T10:32:00Z"
+  }
+]
+```
+
+**PUT `/{id}`** → `200 OK`
+
+Request:
+```json
+{
+  "firstName": "Amelia",
+  "lastName": "Rivera",
+  "role": "ADMIN",
+  "emailVerified": true,
+  "favoriteSpeciesId": "9c858901-8a57-4791-81fe-4c455b099bc9"
+}
+```
+
+Response: a single user object, same shape as one entry of the GET list above.
+
+**DELETE `/{id}`** → `204 No Content`. No request or response body.
+
+</details>
+
+### Admin - Metrics (`/api/admin/metrics`) — 🛡️
+
+| Method | Path | Description                                                                 |
+|--------|------|---------------------------------------------------------------------------------|
+| GET    | ``   | Aggregate usage metrics for the admin panel's Metrics tab, computed fresh on every call (no caching - re-calling this endpoint *is* the "recalculate" action) |
+
+`favoriteSpecies` and `badgeCompletions` names are resolved from `Accept-Language`, same
+as elsewhere. `topRegions` groups bird logs into a ~11km latitude/longitude grid cell
+(`"{lat}, {lng}"`, both rounded to 1 decimal) rather than the free-text `locationName`
+field, since that's whatever the user typed (e.g. "home") and isn't a reliable place
+label. `localeUsage.locale` is `"en"`/`"tr"`/another 2-letter code, or `"unset"` if the
+user never saved a language in their settings.
+
+<details>
+<summary><strong>Examples</strong></summary>
+
+**GET ``** → `200 OK`. No request body.
+
+```json
+{
+  "totalUsers": 42,
+  "favoriteSpecies": [
+    { "speciesId": "9c858901-8a57-4791-81fe-4c455b099bc9", "speciesName": "House Sparrow", "userCount": 12 },
+    { "speciesId": "1b2c3d4e-5f6a-7b8c-9d0e-1f2a3b4c5d6e", "speciesName": "European Robin", "userCount": 7 }
+  ],
+  "badgeCompletions": [
+    { "badgeId": "72cf1811-0625-4933-afc3-b18f4bc18805", "badgeName": "First Flight", "earnedCount": 30 },
+    { "badgeId": "5d443444-2256-4385-a6a5-8b8094c435f2", "badgeName": "Rare Sighting", "earnedCount": 0 }
+  ],
+  "topRegions": [
+    { "region": "40.8, -74.0", "logCount": 58 },
+    { "region": "37.8, -122.5", "logCount": 21 }
+  ],
+  "localeUsage": [
+    { "locale": "unset", "userCount": 30 },
+    { "locale": "en", "userCount": 8 },
+    { "locale": "tr", "userCount": 4 }
+  ],
+  "calculatedAt": "2026-09-20T08:12:45Z"
+}
+```
+
+</details>
 
 ### Bird Logs (`/api/bird-logs`) — 🔒 unless noted
 
@@ -193,6 +450,66 @@ prove it owns the address and get back in.
 
 \* `userId` must be the caller's own id, unless the caller is an admin.
 
+<details>
+<summary><strong>Examples</strong></summary>
+
+**GET ``, GET `/user/{userId}`, GET `/location`** → `200 OK`, each returning an array of
+this shape. No request body.
+
+```json
+[
+  {
+    "id": "b1e2c3d4-1234-4a5b-8c9d-0e1f2a3b4c5d",
+    "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "speciesId": "9c858901-8a57-4791-81fe-4c455b099bc9",
+    "speciesCommonName": "House Sparrow",
+    "speciesStatus": "CONFIDENT",
+    "pet": false,
+    "customName": null,
+    "lifeStage": "ADULT",
+    "gender": "MALE",
+    "photoUrl": "https://wingmark-backend.onrender.com/uploads/abc123.jpg",
+    "note": "Singing on the fence at sunrise",
+    "latitude": 40.7829,
+    "longitude": -73.9654,
+    "locationName": "Central Park",
+    "observedAt": "2026-09-18T06:45:00Z",
+    "visibility": "PRIVATE",
+    "createdAt": "2026-09-18T06:47:12Z"
+  }
+]
+```
+
+**GET `/{id}`** → `200 OK`. No request body. Response: a single object, same shape as
+one array entry above.
+
+**POST ``** → `201 Created`
+
+Request:
+```json
+{
+  "speciesId": "9c858901-8a57-4791-81fe-4c455b099bc9",
+  "speciesStatus": "CONFIDENT",
+  "pet": false,
+  "customName": null,
+  "lifeStage": "ADULT",
+  "gender": "MALE",
+  "photoUrl": "https://wingmark-backend.onrender.com/uploads/abc123.jpg",
+  "note": "Singing on the fence at sunrise",
+  "latitude": 40.7829,
+  "longitude": -73.9654,
+  "locationName": "Central Park"
+}
+```
+
+Response: same shape as one GET entry above.
+
+**PUT `/{id}`** → `200 OK`. Request: same shape as POST. Response: same shape as GET.
+
+**DELETE `/{id}`** → `204 No Content`. No request or response body.
+
+</details>
+
 ### Species guide (`/api/species`)
 
 | Method | Path                      | Auth | Description                                                                 |
@@ -206,6 +523,126 @@ prove it owns the address and get back in.
 | POST   | `/{id}/images`            | 🛡️  | Attach a curated reference image (life stage + gender)                         |
 | GET    | `/{id}/photo-candidates`  | 🛡️  | **Curation tool** — searches iNaturalist for candidate photos (`?lifeStage=ADULT\|BABY&gender=MALE\|FEMALE\|NOT_APPLICABLE`) to review and save via the endpoint above. Does not save anything itself. |
 | DELETE | `/{id}/images/{imageId}`  | 🛡️  | Remove a reference image                                                       |
+
+<details>
+<summary><strong>Examples</strong></summary>
+
+**GET ``** → `200 OK`. No request body.
+
+```json
+{
+  "content": [
+    {
+      "id": "9c858901-8a57-4791-81fe-4c455b099bc9",
+      "commonName": { "en": "House Sparrow", "tr": "Serçe" },
+      "scientificName": "Passer domesticus",
+      "family": "Passeridae",
+      "order": "Passeriformes",
+      "description": { "en": "A small, plump bird common in urban areas." },
+      "lifespan": { "en": "3 years average" },
+      "diet": { "en": "Seeds, grains, insects" },
+      "habitat": { "en": "Urban and suburban areas" },
+      "sizeDescription": { "en": "14-18 cm" },
+      "conservationStatus": { "en": "Least Concern" },
+      "nativeRange": { "en": "Europe, Asia, North Africa" },
+      "images": [
+        {
+          "id": "1a2b3c4d-1234-4a5b-8c9d-0e1f2a3b4c5d",
+          "lifeStage": "ADULT",
+          "gender": "MALE",
+          "imageUrl": "https://wingmark-backend.onrender.com/uploads/sparrow-male.jpg",
+          "caption": "Adult male"
+        }
+      ]
+    }
+  ],
+  "page": { "size": 20, "number": 0, "totalElements": 143, "totalPages": 8 }
+}
+```
+
+**GET `/{id}`** → `200 OK`. No request body. Response: a single species object, same
+shape as one `content` entry above.
+
+**GET `/{id}/sound`** → `200 OK`. No request body.
+
+```json
+[
+  {
+    "id": "XC123456",
+    "recordingUrl": "https://xeno-canto.org/123456/download",
+    "type": "song",
+    "quality": "A",
+    "recordist": "Jane Birder",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+  }
+]
+```
+
+**POST ``** → `201 Created`
+
+Request:
+```json
+{
+  "commonName": { "en": "House Sparrow", "tr": "Serçe" },
+  "scientificName": "Passer domesticus",
+  "family": "Passeridae",
+  "order": "Passeriformes",
+  "description": { "en": "A small, plump bird common in urban areas." },
+  "lifespan": { "en": "3 years average" },
+  "diet": { "en": "Seeds, grains, insects" },
+  "habitat": { "en": "Urban and suburban areas" },
+  "sizeDescription": { "en": "14-18 cm" },
+  "conservationStatus": { "en": "Least Concern" },
+  "nativeRange": { "en": "Europe, Asia, North Africa" }
+}
+```
+
+Response: same shape as one `content` entry above, with `"images": []`.
+
+**PUT `/{id}`** → `200 OK`. Request: same shape as POST. Response: same shape as GET.
+
+**DELETE `/{id}`** → `204 No Content`. No request or response body.
+
+**POST `/{id}/images`** → `201 Created`
+
+Request:
+```json
+{
+  "lifeStage": "ADULT",
+  "gender": "MALE",
+  "imageUrl": "https://wingmark-backend.onrender.com/uploads/sparrow-male.jpg",
+  "caption": "Adult male"
+}
+```
+
+Response:
+```json
+{
+  "id": "1a2b3c4d-1234-4a5b-8c9d-0e1f2a3b4c5d",
+  "lifeStage": "ADULT",
+  "gender": "MALE",
+  "imageUrl": "https://wingmark-backend.onrender.com/uploads/sparrow-male.jpg",
+  "caption": "Adult male"
+}
+```
+
+**GET `/{id}/photo-candidates?lifeStage=ADULT&gender=MALE`** → `200 OK`. No request body.
+
+```json
+[
+  {
+    "observationId": "123456789",
+    "photoUrl": "https://static.inaturalist.org/photos/123456/medium.jpg",
+    "licenseCode": "cc-by-nc",
+    "attribution": "(c) Jane Birder, some rights reserved",
+    "observationUrl": "https://www.inaturalist.org/observations/123456789"
+  }
+]
+```
+
+**DELETE `/{id}/images/{imageId}`** → `204 No Content`. No request or response body.
+
+</details>
 
 ### Badges (`/api/badges`)
 
@@ -239,11 +676,82 @@ also need extra parameters in `criteriaMetadata`:
 The admin panel's badge form exposes all of these, including the species picker for
 `SPECIES_LOGS` and the radius field for the two `*_IN_RADIUS` types.
 
+<details>
+<summary><strong>Examples</strong></summary>
+
+**GET `/catalog`** → `200 OK`. No request body.
+
+```json
+[
+  {
+    "id": "72cf1811-0625-4933-afc3-b18f4bc18805",
+    "name": { "en": "First Flight", "tr": "İlk Uçuş" },
+    "description": { "en": "Log your first bird sighting" },
+    "icon": "first-flight",
+    "criteriaType": "TOTAL_LOGS",
+    "criteriaValue": 1,
+    "criteriaMetadata": null,
+    "tier": "BRONZE"
+  }
+]
+```
+
+**GET `/user/{userId}`** → `200 OK`. No request body.
+
+```json
+[
+  {
+    "badgeId": "72cf1811-0625-4933-afc3-b18f4bc18805",
+    "badgeName": "First Flight",
+    "badgeIcon": "first-flight",
+    "earned": true,
+    "earnedAt": "2026-09-18T06:47:12Z",
+    "progress": 1,
+    "targetValue": 1
+  }
+]
+```
+
+**POST ``** → `201 Created`
+
+Request:
+```json
+{
+  "name": { "en": "First Flight", "tr": "İlk Uçuş" },
+  "description": { "en": "Log your first bird sighting" },
+  "icon": "first-flight",
+  "criteriaType": "TOTAL_LOGS",
+  "criteriaValue": 1,
+  "criteriaMetadata": null,
+  "tier": "BRONZE"
+}
+```
+
+Response: same shape as one `/catalog` entry above.
+
+**PUT `/{id}`** → `200 OK`. Request: same shape as POST. Response: same shape as GET.
+
+**DELETE `/{id}`** → `204 No Content`. No request or response body.
+
+</details>
+
 ### Uploads (`/api/uploads`) — 🔒
 
 | Method | Path      | Description                                                              |
 |--------|-----------|-----------------------------------------------------------------------------|
 | POST   | `/photo`  | Upload a photo (multipart `file`), returns its URL for use as a log's `photoUrl`. Re-encoded server-side to strip EXIF metadata (including GPS). |
+
+<details>
+<summary><strong>Examples</strong></summary>
+
+**POST `/photo`** → `201 Created`. Request is `multipart/form-data`, not JSON - one
+part named `file` (the image). Response:
+
+```json
+{ "url": "https://wingmark-backend.onrender.com/uploads/abc123.jpg" }
+```
+
+</details>
 
 ## Design notes
 
@@ -259,31 +767,3 @@ The admin panel's badge form exposes all of these, including the species picker 
   iNaturalist-backed `photo-candidates` endpoint) and stored, since a specific
   crowd-sourced photo needs a human to check it's actually a good, correctly-labeled
   picture before it goes in the guide.
-
-## Exploratory notes
-
-Not decided, not integrated — just findings worth keeping so they aren't re-derived
-later. `BirdLog` already has `detectedSpeciesId`/`detectionConfidence` columns reserved
-for this, but no detection service exists yet.
-
-### Auto species detection from photo — model evaluation (2026-09-15)
-
-Tested [`chriamue/bird-species-classifier`](https://huggingface.co/chriamue/bird-species-classifier)
-on Hugging Face (EfficientNet, 525 classes, ~96.8% reported validation accuracy) as a
-candidate for auto-suggesting a species from a bird-log photo. Might be used for that
-eventually — **not decided yet**.
-
-- Tested against 4 photos: 2x Pacific Parrotlet, 1x African Goose, 1x sparrow. The
-  sparrow classified correctly; both parrotlets and the goose did not.
-- Misclassifications are a **dataset-coverage** issue, not a bug: the model's full
-  525-label list doesn't include "Pacific Parrotlet" or "African Goose" at all (it has
-  things like Alexandrine Parakeet, Golden Parakeet, African Pygmy Goose, Egyptian
-  Goose, Snow Goose, etc.), so on those photos it silently falls back to the
-  nearest-looking known class (Alexandrine Parakeet, a swan-type guess) instead of
-  reporting "unknown." Sparrows worked because sparrow species are actually in the
-  training set.
-- Takeaway: this model is solid *within* its known 525 species, but has no
-  out-of-vocabulary/"unknown" fallback — it always returns its closest guess. If this
-  model is adopted, that needs to be handled explicitly (e.g. a confidence threshold, or
-  restricting suggestions to species already in Wingmark's own guide) rather than
-  trusting the raw top-1 label.
