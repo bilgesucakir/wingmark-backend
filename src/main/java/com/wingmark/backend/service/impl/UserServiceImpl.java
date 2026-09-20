@@ -5,6 +5,7 @@ import com.wingmark.backend.dto.user.SettingsResponseDto;
 import com.wingmark.backend.dto.user.UpdateProfileRequestDto;
 import com.wingmark.backend.dto.user.UpdateSettingsRequestDto;
 import com.wingmark.backend.dto.user.UserProfileResponseDto;
+import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.entity.UserSettings;
 import com.wingmark.backend.exception.ResourceNotFoundException;
@@ -12,10 +13,12 @@ import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.service.UserService;
+import com.wingmark.backend.util.LocalizedTextResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -27,12 +30,12 @@ public class UserServiceImpl implements UserService {
     private final SpeciesRepository speciesRepository;
 
     @Override
-    public UserProfileResponseDto getProfile(UUID userId) {
-        return toResponse(findUser(userId));
+    public UserProfileResponseDto getProfile(UUID userId, Locale locale) {
+        return toResponse(findUser(userId), locale);
     }
 
     @Override
-    public UserProfileResponseDto updateProfile(UUID userId, UpdateProfileRequestDto request) {
+    public UserProfileResponseDto updateProfile(UUID userId, UpdateProfileRequestDto request, Locale locale) {
         User user = findUser(userId);
 
         if (request.favoriteSpeciesId() != null && !speciesRepository.existsById(request.favoriteSpeciesId())) {
@@ -44,7 +47,7 @@ public class UserServiceImpl implements UserService {
         user.setProfilePicture(request.profilePicture());
         user.setFavoriteSpeciesId(request.favoriteSpeciesId());
 
-        return toResponse(userRepository.save(user));
+        return toResponse(userRepository.save(user), locale);
     }
 
     @Override
@@ -63,18 +66,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserProfileResponseDto> getAllUsers() {
-        return userRepository.findAll().stream().map(this::toResponse).toList();
+    public List<UserProfileResponseDto> getAllUsers(Locale locale) {
+        return userRepository.findAll().stream().map(user -> toResponse(user, locale)).toList();
     }
 
     @Override
-    public UserProfileResponseDto adminUpdateUser(UUID userId, AdminUpdateUserRequestDto request) {
+    public UserProfileResponseDto adminUpdateUser(UUID userId, AdminUpdateUserRequestDto request, Locale locale) {
         User user = findUser(userId);
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setRole(request.role());
         user.setEmailVerified(request.emailVerified());
-        return toResponse(userRepository.save(user));
+        return toResponse(userRepository.save(user), locale);
     }
 
     @Override
@@ -95,7 +98,15 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> ResourceNotFoundException.of("UserSettings", userId));
     }
 
-    private UserProfileResponseDto toResponse(User user) {
+    private UserProfileResponseDto toResponse(User user, Locale locale) {
+        String favoriteSpeciesName = null;
+        if (user.getFavoriteSpeciesId() != null) {
+            favoriteSpeciesName = speciesRepository.findById(user.getFavoriteSpeciesId())
+                    .map(Species::getCommonName)
+                    .map(commonName -> LocalizedTextResolver.resolve(commonName, locale))
+                    .orElse(null);
+        }
+
         return new UserProfileResponseDto(
                 user.getId(),
                 user.getEmail(),
@@ -104,6 +115,7 @@ public class UserServiceImpl implements UserService {
                 user.getLastName(),
                 user.getProfilePicture(),
                 user.getFavoriteSpeciesId(),
+                favoriteSpeciesName,
                 user.getRole(),
                 user.isEmailVerified(),
                 user.getCreatedAt()

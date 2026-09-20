@@ -7,16 +7,17 @@ import com.wingmark.backend.dto.user.UpdateSettingsRequestDto;
 import com.wingmark.backend.dto.user.UserProfileResponseDto;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /** A user's own profile and app settings, plus admin-only account management. */
 public interface UserService {
 
     /** Returns a user's profile. */
-    UserProfileResponseDto getProfile(UUID userId);
+    UserProfileResponseDto getProfile(UUID userId, Locale locale);
 
     /** Updates a user's profile (name, profile picture, favorite species). */
-    UserProfileResponseDto updateProfile(UUID userId, UpdateProfileRequestDto request);
+    UserProfileResponseDto updateProfile(UUID userId, UpdateProfileRequestDto request, Locale locale);
 
     /** Returns a user's app settings (unit preference, locale). */
     SettingsResponseDto getSettings(UUID userId);
@@ -25,10 +26,10 @@ public interface UserService {
     SettingsResponseDto updateSettings(UUID userId, UpdateSettingsRequestDto request);
 
     /** Admin-only: returns every registered user. */
-    List<UserProfileResponseDto> getAllUsers();
+    List<UserProfileResponseDto> getAllUsers(Locale locale);
 
     /** Admin-only: updates a user's name, role and email-verified flag. */
-    UserProfileResponseDto adminUpdateUser(UUID userId, AdminUpdateUserRequestDto request);
+    UserProfileResponseDto adminUpdateUser(UUID userId, AdminUpdateUserRequestDto request, Locale locale);
 
     /** Admin-only: permanently deletes a user account. */
     void deleteUser(UUID userId);

@@ -287,7 +287,3 @@ eventually — **not decided yet**.
   model is adopted, that needs to be handled explicitly (e.g. a confidence threshold, or
   restricting suggestions to species already in Wingmark's own guide) rather than
   trusting the raw top-1 label.
-
-## TODO
-
-- English / Turkish language support (i18n)
