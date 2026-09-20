@@ -3,13 +3,17 @@ package com.wingmark.backend.controller;
 import com.wingmark.backend.dto.birdlog.BirdLogResponseDto;
 import com.wingmark.backend.dto.birdlog.CreateBirdLogRequestDto;
 import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequestDto;
+import com.wingmark.backend.enums.Gender;
+import com.wingmark.backend.enums.LifeStage;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.security.UserPrincipal;
 import com.wingmark.backend.service.BirdLogService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,6 +39,10 @@ import java.util.UUID;
  * UserController/BadgeController). The one true "all logs, everyone's" endpoint
  * (getAll) is admin-only, since there's no cross-user viewing feature for regular
  * users.
+ * <p>
+ * getAll and getByUserId both take the same optional filter/sort query params:
+ * hasSpecies, gender, lifeStage (each unset = no filter) and sortDirection
+ * (defaults to DESC, i.e. most recently observed first).
  */
 @Tag(name = "Bird Logs", description = "Bird sighting logs (photo, species, location, notes)")
 @RestController
@@ -44,24 +52,48 @@ public class BirdLogController {
 
     private final BirdLogService birdLogService;
 
-    /** Admin-only: returns every log across every user, most recently observed first. */
-    @Operation(summary = "Get all bird logs", description = "Admin-only. Returns every log across every user, most recently observed first.")
+    /**
+     * Admin-only: returns every log across every user, optionally filtered by
+     * hasSpecies/gender/lifeStage and sorted by observedAt (default: most recent first).
+     */
+    @Operation(summary = "Get all bird logs", description = "Admin-only. Returns every log across every user. " +
+            "Optional filters: ?hasSpecies=true|false (species selected or not), ?gender=MALE|FEMALE|UNKNOWN, " +
+            "?lifeStage=ADULT|BABY|UNKNOWN - each omitted means no filter on it. " +
+            "?sortDirection=ASC|DESC sorts by observedAt (default DESC, i.e. most recently observed first).")
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<BirdLogResponseDto>> getAll(Locale locale) {
-        return ResponseEntity.ok(birdLogService.getAll(locale));
+    public ResponseEntity<List<BirdLogResponseDto>> getAll(@RequestParam(required = false) Boolean hasSpecies,
+                                                            @RequestParam(required = false) Gender gender,
+                                                            @RequestParam(required = false) LifeStage lifeStage,
+                                                            @Parameter(description = "Sort direction by observedAt; defaults to DESC (most recent first).")
+                                                            @RequestParam(required = false, defaultValue = "DESC") Sort.Direction sortDirection,
+                                                            Locale locale) {
+        return ResponseEntity.ok(birdLogService.getAll(hasSpecies, gender, lifeStage, sortDirection, locale));
     }
 
-    /** Returns all of the given user's own logs, most recently observed first. userId must match the authenticated caller, unless the caller is an admin. */
-    @Operation(summary = "Get bird logs by user", description = "Returns all of this user's own logs, most recently observed first. userId must match the authenticated caller, unless the caller is an admin (used by the admin panel's user detail view).")
+    /**
+     * Returns all of the given user's own logs, optionally filtered by
+     * hasSpecies/gender/lifeStage and sorted by observedAt (default: most recent first).
+     * userId must match the authenticated caller, unless the caller is an admin.
+     */
+    @Operation(summary = "Get bird logs by user", description = "Returns all of this user's own logs. userId must match the authenticated caller, " +
+            "unless the caller is an admin (used by the admin panel's user detail view). " +
+            "Optional filters: ?hasSpecies=true|false (species selected or not), ?gender=MALE|FEMALE|UNKNOWN, " +
+            "?lifeStage=ADULT|BABY|UNKNOWN - each omitted means no filter on it. " +
+            "?sortDirection=ASC|DESC sorts by observedAt (default DESC, i.e. most recently observed first).")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<BirdLogResponseDto>> getByUserId(@AuthenticationPrincipal UserPrincipal principal,
                                                                  @PathVariable UUID userId,
+                                                                 @RequestParam(required = false) Boolean hasSpecies,
+                                                                 @RequestParam(required = false) Gender gender,
+                                                                 @RequestParam(required = false) LifeStage lifeStage,
+                                                                 @Parameter(description = "Sort direction by observedAt; defaults to DESC (most recent first).")
+                                                                 @RequestParam(required = false, defaultValue = "DESC") Sort.Direction sortDirection,
                                                                  Locale locale) {
         if (!principal.getId().equals(userId) && !principal.isAdmin()) {
             throw ResourceNotFoundException.of("User", userId);
         }
-        return ResponseEntity.ok(birdLogService.getByUserId(userId, locale));
+        return ResponseEntity.ok(birdLogService.getByUserId(userId, hasSpecies, gender, lifeStage, sortDirection, locale));
     }
 
     /** Returns the caller's own logs whose coordinates fall within the given lat/lng box, for the map view. */

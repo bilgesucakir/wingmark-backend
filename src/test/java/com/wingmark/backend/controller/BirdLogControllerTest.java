@@ -3,10 +3,14 @@ package com.wingmark.backend.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wingmark.backend.entity.Badge;
+import com.wingmark.backend.entity.BirdLog;
+import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.enums.BadgeCriteriaType;
 import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.repository.BadgeRepository;
+import com.wingmark.backend.repository.BirdLogRepository;
+import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +45,12 @@ class BirdLogControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private BirdLogRepository birdLogRepository;
+
+    @Autowired
+    private SpeciesRepository speciesRepository;
 
     private String registerLoginAsAdmin(String label) throws Exception {
         String suffix = label + "-" + System.nanoTime();
@@ -269,5 +280,119 @@ class BirdLogControllerTest {
                         .param("minLat", "0").param("maxLat", "1").param("minLng", "0"))
                 // maxLng deliberately omitted
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getByUserIdSortsByObservedAtInEitherDirection() throws Exception {
+        String token = registerAndGetToken("sortuser");
+        UUID userId = extractUserId(token);
+
+        String oldestId = createMinimalLog(token, "ADULT", "MALE", null);
+        String middleId = createMinimalLog(token, "ADULT", "MALE", null);
+        String newestId = createMinimalLog(token, "ADULT", "MALE", null);
+
+        // Force a known, distinct observedAt ordering (all three would otherwise share
+        // ~the same real-clock instant, since they're created back-to-back in the test).
+        setObservedAt(oldestId, Instant.parse("2026-01-01T00:00:00Z"));
+        setObservedAt(middleId, Instant.parse("2026-01-02T00:00:00Z"));
+        setObservedAt(newestId, Instant.parse("2026-01-03T00:00:00Z"));
+
+        // Sort.Direction binds like every other enum query param in this app: exact-case
+        // only ("ASC"/"DESC"), same as gender/lifeStage below - see
+        // getByUserIdFiltersByHasSpeciesGenderAndLifeStage for that same constraint.
+        mockMvc.perform(get("/api/bird-logs/user/" + userId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("sortDirection", "ASC"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(oldestId))
+                .andExpect(jsonPath("$[1].id").value(middleId))
+                .andExpect(jsonPath("$[2].id").value(newestId));
+
+        mockMvc.perform(get("/api/bird-logs/user/" + userId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("sortDirection", "DESC"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(newestId))
+                .andExpect(jsonPath("$[1].id").value(middleId))
+                .andExpect(jsonPath("$[2].id").value(oldestId));
+
+        // No sortDirection at all still defaults to DESC, unchanged from before this feature.
+        mockMvc.perform(get("/api/bird-logs/user/" + userId).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(newestId));
+    }
+
+    @Test
+    void getByUserIdFiltersByHasSpeciesGenderAndLifeStage() throws Exception {
+        String token = registerAndGetToken("filteruser");
+        UUID userId = extractUserId(token);
+
+        Species species = speciesRepository.save(Species.builder()
+                .commonName(Map.of("en", "Filter Test Bird"))
+                .scientificName("Testus filterus " + System.nanoTime())
+                .build());
+
+        String withSpeciesAdultMale = createMinimalLog(token, "ADULT", "MALE", species.getId());
+        String noSpeciesBabyFemale = createMinimalLog(token, "BABY", "FEMALE", null);
+
+        mockMvc.perform(get("/api/bird-logs/user/" + userId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("hasSpecies", "false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(noSpeciesBabyFemale));
+
+        mockMvc.perform(get("/api/bird-logs/user/" + userId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("hasSpecies", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(withSpeciesAdultMale));
+
+        mockMvc.perform(get("/api/bird-logs/user/" + userId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("gender", "FEMALE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(noSpeciesBabyFemale));
+
+        mockMvc.perform(get("/api/bird-logs/user/" + userId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("lifeStage", "ADULT"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(withSpeciesAdultMale));
+
+        mockMvc.perform(get("/api/bird-logs/user/" + userId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    private String createMinimalLog(String token, String lifeStage, String gender, UUID speciesId) throws Exception {
+        Map<String, Object> body = new HashMap<>();
+        body.put("pet", false);
+        body.put("lifeStage", lifeStage);
+        body.put("gender", gender);
+        body.put("latitude", 1.0);
+        body.put("longitude", 1.0);
+        if (speciesId != null) {
+            body.put("speciesId", speciesId.toString());
+        }
+
+        String created = mockMvc.perform(post("/api/bird-logs")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readTree(created).get("id").asText();
+    }
+
+    private void setObservedAt(String logId, Instant observedAt) {
+        BirdLog log = birdLogRepository.findById(UUID.fromString(logId)).orElseThrow();
+        log.setObservedAt(observedAt);
+        birdLogRepository.save(log);
     }
 }

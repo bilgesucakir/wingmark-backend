@@ -440,8 +440,8 @@ user never saved a language in their settings.
 
 | Method | Path              | Auth | Description                                                      |
 |--------|-------------------|:----:|--------------------------------------------------------------------|
-| GET    | ``                | 🛡️  | Get every log across every user (there's no per-user viewing feature for this yet, so it's admin-only for now) |
-| GET    | `/user/{userId}`  | 🔒*  | Get all of this user's own logs, most recent first (admins can pass any user's id, for the admin panel's user detail view) |
+| GET    | ``                | 🛡️  | Get every log across every user, filterable/sortable (see below) - there's no per-user viewing feature for this yet, so it's admin-only for now |
+| GET    | `/user/{userId}`  | 🔒*  | Get all of this user's own logs, filterable/sortable (see below) - admins can pass any user's id, for the admin panel's user detail view |
 | GET    | `/location`       |      | Get the caller's logs within a lat/lng box (`minLat/maxLat/minLng/maxLng`), for the map view |
 | GET    | `/{id}`           |      | Get one of the caller's logs by id                                  |
 | POST   | ``                |      | Create a log (re-evaluates badge progress)                          |
@@ -449,6 +449,17 @@ user never saved a language in their settings.
 | DELETE | `/{id}`           |      | Delete a log (re-evaluates badge progress)                          |
 
 \* `userId` must be the caller's own id, unless the caller is an admin.
+
+**GET `` and GET `/user/{userId}` both take the same optional query params:**
+
+| Param           | Values                     | Effect                                                    |
+|-----------------|----------------------------|------------------------------------------------------------|
+| `hasSpecies`    | `true` \| `false`          | Only logs with/without a species selected. Omit for no filter. |
+| `gender`        | `MALE` \| `FEMALE` \| `UNKNOWN` | Only logs with this gender. Omit for no filter. Exact case required. |
+| `lifeStage`     | `ADULT` \| `BABY` \| `UNKNOWN`  | Only logs with this life stage. Omit for no filter. Exact case required. |
+| `sortDirection` | `ASC` \| `DESC`            | Sort by `observedAt`. Defaults to `DESC` (most recent first) if omitted. Exact case required. |
+
+All four can be combined, e.g. `GET /api/bird-logs/user/{userId}?hasSpecies=false&gender=FEMALE&sortDirection=ASC`.
 
 <details>
 <summary><strong>Examples</strong></summary>
@@ -514,7 +525,7 @@ Response: same shape as one GET entry above.
 
 | Method | Path                      | Auth | Description                                                                 |
 |--------|---------------------------|:----:|-------------------------------------------------------------------------------|
-| GET    | ``                        |      | Paginated species list (`?page=`/`?size=`/`?sort=`), optional `?search=` by common name; returns `{content: [...], page: {size, number, totalElements, totalPages}}` |
+| GET    | ``                        |      | Paginated species list (`?page=`/`?size=`), optional `?search=` by common name; returns `{content: [...], page: {size, number, totalElements, totalPages}}` |
 | GET    | `/{id}`                   |      | Get one species by id, with its reference images                               |
 | GET    | `/{id}/sound`             |      | Live-fetch call/song recordings from Xeno-canto, capped at 5 per species        |
 | POST   | ``                        | 🛡️  | Create a species                                                               |
@@ -523,6 +534,17 @@ Response: same shape as one GET entry above.
 | POST   | `/{id}/images`            | 🛡️  | Attach a curated reference image (life stage + gender)                         |
 | GET    | `/{id}/photo-candidates`  | 🛡️  | **Curation tool** — searches iNaturalist for candidate photos (`?lifeStage=ADULT\|BABY&gender=MALE\|FEMALE\|NOT_APPLICABLE`) to review and save via the endpoint above. Does not save anything itself. |
 | DELETE | `/{id}/images/{imageId}`  | 🛡️  | Remove a reference image                                                       |
+
+**Sorting** the list uses the standard `?sort=<field>,<asc|desc>` param:
+
+| `?sort=` value            | Sorts by                          |
+|----------------------------|------------------------------------|
+| `commonName.en,asc`        | Common name (English), A → Z       |
+| `commonName.tr,asc`        | Common name (Turkish), A → Z       |
+| `scientificName,asc`       | Scientific/species name, A → Z     |
+
+Any of these also accepts `desc` for the reverse order (e.g. `commonName.tr,desc`). Multiple
+`?sort=` params can be combined for a tiebreaker, same as any Spring Data `Pageable`.
 
 <details>
 <summary><strong>Examples</strong></summary>

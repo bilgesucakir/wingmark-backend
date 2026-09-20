@@ -49,9 +49,14 @@ public class SpeciesController {
     private final XenoCantoService xenoCantoService;
     private final INaturalistService iNaturalistService;
 
-    /** Returns a page of species in the guide, optionally filtered by a common-name substring. Public. */
+    /**
+     * Returns a page of species in the guide, optionally filtered by a common-name
+     * substring. Public. Sortable via the standard ?sort=<field>,<asc|desc> param on
+     * commonName.tr, commonName.en, or scientificName (or any other declared field).
+     */
     @Operation(summary = "Get all species", description = "Returns a page of species in the guide, optionally filtered by a common-name substring (?search=), " +
-            "paginated via the standard ?page=/?size=/?sort= params. Public endpoint.")
+            "paginated via the standard ?page=/?size= params. Sortable via ?sort=<field>,<asc|desc>, e.g. " +
+            "?sort=commonName.en,asc, ?sort=commonName.tr,desc, or ?sort=scientificName,asc. Public endpoint.")
     @GetMapping
     public ResponseEntity<Page<SpeciesResponseDto>> getAll(@RequestParam(required = false) String search,
                                                             @PageableDefault(size = 20) Pageable pageable) {

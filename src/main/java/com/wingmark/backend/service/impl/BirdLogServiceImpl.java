@@ -5,6 +5,8 @@ import com.wingmark.backend.dto.birdlog.CreateBirdLogRequestDto;
 import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequestDto;
 import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.entity.Species;
+import com.wingmark.backend.enums.Gender;
+import com.wingmark.backend.enums.LifeStage;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
@@ -12,6 +14,7 @@ import com.wingmark.backend.service.BadgeService;
 import com.wingmark.backend.service.BirdLogService;
 import com.wingmark.backend.util.LocalizedTextResolver;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -28,15 +31,15 @@ public class BirdLogServiceImpl implements BirdLogService {
     private final BadgeService badgeService;
 
     @Override
-    public List<BirdLogResponseDto> getAll(Locale locale) {
-        return birdLogRepository.findAllByOrderByObservedAtDesc().stream()
+    public List<BirdLogResponseDto> getAll(Boolean hasSpecies, Gender gender, LifeStage lifeStage, Sort.Direction sortDirection, Locale locale) {
+        return birdLogRepository.findFiltered(null, hasSpecies, gender, lifeStage, sortDirection).stream()
                 .map(log -> toResponse(log, locale))
                 .toList();
     }
 
     @Override
-    public List<BirdLogResponseDto> getByUserId(UUID userId, Locale locale) {
-        return birdLogRepository.findByUserIdOrderByObservedAtDesc(userId).stream()
+    public List<BirdLogResponseDto> getByUserId(UUID userId, Boolean hasSpecies, Gender gender, LifeStage lifeStage, Sort.Direction sortDirection, Locale locale) {
+        return birdLogRepository.findFiltered(userId, hasSpecies, gender, lifeStage, sortDirection).stream()
                 .map(log -> toResponse(log, locale))
                 .toList();
     }

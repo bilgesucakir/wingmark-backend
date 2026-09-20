@@ -177,6 +177,32 @@ class SpeciesControllerTest {
     }
 
     @Test
+    void probeSortByNestedCommonNameField() throws Exception {
+        String marker = "SortProbe" + System.nanoTime();
+        speciesRepository.save(Species.builder()
+                .commonName(Map.of("en", "Charlie " + marker, "tr", "Alfa " + marker))
+                .scientificName("Zzz " + marker).build());
+        speciesRepository.save(Species.builder()
+                .commonName(Map.of("en", "Alpha " + marker, "tr", "Charlie " + marker))
+                .scientificName("Aaa " + marker).build());
+        speciesRepository.save(Species.builder()
+                .commonName(Map.of("en", "Bravo " + marker, "tr", "Bravo " + marker))
+                .scientificName("Mmm " + marker).build());
+
+        mockMvc.perform(get("/api/species").param("search", marker).param("sort", "commonName.en,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].commonName.en").value("Alpha " + marker))
+                .andExpect(jsonPath("$.content[1].commonName.en").value("Bravo " + marker))
+                .andExpect(jsonPath("$.content[2].commonName.en").value("Charlie " + marker));
+
+        mockMvc.perform(get("/api/species").param("search", marker).param("sort", "scientificName,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].scientificName").value("Aaa " + marker))
+                .andExpect(jsonPath("$.content[1].scientificName").value("Mmm " + marker))
+                .andExpect(jsonPath("$.content[2].scientificName").value("Zzz " + marker));
+    }
+
+    @Test
     void photoCandidatesEndpointIsAdminOnly() throws Exception {
         String userToken = registerAndGetToken("nonadmin");
 
