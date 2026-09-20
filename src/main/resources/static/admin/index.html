@@ -21,6 +21,7 @@
     <button class="tab-btn" data-section="users">Users</button>
     <button class="tab-btn" data-section="badges">Badges</button>
     <button class="tab-btn" data-section="logs">Logs</button>
+    <button class="tab-btn" data-section="metrics">Metrics</button>
   </nav>
 
   <div class="container">
@@ -276,6 +277,9 @@
         </div>
         <div id="user-detail-msg"></div>
 
+        <h3 class="subheading">Favorite species</h3>
+        <p id="user-detail-favorite-species" class="muted">—</p>
+
         <h3 class="subheading">Badges</h3>
         <ul class="species-list" id="user-detail-badges"></ul>
 
@@ -333,6 +337,12 @@
                 <option value="false">No</option>
               </select>
             </div>
+          </div>
+          <div class="field">
+            <label for="user-favoriteSpeciesId">Favorite species</label>
+            <select id="user-favoriteSpeciesId">
+              <option value="">None</option>
+            </select>
           </div>
           <div class="actions">
             <button type="submit" class="primary" id="save-user-btn">Save user</button>
@@ -458,6 +468,38 @@
             <tbody id="logs-tbody"></tbody>
           </table>
         </div>
+      </div>
+    </section>
+
+    <!-- ============ Metrics ============ -->
+    <section id="section-metrics" class="section hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Metrics</h2>
+          <button class="secondary" id="reload-metrics-btn">Reload</button>
+        </div>
+        <p class="muted" id="metrics-calculated-at"></p>
+        <div id="metrics-msg"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Favorite species</h2></div>
+        <div class="bar-chart" id="metrics-favorite-species"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Badge completions</h2></div>
+        <div class="bar-chart" id="metrics-badge-completions"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Most popular regions</h2></div>
+        <div class="bar-chart" id="metrics-top-regions"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Locale usage</h2></div>
+        <div class="bar-chart" id="metrics-locale-usage"></div>
       </div>
     </section>
   </div>
