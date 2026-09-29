@@ -21,6 +21,7 @@ public class JwtTokenProvider {
     private static final String CLAIM_ROLE = "role";
     private static final String CLAIM_TYPE = "type";
     private static final String TYPE_ACCESS = "access";
+    private static final String CLAIM_TOKEN_VERSION = "tv";
 
     private final JwtProperties jwtProperties;
 
@@ -28,13 +29,14 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(UUID userId, String email, String role) {
+    public String generateAccessToken(UUID userId, String email, String role, int tokenVersion) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)
                 .claim(CLAIM_ROLE, role)
                 .claim(CLAIM_TYPE, TYPE_ACCESS)
+                .claim(CLAIM_TOKEN_VERSION, tokenVersion)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(jwtProperties.accessTokenExpirationMs())))
                 .signWith(key())
@@ -55,6 +57,12 @@ public class JwtTokenProvider {
 
     public UUID getUserId(Claims claims) {
         return UUID.fromString(claims.getSubject());
+    }
+
+    /** The user's tokenVersion when this token was minted; 0 for tokens that predate the claim. */
+    public int getTokenVersion(Claims claims) {
+        Integer version = claims.get(CLAIM_TOKEN_VERSION, Integer.class);
+        return version == null ? 0 : version;
     }
 
     public String getRole(Claims claims) {

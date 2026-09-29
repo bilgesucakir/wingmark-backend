@@ -138,4 +138,62 @@ class AdminUserControllerTest {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void adminCannotDemoteOrUnverifyThemselves() throws Exception {
+        Registered admin = register("selfdemote");
+        String adminToken = promoteAndLogin(admin);
+
+        for (Object[] change : new Object[][]{{"USER", true}, {"ADMIN", false}}) {
+            String body = objectMapper.writeValueAsString(new HashMap<>() {{
+                put("role", change[0]);
+                put("emailVerified", change[1]);
+            }});
+            mockMvc.perform(put("/api/admin/users/" + admin.userId())
+                            .header("Authorization", "Bearer " + adminToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isConflict());
+        }
+    }
+
+    @Test
+    void demotingAnAdminRevokesTheirAdminAccessImmediately() throws Exception {
+        Registered admin = register("demoter");
+        String adminToken = promoteAndLogin(admin);
+        Registered other = register("demotee");
+        String otherToken = promoteAndLogin(other);
+
+        mockMvc.perform(get("/api/admin/users").header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isOk());
+
+        String body = objectMapper.writeValueAsString(new HashMap<>() {{
+            put("role", "USER");
+            put("emailVerified", true);
+        }});
+        mockMvc.perform(put("/api/admin/users/" + other.userId())
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+
+        // Same, still-unexpired token - its "ADMIN" role claim no longer counts.
+        mockMvc.perform(get("/api/admin/users").header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminDeletingAUserInvalidatesThatUsersToken() throws Exception {
+        Registered admin = register("deleter");
+        String adminToken = promoteAndLogin(admin);
+        Registered target = register("deletee");
+        String targetToken = tokenFor(target.email(), target.password());
+
+        mockMvc.perform(delete("/api/admin/users/" + target.userId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/users/" + target.userId()).header("Authorization", "Bearer " + targetToken))
+                .andExpect(status().isUnauthorized());
+    }
 }

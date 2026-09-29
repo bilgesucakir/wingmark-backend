@@ -76,13 +76,19 @@ const Api = (() => {
 
     if (!res.ok) {
       let message = "Request failed (" + res.status + ")";
+      let code = null;
       try {
         const body = await res.json();
         if (body && body.message) message = body.message;
+        if (body && body.code) code = body.code;
       } catch (e) {
         /* no JSON body */
       }
-      throw new Error(message);
+      // The machine-readable code is shown alongside the message so admins can report it precisely.
+      const err = new Error(code ? message + " [" + code + "]" : message);
+      err.code = code;
+      err.status = res.status;
+      throw err;
     }
 
     if (res.status === 204) return null;
@@ -132,6 +138,7 @@ const Api = (() => {
 
   return {
     request,
+    setTokens,
     login,
     logout,
     isAdminLoggedIn,

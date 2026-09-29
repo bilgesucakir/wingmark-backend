@@ -11,6 +11,7 @@
     <h1>Wingmark Admin</h1>
     <div class="who">
       <span id="who-email"></span>
+      <button class="secondary" id="change-password-btn">Change password</button>
       <button class="secondary" id="logout-btn">Log out</button>
     </div>
   </div>
@@ -26,6 +27,35 @@
 
   <div class="container">
     <div id="global-msg"></div>
+
+    <!-- ============ Change own password ============ -->
+    <div class="panel hidden" id="password-panel">
+      <div class="panel-header">
+        <h2>Change my password</h2>
+        <button class="secondary" id="cancel-password-btn">Close</button>
+      </div>
+      <div id="password-msg"></div>
+      <form id="password-form">
+        <div class="field">
+          <label for="current-password">Current password</label>
+          <input type="password" id="current-password" autocomplete="current-password" required />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="new-password">New password</label>
+            <input type="password" id="new-password" autocomplete="new-password" minlength="8" required />
+          </div>
+          <div class="field">
+            <label for="confirm-password">Confirm new password</label>
+            <input type="password" id="confirm-password" autocomplete="new-password" minlength="8" required />
+          </div>
+        </div>
+        <p class="muted">At least 8 characters with a letter and a number. Every other session (including the app) is signed out; this panel stays signed in.</p>
+        <div class="actions">
+          <button type="submit" class="primary" id="save-password-btn">Change password</button>
+        </div>
+      </form>
+    </div>
 
     <!-- ============ Overview ============ -->
     <section id="section-overview" class="section">
@@ -277,6 +307,9 @@
         </div>
         <div id="user-detail-msg"></div>
 
+        <h3 class="subheading">Profile picture</h3>
+        <div id="user-detail-profile-picture" class="muted">—</div>
+
         <h3 class="subheading">Favorite species</h3>
         <p id="user-detail-favorite-species" class="muted">—</p>
 
@@ -293,6 +326,7 @@
                 <th>Gender</th>
                 <th>Pet</th>
                 <th>Observed</th>
+                <th>Logged</th>
                 <th>Note</th>
               </tr>
             </thead>
@@ -338,14 +372,23 @@
               </select>
             </div>
           </div>
+          <p class="muted" id="user-access-hint">Role and verification changes apply on the user's very next request. Setting "Email verified" to No locks them out until they verify again.</p>
           <div class="field">
             <label for="user-favoriteSpeciesId">Favorite species</label>
             <select id="user-favoriteSpeciesId">
               <option value="">None</option>
             </select>
           </div>
+          <div class="field">
+            <label for="user-profilePicture">Profile picture</label>
+            <select id="user-profilePicture">
+              <option value="">None</option>
+            </select>
+            <p class="muted">Preset avatars ship with the app; a custom photo is one the user uploaded. Pick "None" to remove an inappropriate photo.</p>
+          </div>
           <div class="actions">
             <button type="submit" class="primary" id="save-user-btn">Save user</button>
+            <button type="button" class="secondary" id="send-reset-code-btn">Send password reset code</button>
             <button type="button" class="danger" id="delete-user-btn">Delete user</button>
           </div>
         </form>
@@ -462,6 +505,7 @@
                 <th>Gender</th>
                 <th>Pet</th>
                 <th>Observed</th>
+                <th>Logged</th>
                 <th>Note</th>
               </tr>
             </thead>

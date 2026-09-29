@@ -45,4 +45,20 @@ public class User extends BaseEntity {
     private boolean emailVerified = false;
 
     private Instant lastLoginAt;
+
+    /**
+     * Stamped into every access token as the "tv" claim; the JWT filter rejects tokens whose
+     * stamp is lower. Incremented on password change/reset and logout-all so existing
+     * sessions end immediately rather than when their access token expires. Null (all
+     * pre-existing users) counts as 0, as does a token minted before this claim existed.
+     */
+    private Integer tokenVersion;
+
+    public int currentTokenVersion() {
+        return tokenVersion == null ? 0 : tokenVersion;
+    }
+
+    public void invalidateIssuedTokens() {
+        tokenVersion = currentTokenVersion() + 1;
+    }
 }

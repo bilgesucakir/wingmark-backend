@@ -89,9 +89,21 @@ so it always deploys as a container). To deploy:
    a random suffix if that name is already taken elsewhere. Update the env var in the
    dashboard if it differs; it's baked into every verification-email link.
 
-The `/uploads/**` static route serves whatever `UPLOAD_DIR` points at, so on Render it
-reads from the mounted disk (`/data/uploads`) — without a disk, uploaded photos would be
-wiped on every deploy/restart, since Render's container filesystem is otherwise ephemeral.
+Uploaded images are stored **in MongoDB** (GridFS: the `uploads.files` / `uploads.chunks`
+collections), not on disk - so every instance (Render, a laptop, tests) sees the same
+photos through the same database, and nothing is lost on deploy. Images are downscaled to
+at most 1600px on the longest side, so each is typically a few hundred KB; keep an eye on
+Atlas storage (the free tier is 512MB).
+
+`UPLOAD_DIR` is now legacy: photos uploaded before the switch lived on Render's disk at
+`/data/uploads`. On startup, any image in `UPLOAD_DIR` that isn't in the database yet is
+imported once under the same filename (so old `/uploads/...` URLs keep working); the logs
+say how many. After a deploy has logged the import, the Render disk can be removed.
+
+**Running locally:** don't copy the production `.env` as-is - it points the database at
+Atlas (so local testing writes to production) and sets `UPLOAD_DIR=/data/uploads`. Override
+them when starting, e.g.
+`DB_CONNECTION_STRING=mongodb://localhost:27017/wingmark mvn spring-boot:run`.
 
 ## Database
 
@@ -118,14 +130,16 @@ There's no self-service "become admin" flow by design — admin-only endpoints (
 and badge catalog management, photo curation) are meant to be operated by whoever runs
 the backend, not by app users. To promote an account:
 
-1. Register/log in normally to create the account.
+1. Register normally to create the account.
 2. Connect to the database (e.g. `mongosh "mongodb://localhost:27017/wingmark"`, or
-   MongoDB Compass/Atlas UI) and run:
+   MongoDB Compass/Atlas UI) and run (verifying the email too, if you haven't clicked
+   the link):
    ```js
-   db.users.updateOne({ email: "you@example.com" }, { $set: { role: "ADMIN" } })
+   db.users.updateOne({ email: "you@example.com" }, { $set: { role: "ADMIN", emailVerified: true } })
    ```
-3. Log in again — the role is baked into the JWT at login time, so you need a fresh
-   token after the change.
+3. Log in. The role is read from the database on every request, so an already
+   logged-in session picks it up immediately (the admin panel reads the role from the
+   token, though, so log in again there).
 
 ## API documentation
 
@@ -151,32 +165,80 @@ Any error response (4xx/5xx) uses this shape, regardless of endpoint:
   "timestamp": "2026-09-20T08:12:45Z",
   "status": 404,
   "error": "Not Found",
-  "message": "Species 9c858901-8a57-4791-81fe-4c455b099bc9 not found",
-  "path": "/api/species/9c858901-8a57-4791-81fe-4c455b099bc9",
-  "validationErrors": null
+  "code": "NOT_FOUND",
+  "message": "Species not found with id: 9c858901-8a57-4791-81fe-4c455b099bc9",
+  "path": "/api/species/9c858901-8a57-4791-81fe-4c455b099bc9"
 }
 ```
 
-`validationErrors` is only populated for request-body validation failures (400), as a
-`{"fieldName": "message"}` map.
+`code` is a stable, machine-readable identifier - **branch on `code`, not on `message`**
+(messages are for humans and may change). `validationErrors` is only present for
+request-body validation failures (`VALIDATION_FAILED`), as a `{"fieldName": "message"}` map.
+A `406` (client refuses JSON) has no body at all.
+
+| Code | Status | When |
+|------|--------|------|
+| `VALIDATION_FAILED` | 400 | Request-body field validation failed; see `validationErrors` |
+| `MALFORMED_REQUEST` | 400 | Unparseable JSON, or a non-multipart request to the upload endpoint |
+| `INVALID_PARAMETER` | 400 | Bad/missing query or path param (wrong type, unknown enum, `limit` out of range) |
+| `BAD_REQUEST` | 400 | Other invalid values (e.g. a species/badge name without an `en` translation) |
+| `OBSERVED_AT_IN_FUTURE` | 400 | A bird log's `observedAt` is more than 5 minutes in the future |
+| `SAME_PASSWORD` | 400 | Reset/change password to the current password |
+| `INVALID_PROFILE_PICTURE` | 400 | `profilePicture` isn't null, a preset avatar key, or an existing upload |
+| `INVALID_BOUNDS` | 400 | Map box out of range or `minLat > maxLat` |
+| `INVALID_OR_EXPIRED_CODE` | 400 | Wrong, expired, used, or burned (5 wrong guesses) password-reset code |
+| `INVALID_FILE` | 400 | Empty upload, or not a decodable image |
+| `UNAUTHENTICATED` | 401 | No/invalid/expired access token - or its account was deleted, un-verified, or had all sessions ended (password change/reset, logout-all) |
+| `INVALID_CREDENTIALS` | 401 | Wrong email or password on login |
+| `INVALID_OR_EXPIRED_TOKEN` | 401 | Bad refresh token, or bad email-verification link |
+| `FORBIDDEN` | 403 | Authenticated but not allowed (e.g. non-admin on an admin endpoint) |
+| `EMAIL_NOT_VERIFIED` | 403 | Login/refresh before the email is verified - show the "check your inbox" screen |
+| `WRONG_PASSWORD` | 403 | Wrong current password on change-password or delete-account |
+| `CANNOT_MODIFY_SELF` | 403/409 | Admin deleting (403) or demoting/un-verifying (409) their own account |
+| `NOT_FOUND` | 404 | Resource in the URL doesn't exist or isn't yours; also unknown endpoints |
+| `METHOD_NOT_ALLOWED` | 405 | Wrong HTTP method for the path |
+| `CONFLICT` | 409 | Other conflicts (e.g. duplicate species scientific name) |
+| `EMAIL_TAKEN` / `USERNAME_TAKEN` | 409 | Register with an email/username already in use |
+| `LAST_ADMIN` | 409 | The only admin tried to delete their own account |
+| `FILE_TOO_LARGE` | 413 | Upload over 10MB |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | Upload that isn't JPEG/PNG, or a request body in an unsupported content type |
+| `INVALID_REFERENCE` | 422 | Body points at a species that doesn't exist (`speciesId`, `favoriteSpeciesId`) |
+| `EXTERNAL_SERVICE_ERROR` | 502 | Xeno-canto / iNaturalist failed or isn't configured |
+| `INTERNAL_ERROR` | 500 | Unexpected server error (logged server-side) |
+
+Status codes used across the API:
+
+| Status | When |
+|--------|------|
+| `400 Bad Request` | Validation failure, malformed JSON, bad query/path param, or an invalid value such as a future `observedAt` |
+| `401 Unauthorized` | Missing/invalid/expired access token - **or** a token whose account has since been deleted or un-verified, or whose sessions were ended by a password change/reset or logout-all (checked on every request) |
+| `403 Forbidden` | Authenticated but not allowed: non-admin on an admin endpoint, unverified email on login/refresh, wrong password on change-password/account deletion |
+| `404 Not Found` | The resource in the URL doesn't exist - or belongs to another user (never 403, so ids aren't confirmed) |
+| `409 Conflict` | Duplicate email/username/scientific name, or a state conflict (the last admin deleting themselves, an admin demoting/un-verifying themselves) |
+| `413 Payload Too Large` | Upload over 10MB |
+| `415 Unsupported Media Type` | Upload that isn't a JPEG/PNG image |
+| `422 Unprocessable Entity` | The URL was found but the body points at something that doesn't exist, e.g. an unknown `speciesId` / `favoriteSpeciesId` |
 
 ### Auth (`/api/auth`)
 
 | Method | Path                          | Auth | Description                                                          |
 |--------|-------------------------------|:----:|-------------------------------------------------------------------------|
-| POST   | `/register`                   |      | Create an account, returns a token pair, and emails a verification link  |
+| POST   | `/register`                   |      | Create an unverified account and email a verification link. **No tokens** |
 | POST   | `/login`                      |      | Log in, returns a fresh token pair. Rejected (403) until the email is verified |
-| POST   | `/refresh`                    |      | Exchange a refresh token for a new token pair                            |
+| POST   | `/refresh`                    |      | Exchange a refresh token for a new token pair. Rejected (403) if the email is no longer verified |
 | POST   | `/logout`                     |      | Revoke one refresh token                                                 |
-| POST   | `/logout-all`                 | 🔒  | Revoke every refresh token for the caller                                |
-| POST   | `/forgot-password`            |      | Issue a password-reset token (if the email exists)                        |
-| POST   | `/reset-password`             |      | Consume a reset token to set a new password                               |
+| POST   | `/logout-all`                 | 🔒  | Sign out everywhere: revoke every refresh token and invalidate every issued access token |
+| POST   | `/forgot-password`            |      | Email a 6-digit reset code (if the email exists)                         |
+| POST   | `/reset-password`             |      | Consume the emailed code to set a new password (signs out every session)  |
 | GET    | `/verify-email?token=`        |      | Consumes the link from the verification email (opened in a browser, not called by the app) |
 | POST   | `/resend-verification-email`  |      | Re-sends the verification email for a given address; no-ops if unknown/already verified |
 
-Registration still returns a usable token pair immediately (so the app can show a
-"check your email" screen right after signup), but a subsequent `/login` is rejected
-with 403 until that account's email is verified. The verification token expires after
+Registration does **not** return tokens: the new account can't use the API at all until
+its email is verified. The app should show a "check your email" screen after signup,
+then call `/login` once the link has been clicked - `/login` (and `/refresh`) answer 403
+until then. Access tokens are also re-checked against the database on every request, so
+a token stops working immediately if its account is deleted or un-verified, and role
+changes apply on the next request rather than when the token expires. The verification token expires after
 24h; `resend-verification-email` is deliberately unauthenticated (same shape as
 `forgot-password`, taking just an email) rather than requiring a token, since an
 unverified account that lost its session (app reinstalled, storage cleared, or its
@@ -202,13 +264,17 @@ Request:
 Response:
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIz...",
-  "refreshToken": "8f14e45fceea167a5a36dedd4bea2543",
-  "expiresInMs": 900000
+  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "email": "amelia@example.com",
+  "username": "amelia_birds",
+  "emailVerified": false,
+  "message": "Account created. Check your inbox for a verification link, then log in."
 }
 ```
 
-**POST `/login`** → `200 OK`
+`409` if the email or username is taken.
+
+**POST `/login`** → `200 OK` (`401` wrong email/password, `403` email not verified yet)
 
 Request:
 ```json
@@ -218,7 +284,14 @@ Request:
 }
 ```
 
-Response: same shape as `/register`.
+Response:
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIz...",
+  "refreshToken": "8f14e45fceea167a5a36dedd4bea2543",
+  "expiresInMs": 900000
+}
+```
 
 **POST `/refresh`** → `200 OK`
 
@@ -227,13 +300,17 @@ Request:
 { "refreshToken": "8f14e45fceea167a5a36dedd4bea2543" }
 ```
 
-Response: same shape as `/register` (a new token pair, old refresh token revoked).
+Response: same shape as `/login` (a new token pair, old refresh token revoked). `401` if
+the refresh token is unknown/expired/revoked or its account was deleted; `403` if the
+account's email is no longer verified.
 
 **POST `/logout`** → `204 No Content`
 
 Request: same body as `/refresh`. No response body.
 
-**POST `/logout-all`** → `204 No Content`. No request body, no response body.
+**POST `/logout-all`** → `204 No Content`. No request body, no response body. Every
+refresh token is revoked **and** every access token issued so far (including the one
+used for this call) stops working immediately.
 
 **POST `/forgot-password`** → `202 Accepted`
 
@@ -242,19 +319,27 @@ Request:
 { "email": "amelia@example.com" }
 ```
 
-No response body.
+No response body. If the account exists, a **6-digit code** is emailed (valid 15 minutes,
+single use). Requesting again replaces the previous code; a request within 60 seconds of
+the last code sends nothing. The response is `202` in every case, so it never reveals
+whether the email is registered.
 
 **POST `/reset-password`** → `204 No Content`
 
 Request:
 ```json
 {
-  "token": "b1946ac92492d2347c6235b4d2611184",
+  "email": "amelia@example.com",
+  "code": "482913",
   "newPassword": "newSecret9"
 }
 ```
 
-No response body.
+No response body. Every existing session (refresh tokens and access tokens) is signed
+out; log in with the new password. Errors: `400 INVALID_OR_EXPIRED_CODE` (wrong, expired
+or already-used code, or unknown email - deliberately indistinguishable; the code is
+burned after 5 wrong guesses, so request a new one), `400 SAME_PASSWORD`,
+`400 VALIDATION_FAILED` (code not 6 digits, weak password).
 
 **GET `/verify-email?token=b1946ac9...`** → `200 OK`, `Content-Type: text/html`. No
 JSON - it's an HTML page meant to be opened directly from the email link:
@@ -281,6 +366,19 @@ No response body.
 | PUT    | ``           | Update the caller's profile                    |
 | GET    | `/settings`  | Get the caller's app settings                  |
 | PUT    | `/settings`  | Update the caller's app settings               |
+| POST   | `/password`  | Change the caller's password (current password required); returns a fresh token pair |
+| DELETE | ``           | Permanently delete the caller's account and all of its data (password required) |
+
+A `favoriteSpeciesId` that doesn't exist is rejected with `422 INVALID_REFERENCE`. A
+`userId` other than the caller's own returns `404`.
+
+`profilePicture` must be one of:
+- `null` (or blank) - no picture;
+- a preset avatar key from [`GET /api/avatars`](#avatars-apiavatars) (`avatar-1` ... `avatar-12`) - the image ships in the app;
+- a `/uploads/...` URL returned by `POST /api/uploads/photo` (relative, exactly as returned) that still exists.
+
+Anything else is `400 INVALID_PROFILE_PICTURE`. Re-sending the value already stored is
+always accepted.
 
 `favoriteSpeciesName` is resolved server-side from `Accept-Language` on every request
 (same mechanism as `speciesCommonName` on bird logs) - it is not stored, only
@@ -340,6 +438,31 @@ Request:
 
 Response: same shape as GET above.
 
+**POST `/password` (change password)** → `200 OK`
+
+Request:
+```json
+{ "currentPassword": "correcthorse8", "newPassword": "newSecret9" }
+```
+
+Response: a fresh token pair (same shape as `/api/auth/login`) - store it, since every
+other session, **including the access token used for this call**, is signed out.
+Errors: `403 WRONG_PASSWORD`, `400 SAME_PASSWORD`, `400 VALIDATION_FAILED`
+(`newPassword` needs 8-72 chars with a letter and a number).
+
+**DELETE `` (delete own account)** → `204 No Content`
+
+Request:
+```json
+{ "password": "correcthorse8" }
+```
+
+Deletes the account and everything tied to it: bird logs, badge progress, settings,
+refresh / password-reset / verification tokens, and uploaded photos (the profile
+picture and log photos - unless another account or a species image still points at the
+same file). Every token the user holds stops working immediately. `403` if the password
+is wrong, `409` if the caller is the only admin left. Cannot be undone.
+
 </details>
 
 ### Admin - Users (`/api/admin/users`) — 🛡️, all endpoints
@@ -348,7 +471,11 @@ Response: same shape as GET above.
 |--------|-----------|-----------------------------------------------------------------------------|
 | GET    | ``        | Get every registered user account                                          |
 | PUT    | `/{id}`   | Update a user's name, role, email-verified flag, and favorite species       |
-| DELETE | `/{id}`   | Delete a user account (an admin cannot delete their own account this way)   |
+| DELETE | `/{id}`   | Delete a user account and all of its data (an admin cannot delete their own account this way) |
+
+Role and verification changes take effect on the user's very next request. An admin
+can't change their own role or un-verify themselves (`409`), since that would lock their
+own session out; `favoriteSpeciesId` pointing at no species is `422`.
 
 <details>
 <summary><strong>Examples</strong></summary>
@@ -382,13 +509,21 @@ Request:
   "lastName": "Rivera",
   "role": "ADMIN",
   "emailVerified": true,
-  "favoriteSpeciesId": "9c858901-8a57-4791-81fe-4c455b099bc9"
+  "favoriteSpeciesId": "9c858901-8a57-4791-81fe-4c455b099bc9",
+  "profilePicture": "avatar-3"
 }
 ```
 
+A **full replacement**: omitted `firstName`, `lastName`, `favoriteSpeciesId` or
+`profilePicture` are cleared, so send the current values for anything you're not
+changing. `profilePicture` follows the same rules as the user's own profile update (set it
+to `null` to remove an inappropriate photo).
+
 Response: a single user object, same shape as one entry of the GET list above.
 
-**DELETE `/{id}`** → `204 No Content`. No request or response body.
+**DELETE `/{id}`** → `204 No Content`. No request or response body. Removes the same
+data as the self-service account deletion above, and the user is signed out
+immediately. `403` when targeting your own account.
 
 </details>
 
@@ -442,7 +577,7 @@ user never saved a language in their settings.
 |--------|-------------------|:----:|--------------------------------------------------------------------|
 | GET    | ``                | 🛡️  | Get every log across every user, filterable/sortable (see below) - there's no per-user viewing feature for this yet, so it's admin-only for now |
 | GET    | `/user/{userId}`  | 🔒*  | Get all of this user's own logs, filterable/sortable (see below) - admins can pass any user's id, for the admin panel's user detail view |
-| GET    | `/location`       |      | Get the caller's logs within a lat/lng box (`minLat/maxLat/minLng/maxLng`), for the map view |
+| GET    | `/location`       |      | Get the caller's logs inside the visible map region, filterable and capped (see below) |
 | GET    | `/{id}`           |      | Get one of the caller's logs by id                                  |
 | POST   | ``                |      | Create a log (re-evaluates badge progress)                          |
 | PUT    | `/{id}`           |      | Update a log (re-evaluates badge progress)                          |
@@ -460,6 +595,20 @@ user never saved a language in their settings.
 | `sortDirection` | `ASC` \| `DESC`            | Sort by `observedAt`. Defaults to `DESC` (most recent first) if omitted. Exact case required. |
 
 All four can be combined, e.g. `GET /api/bird-logs/user/{userId}?hasSpecies=false&gender=FEMALE&sortDirection=ASC`.
+
+**GET `/location`** - call it whenever the visible map region changes:
+
+| Param | Values | Effect |
+|-------|--------|--------|
+| `minLat`, `maxLat` | `-90` .. `90`, `minLat <= maxLat` | Required. Latitude range of the box. |
+| `minLng`, `maxLng` | `-180` .. `180` | Required. If `minLng > maxLng` the box **crosses the antimeridian** (e.g. `minLng=170&maxLng=-170`). |
+| `hasSpecies`, `gender`, `lifeStage` | as above | Optional, same filters as the diary list. |
+| `limit` | `1` .. `1000`, default `500` | Maximum logs returned, most recently observed first. |
+
+The body is a plain array (same shape as below). The response header
+**`X-Result-Truncated: true`** means more logs matched than `limit` - zoom in or raise
+the limit; `false` means you have everything in the box. Out-of-range bounds or
+`minLat > maxLat` are `400 INVALID_BOUNDS`; a bad `limit` is `400 INVALID_PARAMETER`.
 
 <details>
 <summary><strong>Examples</strong></summary>
@@ -479,7 +628,7 @@ this shape. No request body.
     "customName": null,
     "lifeStage": "ADULT",
     "gender": "MALE",
-    "photoUrl": "https://wingmark-backend.onrender.com/uploads/abc123.jpg",
+    "photoUrl": "/uploads/abc123.jpg",
     "note": "Singing on the fence at sunrise",
     "latitude": 40.7829,
     "longitude": -73.9654,
@@ -505,17 +654,26 @@ Request:
   "customName": null,
   "lifeStage": "ADULT",
   "gender": "MALE",
-  "photoUrl": "https://wingmark-backend.onrender.com/uploads/abc123.jpg",
+  "photoUrl": "/uploads/abc123.jpg",
   "note": "Singing on the fence at sunrise",
   "latitude": 40.7829,
   "longitude": -73.9654,
-  "locationName": "Central Park"
+  "locationName": "Central Park",
+  "observedAt": "2026-09-18T06:45:00Z"
 }
 ```
 
+`observedAt` is when the bird was actually seen (ISO-8601; an offset like
+`2026-09-18T09:45:00+03:00` also works and is stored as UTC). A `speciesId` that
+doesn't exist is rejected with `422`. `observedAt` is optional - omit it
+and the upload time is used. A time more than 5 minutes in the future is rejected with
+`400 Bad Request`.
+
 Response: same shape as one GET entry above.
 
-**PUT `/{id}`** → `200 OK`. Request: same shape as POST. Response: same shape as GET.
+**PUT `/{id}`** → `200 OK`. Request: same shape as POST, except that omitting
+`observedAt` keeps the log's existing sighting time rather than resetting it. Response:
+same shape as GET.
 
 **DELETE `/{id}`** → `204 No Content`. No request or response body.
 
@@ -572,7 +730,7 @@ Any of these also accepts `desc` for the reverse order (e.g. `commonName.tr,desc
           "id": "1a2b3c4d-1234-4a5b-8c9d-0e1f2a3b4c5d",
           "lifeStage": "ADULT",
           "gender": "MALE",
-          "imageUrl": "https://wingmark-backend.onrender.com/uploads/sparrow-male.jpg",
+          "imageUrl": "/uploads/sparrow-male.jpg",
           "caption": "Adult male"
         }
       ]
@@ -632,7 +790,7 @@ Request:
 {
   "lifeStage": "ADULT",
   "gender": "MALE",
-  "imageUrl": "https://wingmark-backend.onrender.com/uploads/sparrow-male.jpg",
+  "imageUrl": "/uploads/sparrow-male.jpg",
   "caption": "Adult male"
 }
 ```
@@ -643,7 +801,7 @@ Response:
   "id": "1a2b3c4d-1234-4a5b-8c9d-0e1f2a3b4c5d",
   "lifeStage": "ADULT",
   "gender": "MALE",
-  "imageUrl": "https://wingmark-backend.onrender.com/uploads/sparrow-male.jpg",
+  "imageUrl": "/uploads/sparrow-male.jpg",
   "caption": "Adult male"
 }
 ```
@@ -761,7 +919,7 @@ Response: same shape as one `/catalog` entry above.
 
 | Method | Path      | Description                                                              |
 |--------|-----------|-----------------------------------------------------------------------------|
-| POST   | `/photo`  | Upload a photo (multipart `file`), returns its URL for use as a log's `photoUrl`. Re-encoded server-side to strip EXIF metadata (including GPS). |
+| POST   | `/photo`  | Upload a JPEG or PNG (multipart `file`, max 10MB), returns its URL for a log's `photoUrl` or a custom `profilePicture`. Re-encoded server-side to strip EXIF metadata (including GPS). |
 
 <details>
 <summary><strong>Examples</strong></summary>
@@ -770,8 +928,40 @@ Response: same shape as one `/catalog` entry above.
 part named `file` (the image). Response:
 
 ```json
-{ "url": "https://wingmark-backend.onrender.com/uploads/abc123.jpg" }
+{ "url": "/uploads/3f2b9c1e-6d0a-4f7e-9b1a-2c4d5e6f7a8b.jpg" }
 ```
+
+The URL is always **relative** to this backend (`/uploads/<uuid>.<ext>`). Store it as-is
+in `photoUrl` / `profilePicture`, and prefix the backend's base URL only when loading
+the image (e.g. `https://wingmark-backend.onrender.com/uploads/...`). `GET /uploads/{file}`
+is public, returns the image with a long-lived immutable `Cache-Control`, and `404 NOT_FOUND`
+if it doesn't exist. Images are stored in the database and downscaled to at most 1600px on
+the longest side.
+
+Only `image/jpeg` and `image/png` are accepted - anything else (including HEIC and WebP)
+is `415 UNSUPPORTED_MEDIA_TYPE`, so on iOS convert with `UIImage.jpegData(...)` first. An
+empty or undecodable image is `400 INVALID_FILE`, over 10MB is `413 FILE_TOO_LARGE`, and a
+non-multipart request is `400 MALFORMED_REQUEST`.
+
+</details>
+
+### Avatars (`/api/avatars`)
+
+| Method | Path | Auth | Description |
+|--------|------|:----:|-------------|
+| GET    | ``   |      | List the preset avatar keys a `profilePicture` may be set to |
+
+<details>
+<summary><strong>Examples</strong></summary>
+
+**GET ``** → `200 OK`. No request body. Public.
+
+```json
+[ { "key": "avatar-1" }, { "key": "avatar-2" }, "...", { "key": "avatar-12" } ]
+```
+
+Only keys are served - the images ship inside the app, named by key. New avatars are
+only ever appended; an existing key is never renamed or removed.
 
 </details>
 
@@ -780,6 +970,19 @@ part named `file` (the image). Response:
 - **Ownership scoping, not just permission checks**: bird logs and user profiles are
   looked up by `(id, ownerId)` in the same query, not fetched then checked — so another
   user's id returns a plain 404, never a 403 that would confirm it exists.
+- **Tokens are re-checked against the database**: the JWT filter loads the user on every
+  authenticated request, so deleting or un-verifying an account, or changing its role,
+  takes effect immediately instead of when the 15-minute access token expires. Each
+  access token also carries the user's `tokenVersion`; password change/reset and
+  logout-all bump it, which ends every already-issued session at once.
+- **Password reset uses a short emailed code, not a link**: the app just needs a text
+  field, no universal links. A 6-digit code is only safe with limits, so it expires in 15
+  minutes, is single use, is burned after 5 wrong guesses, and is hashed with the user's
+  id (codes can repeat across users).
+- **Account deletion is a full cascade**: the user document is removed first (cutting
+  off access), then everything keyed by their id, then their uploaded files - skipping
+  any file another account or a species image still references, since upload URLs aren't
+  owner-tagged.
 - **Badges recompute on every log change**: create/update/delete a bird log and every
   badge's progress is recalculated for that user in the same request — no background
   job, no separate "sync" step.

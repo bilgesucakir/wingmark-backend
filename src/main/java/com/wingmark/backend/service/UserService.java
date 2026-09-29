@@ -28,9 +28,15 @@ public interface UserService {
     /** Admin-only: returns every registered user. */
     List<UserProfileResponseDto> getAllUsers(Locale locale);
 
-    /** Admin-only: updates a user's name, role and email-verified flag. */
+    /** Admin-only: replaces a user's name, role, email-verified flag, favorite species and profile picture. */
     UserProfileResponseDto adminUpdateUser(UUID userId, AdminUpdateUserRequestDto request, Locale locale);
 
-    /** Admin-only: permanently deletes a user account. */
+    /** Admin-only: permanently deletes a user account and all of its data. */
     void deleteUser(UUID userId);
+
+    /**
+     * Permanently deletes the caller's own account and all of its data, after re-checking
+     * their password. The last remaining admin can't delete themselves this way.
+     */
+    void deleteOwnAccount(UUID userId, String password);
 }

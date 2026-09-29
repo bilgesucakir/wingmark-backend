@@ -10,6 +10,7 @@ import lombok.experimental.SuperBuilder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -21,6 +22,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @SuperBuilder
 @Document(collection = "bird_logs")
+// Map viewport queries (userId + lat/lng box) and the per-user diary list (sorted by observedAt).
+@CompoundIndex(name = "user_location", def = "{'userId': 1, 'latitude': 1, 'longitude': 1}")
+@CompoundIndex(name = "user_observed_at", def = "{'userId': 1, 'observedAt': -1}")
 public class BirdLog extends BaseEntity {
 
     private UUID userId;

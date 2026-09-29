@@ -5,6 +5,7 @@ import com.wingmark.backend.dto.auth.AuthResponseDto;
 import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
+import com.wingmark.backend.dto.auth.RegisterResponseDto;
 import com.wingmark.backend.dto.auth.ResendVerificationEmailRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 import com.wingmark.backend.entity.EmailVerificationToken;
@@ -13,6 +14,10 @@ import com.wingmark.backend.entity.RefreshToken;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.entity.UserSettings;
 import com.wingmark.backend.enums.Role;
+import com.wingmark.backend.exception.ErrorCode;
+import com.wingmark.backend.exception.BadRequestException;
+import com.wingmark.backend.exception.ResourceNotFoundException;
+import com.wingmark.backend.exception.UnauthorizedActionException;
 import com.wingmark.backend.exception.DuplicateResourceException;
 import com.wingmark.backend.exception.InvalidCredentialsException;
 import com.wingmark.backend.exception.InvalidTokenException;
@@ -32,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -39,6 +45,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+    private static final Duration RESET_CODE_TTL = Duration.ofMinutes(15);
+    private static final Duration RESET_CODE_RESEND_COOLDOWN = Duration.ofSeconds(60);
+    private static final int RESET_CODE_MAX_ATTEMPTS = 5;
 
     private final UserRepository userRepository;
     private final UserSettingsRepository userSettingsRepository;
@@ -51,12 +61,12 @@ public class AuthServiceImpl implements AuthService {
     private final AppProperties appProperties;
 
     @Override
-    public AuthResponseDto register(RegisterRequestDto request) {
+    public RegisterResponseDto register(RegisterRequestDto request) {
         if (userRepository.existsByEmailIgnoreCase(request.email())) {
-            throw new DuplicateResourceException("An account with this email already exists");
+            throw new DuplicateResourceException(ErrorCode.EMAIL_TAKEN, "An account with this email already exists");
         }
         if (userRepository.existsByUsernameIgnoreCase(request.username())) {
-            throw new DuplicateResourceException("This username is already taken");
+            throw new DuplicateResourceException(ErrorCode.USERNAME_TAKEN, "This username is already taken");
         }
 
         User user = User.builder()
@@ -76,7 +86,9 @@ public class AuthServiceImpl implements AuthService {
 
         issueVerificationEmail(user);
 
-        return issueTokens(user);
+        // No tokens until the email is verified - login and refresh both enforce that too.
+        return new RegisterResponseDto(user.getId(), user.getEmail(), user.getUsername(), false,
+                "Account created. Check your inbox for a verification link, then log in.");
     }
 
     @Override
@@ -112,6 +124,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(stored.getUserId())
                 .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
 
+        if (!user.isEmailVerified()) {
+            throw new UnverifiedEmailException("Please verify your email before continuing");
+        }
+
         stored.setRevokedAt(Instant.now());
         refreshTokenRepository.save(stored);
 
@@ -130,22 +146,37 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logoutAll(UUID userId) {
         refreshTokenRepository.revokeAllForUser(userId, Instant.now());
+        userRepository.findById(userId).ifPresent(user -> {
+            user.invalidateIssuedTokens();
+            userRepository.save(user);
+        });
     }
 
     @Override
     public void forgotPassword(ForgotPasswordRequestDto request) {
         userRepository.findByEmailIgnoreCase(request.email()).ifPresent(user -> {
-            String rawToken = RandomTokenGenerator.generate();
-            PasswordResetToken resetToken = PasswordResetToken.builder()
-                    .userId(user.getId())
-                    .tokenHash(TokenHasher.sha256(rawToken))
-                    .expiresAt(Instant.now().plusSeconds(3600))
-                    .build();
-            passwordResetTokenRepository.save(resetToken);
+            boolean recentlyIssued = passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())
+                    .map(PasswordResetToken::getCreatedAt)
+                    .filter(createdAt -> createdAt.isAfter(Instant.now().minus(RESET_CODE_RESEND_COOLDOWN)))
+                    .isPresent();
+            if (recentlyIssued) {
+                // Throttled silently - same 202 either way, so this doesn't leak anything,
+                // and it stops the endpoint being used to spam someone's inbox.
+                return;
+            }
 
-            // TODO: wire up an email provider; for now the raw token is logged so the
-            // reset flow can be exercised end-to-end in development.
-            log.info("Password reset requested for user {}. Reset token: {}", user.getId(), rawToken);
+            // Only the newest code is ever valid.
+            passwordResetTokenRepository.deleteByUserId(user.getId());
+
+            String code = RandomTokenGenerator.numericCode(6);
+            passwordResetTokenRepository.save(PasswordResetToken.builder()
+                    .userId(user.getId())
+                    .tokenHash(resetCodeHash(user.getId(), code))
+                    .expiresAt(Instant.now().plus(RESET_CODE_TTL))
+                    .failedAttempts(0)
+                    .build());
+
+            emailService.sendPasswordResetCode(user.getEmail(), code, (int) RESET_CODE_TTL.toMinutes());
         });
         // Always return silently regardless of whether the email exists, to avoid
         // leaking which addresses have accounts.
@@ -153,28 +184,65 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void resetPassword(ResetPasswordRequestDto request) {
-        String hash = TokenHasher.sha256(request.token());
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(hash)
-                .orElseThrow(() -> new InvalidTokenException("Invalid or expired password reset token"));
+        User user = userRepository.findByEmailIgnoreCase(request.email())
+                .orElseThrow(AuthServiceImpl::invalidResetCode);
+        PasswordResetToken resetToken = passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())
+                .filter(PasswordResetToken::isActive)
+                .orElseThrow(AuthServiceImpl::invalidResetCode);
 
-        if (!resetToken.isActive()) {
-            throw new InvalidTokenException("Invalid or expired password reset token");
+        if (!resetToken.getTokenHash().equals(resetCodeHash(user.getId(), request.code()))) {
+            int attempts = (resetToken.getFailedAttempts() == null ? 0 : resetToken.getFailedAttempts()) + 1;
+            resetToken.setFailedAttempts(attempts);
+            if (attempts >= RESET_CODE_MAX_ATTEMPTS) {
+                // A 6-digit code is only safe with a hard guess limit; burn it.
+                resetToken.setUsedAt(Instant.now());
+            }
+            passwordResetTokenRepository.save(resetToken);
+            throw invalidResetCode();
         }
-
-        User user = userRepository.findById(resetToken.getUserId())
-                .orElseThrow(() -> new InvalidTokenException("Invalid or expired password reset token"));
 
         if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("New password must be different from the current password");
+            throw new BadRequestException(ErrorCode.SAME_PASSWORD, "New password must be different from the current password");
         }
-
-        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        userRepository.save(user);
 
         resetToken.setUsedAt(Instant.now());
         passwordResetTokenRepository.save(resetToken);
 
+        setPasswordAndEndSessions(user, request.newPassword());
+    }
+
+    @Override
+    public AuthResponseDto changePassword(UUID userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> ResourceNotFoundException.of("User", userId));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new UnauthorizedActionException(ErrorCode.WRONG_PASSWORD, "Current password is incorrect");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new BadRequestException(ErrorCode.SAME_PASSWORD, "New password must be different from the current password");
+        }
+
+        setPasswordAndEndSessions(user, newPassword);
+        // Every other device is signed out; hand this one a fresh pair so it stays in.
+        return issueTokens(user);
+    }
+
+    /** Sets the new password and ends every existing session - refresh tokens and already-issued access tokens alike. */
+    private void setPasswordAndEndSessions(User user, String newPassword) {
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.invalidateIssuedTokens();
+        userRepository.save(user);
         refreshTokenRepository.revokeAllForUser(user.getId(), Instant.now());
+    }
+
+    /** Salted with the user id: codes are only 6 digits, so two users can draw the same one and tokenHash is unique. */
+    private static String resetCodeHash(UUID userId, String code) {
+        return TokenHasher.sha256(userId + ":" + code);
+    }
+
+    private static BadRequestException invalidResetCode() {
+        return new BadRequestException(ErrorCode.INVALID_OR_EXPIRED_CODE, "Invalid or expired reset code");
     }
 
     @Override
@@ -220,7 +288,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private AuthResponseDto issueTokens(User user) {
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name(),
+                user.currentTokenVersion());
 
         String rawRefreshToken = RandomTokenGenerator.generate();
         RefreshToken refreshToken = RefreshToken.builder()

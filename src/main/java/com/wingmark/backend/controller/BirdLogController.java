@@ -1,5 +1,6 @@
 package com.wingmark.backend.controller;
 
+import com.wingmark.backend.dto.birdlog.BirdLogLocationResultDto;
 import com.wingmark.backend.dto.birdlog.BirdLogResponseDto;
 import com.wingmark.backend.dto.birdlog.CreateBirdLogRequestDto;
 import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequestDto;
@@ -50,6 +51,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BirdLogController {
 
+    public static final String TRUNCATED_HEADER = "X-Result-Truncated";
+
     private final BirdLogService birdLogService;
 
     /**
@@ -96,16 +99,31 @@ public class BirdLogController {
         return ResponseEntity.ok(birdLogService.getByUserId(userId, hasSpecies, gender, lifeStage, sortDirection, locale));
     }
 
-    /** Returns the caller's own logs whose coordinates fall within the given lat/lng box, for the map view. */
-    @Operation(summary = "Get bird logs by location", description = "Returns the caller's own logs whose coordinates fall within the given lat/lng bounding box, for the map view.")
+    /**
+     * Returns the caller's own logs inside the visible map region, newest first and capped at
+     * {@code limit}. The body stays a plain array; whether more logs matched than were
+     * returned is reported in the X-Result-Truncated header.
+     */
+    @Operation(summary = "Get bird logs by location", description = "Returns the caller's own logs inside a lat/lng box (the visible map region), most recently observed first. " +
+            "minLng > maxLng means the box crosses the antimeridian (e.g. minLng=170&maxLng=-170). Latitudes must be in [-90, 90], longitudes in [-180, 180], " +
+            "and minLat <= maxLat, otherwise 400 INVALID_BOUNDS. Optional filters as on /user/{userId}: ?hasSpecies, ?gender, ?lifeStage. " +
+            "?limit (1-1000, default 500) caps the result; header X-Result-Truncated: true means more logs matched than were returned (zoom in).")
     @GetMapping("/location")
     public ResponseEntity<List<BirdLogResponseDto>> getByLocation(@AuthenticationPrincipal UserPrincipal principal,
                                                                     @RequestParam double minLat,
                                                                     @RequestParam double maxLat,
                                                                     @RequestParam double minLng,
                                                                     @RequestParam double maxLng,
+                                                                    @RequestParam(required = false) Boolean hasSpecies,
+                                                                    @RequestParam(required = false) Gender gender,
+                                                                    @RequestParam(required = false) LifeStage lifeStage,
+                                                                    @RequestParam(defaultValue = "500") int limit,
                                                                     Locale locale) {
-        return ResponseEntity.ok(birdLogService.getByLocation(principal.getId(), minLat, maxLat, minLng, maxLng, locale));
+        BirdLogLocationResultDto result = birdLogService.getByLocation(principal.getId(), minLat, maxLat, minLng, maxLng,
+                hasSpecies, gender, lifeStage, limit, locale);
+        return ResponseEntity.ok()
+                .header(TRUNCATED_HEADER, String.valueOf(result.truncated()))
+                .body(result.logs());
     }
 
     /** Returns one of the caller's own logs by id. */
@@ -116,7 +134,8 @@ public class BirdLogController {
     }
 
     /** Creates a new bird sighting log for the caller and re-evaluates their badge progress. */
-    @Operation(summary = "Create a bird log", description = "Creates a new bird sighting log for the caller and re-evaluates their badge progress.")
+    @Operation(summary = "Create a bird log", description = "Creates a new bird sighting log for the caller and re-evaluates their badge progress. " +
+            "observedAt (ISO-8601, e.g. 2026-09-28T07:30:00Z) is optional and defaults to the upload time; it cannot be in the future.")
     @PostMapping
     public ResponseEntity<BirdLogResponseDto> create(@AuthenticationPrincipal UserPrincipal principal,
                                                     @Valid @RequestBody CreateBirdLogRequestDto request,
@@ -125,7 +144,8 @@ public class BirdLogController {
     }
 
     /** Updates one of the caller's own bird logs and re-evaluates their badge progress. */
-    @Operation(summary = "Update a bird log", description = "Updates one of the caller's own bird logs and re-evaluates their badge progress.")
+    @Operation(summary = "Update a bird log", description = "Updates one of the caller's own bird logs and re-evaluates their badge progress. " +
+            "observedAt is optional - omit it to keep the log's existing sighting time.")
     @PutMapping("/{id}")
     public ResponseEntity<BirdLogResponseDto> update(@AuthenticationPrincipal UserPrincipal principal,
                                                     @PathVariable UUID id,

@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface RefreshTokenRepository extends MongoRepository<RefreshToken, UUID>, RefreshTokenRepositoryCustom {
 
     Optional<RefreshToken> findByTokenHash(String tokenHash);
+
+    void deleteByUserId(UUID userId);
 }

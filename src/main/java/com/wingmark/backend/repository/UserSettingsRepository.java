@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface UserSettingsRepository extends MongoRepository<UserSettings, UUID> {
 
     Optional<UserSettings> findByUserId(UUID userId);
+
+    void deleteByUserId(UUID userId);
 }

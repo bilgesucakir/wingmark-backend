@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.repository.UserRepository;
+import com.wingmark.backend.support.TestAuth;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -89,7 +90,8 @@ class BadgeControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
-        return objectMapper.readTree(response).get("accessToken").asText();
+        String registeredEmail = objectMapper.readTree(response).get("email").asText();
+        return TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, registeredEmail, "password1");
     }
 
     private UUID extractUserId(String accessToken) throws Exception {

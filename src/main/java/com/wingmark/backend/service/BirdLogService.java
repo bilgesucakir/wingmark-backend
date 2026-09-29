@@ -1,5 +1,6 @@
 package com.wingmark.backend.service;
 
+import com.wingmark.backend.dto.birdlog.BirdLogLocationResultDto;
 import com.wingmark.backend.dto.birdlog.BirdLogResponseDto;
 import com.wingmark.backend.dto.birdlog.CreateBirdLogRequestDto;
 import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequestDto;
@@ -32,7 +33,8 @@ public interface BirdLogService {
     BirdLogResponseDto getById(UUID userId, UUID logId, Locale locale);
 
     /** Returns this user's logs whose coordinates fall within the given lat/lng box, for the map view. */
-    List<BirdLogResponseDto> getByLocation(UUID userId, double minLat, double maxLat, double minLng, double maxLng, Locale locale);
+    BirdLogLocationResultDto getByLocation(UUID userId, double minLat, double maxLat, double minLng, double maxLng,
+                                           Boolean hasSpecies, Gender gender, LifeStage lifeStage, int limit, Locale locale);
 
     /** Creates a new log for this user and re-evaluates their badge progress. */
     BirdLogResponseDto create(UUID userId, CreateBirdLogRequestDto request, Locale locale);
