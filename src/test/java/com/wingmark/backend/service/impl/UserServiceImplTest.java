@@ -11,6 +11,15 @@ import com.wingmark.backend.entity.UserSettings;
 import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.enums.UnitPreference;
 import com.wingmark.backend.exception.ResourceNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.wingmark.backend.service.AccountDeletionService;
+import com.wingmark.backend.service.AvatarCatalog;
+import com.wingmark.backend.service.FileStorageService;
+import com.wingmark.backend.exception.UnauthorizedActionException;
+import com.wingmark.backend.exception.InvalidReferenceException;
+import com.wingmark.backend.exception.BadRequestException;
+import com.wingmark.backend.exception.ErrorCode;
+import com.wingmark.backend.exception.ConflictException;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
@@ -29,6 +38,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +51,12 @@ class UserServiceImplTest {
     private UserSettingsRepository userSettingsRepository;
     @Mock
     private SpeciesRepository speciesRepository;
+    @Mock
+    private AccountDeletionService accountDeletionService;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
+    private FileStorageService fileStorageService;
 
     private UserServiceImpl userService;
 
@@ -47,7 +64,8 @@ class UserServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserServiceImpl(userRepository, userSettingsRepository, speciesRepository);
+        userService = new UserServiceImpl(userRepository, userSettingsRepository, speciesRepository, accountDeletionService, passwordEncoder,
+                new AvatarCatalog(), fileStorageService);
     }
 
     @Test
@@ -95,7 +113,7 @@ class UserServiceImplTest {
         UpdateProfileRequestDto request = new UpdateProfileRequestDto("First", "Last", null, speciesId);
 
         assertThatThrownBy(() -> userService.updateProfile(userId, request, Locale.ENGLISH))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(InvalidReferenceException.class);
     }
 
     @Test
@@ -152,7 +170,7 @@ class UserServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true, null);
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true, null, null);
 
         UserProfileResponseDto response = userService.adminUpdateUser(userId, request, Locale.ENGLISH);
 
@@ -169,7 +187,7 @@ class UserServiceImplTest {
         when(speciesRepository.existsById(speciesId)).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.USER, true, speciesId);
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.USER, true, speciesId, null);
 
         UserProfileResponseDto response = userService.adminUpdateUser(userId, request, Locale.ENGLISH);
 
@@ -183,35 +201,108 @@ class UserServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(speciesRepository.existsById(speciesId)).thenReturn(false);
 
-        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.USER, true, speciesId);
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.USER, true, speciesId, null);
 
         assertThatThrownBy(() -> userService.adminUpdateUser(userId, request, Locale.ENGLISH))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(InvalidReferenceException.class);
     }
 
     @Test
     void adminUpdateUserThrowsWhenUserMissing() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true, null);
+        AdminUpdateUserRequestDto request = new AdminUpdateUserRequestDto("First", "Last", Role.ADMIN, true, null, null);
 
         assertThatThrownBy(() -> userService.adminUpdateUser(userId, request, Locale.ENGLISH))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
-    void deleteUserThrowsWhenMissing() {
-        when(userRepository.existsById(userId)).thenReturn(false);
+    void deleteUserDelegatesToTheFullAccountDeletion() {
+        userService.deleteUser(userId);
 
-        assertThatThrownBy(() -> userService.deleteUser(userId)).isInstanceOf(ResourceNotFoundException.class);
+        verify(accountDeletionService).deleteAccount(userId);
     }
 
     @Test
-    void deleteUserRemovesExistingUser() {
-        when(userRepository.existsById(userId)).thenReturn(true);
+    void deleteOwnAccountRejectsWrongPassword() {
+        User user = User.builder().id(userId).email("user@example.com").passwordHash("hash").role(Role.USER).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong", "hash")).thenReturn(false);
 
-        userService.deleteUser(userId);
+        assertThatThrownBy(() -> userService.deleteOwnAccount(userId, "wrong"))
+                .isInstanceOf(UnauthorizedActionException.class);
+        verify(accountDeletionService, never()).deleteAccount(any());
+    }
 
-        org.mockito.Mockito.verify(userRepository).deleteById(userId);
+    @Test
+    void deleteOwnAccountRefusesTheLastAdmin() {
+        User user = User.builder().id(userId).email("admin@example.com").passwordHash("hash").role(Role.ADMIN).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("right", "hash")).thenReturn(true);
+        when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
+
+        assertThatThrownBy(() -> userService.deleteOwnAccount(userId, "right"))
+                .isInstanceOf(ConflictException.class);
+        verify(accountDeletionService, never()).deleteAccount(any());
+    }
+
+    @Test
+    void deleteOwnAccountDeletesEverythingWhenPasswordMatches() {
+        User user = User.builder().id(userId).email("user@example.com").passwordHash("hash").role(Role.USER).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("right", "hash")).thenReturn(true);
+
+        userService.deleteOwnAccount(userId, "right");
+
+        verify(accountDeletionService).deleteAccount(userId);
+    }
+
+    @Test
+    void updateProfileAcceptsPresetAvatarNullAndAnExistingUpload() {
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(fileStorageService.storedFilename("/uploads/abc.jpg")).thenReturn(Optional.of("abc.jpg"));
+        when(fileStorageService.exists("abc.jpg")).thenReturn(true);
+
+        userService.updateProfile(userId, new UpdateProfileRequestDto(null, null, "avatar-3", null), Locale.ENGLISH);
+        assertThat(user.getProfilePicture()).isEqualTo("avatar-3");
+
+        userService.updateProfile(userId, new UpdateProfileRequestDto(null, null, "/uploads/abc.jpg", null), Locale.ENGLISH);
+        assertThat(user.getProfilePicture()).isEqualTo("/uploads/abc.jpg");
+
+        userService.updateProfile(userId, new UpdateProfileRequestDto(null, null, "  ", null), Locale.ENGLISH);
+        assertThat(user.getProfilePicture()).isNull();
+    }
+
+    @Test
+    void updateProfileRejectsUnknownKeysExternalUrlsAndMissingUploads() {
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(fileStorageService.storedFilename(any())).thenAnswer(inv -> {
+            String url = inv.getArgument(0);
+            int i = url.lastIndexOf("/uploads/");
+            return i < 0 ? Optional.empty() : Optional.of(url.substring(i + "/uploads/".length()));
+        });
+        when(fileStorageService.exists("gone.jpg")).thenReturn(false);
+
+        for (String bad : new String[]{"avatar-999", "https://evil.example.com/x.png", "https://evil.example.com/uploads/abc.jpg", "/uploads/gone.jpg"}) {
+            assertThatThrownBy(() -> userService.updateProfile(userId, new UpdateProfileRequestDto(null, null, bad, null), Locale.ENGLISH))
+                    .as(bad)
+                    .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.INVALID_PROFILE_PICTURE));
+        }
+    }
+
+    @Test
+    void updateProfileKeepsALegacyPictureThatIsResentUnchanged() {
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).profilePicture("legacy-value").build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        userService.updateProfile(userId, new UpdateProfileRequestDto("New", null, "legacy-value", null), Locale.ENGLISH);
+
+        assertThat(user.getProfilePicture()).isEqualTo("legacy-value");
+        assertThat(user.getFirstName()).isEqualTo("New");
     }
 }

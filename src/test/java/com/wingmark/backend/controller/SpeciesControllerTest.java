@@ -6,6 +6,7 @@ import com.wingmark.backend.entity.User;
 import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserRepository;
+import com.wingmark.backend.support.TestAuth;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -61,7 +62,8 @@ class SpeciesControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
-        return objectMapper.readTree(response).get("accessToken").asText();
+        String registeredEmail = objectMapper.readTree(response).get("email").asText();
+        return TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, registeredEmail, "password1");
     }
 
     private String registerLoginAsAdmin(String label) throws Exception {
@@ -123,18 +125,19 @@ class SpeciesControllerTest {
             put("scientificName", "Testus birdus " + System.nanoTime());
         }});
 
-        // /api/species/** is permitAll at the filter chain level (so public GETs work
-        // without a token); the admin gate is enforced purely by @PreAuthorize, so even
-        // a request with no token at all is rejected as 403 (access denied), not 401.
+        // Only GETs on /api/species/** are public, so a write with no token at all is
+        // unauthenticated (401), not merely forbidden.
         mockMvc.perform(post("/api/species").contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
 
         // Authenticated but not an admin -> forbidden.
         mockMvc.perform(post("/api/species")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
     @Test

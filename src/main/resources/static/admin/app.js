@@ -4,6 +4,47 @@ const claims = Api.currentClaims();
 document.getElementById("who-email").textContent = (claims && claims.email) || "";
 document.getElementById("logout-btn").addEventListener("click", () => Api.logout());
 
+/* =====================================================================
+ * Change own password
+ * ===================================================================== */
+
+const passwordPanel = document.getElementById("password-panel");
+const passwordForm = document.getElementById("password-form");
+const passwordMsg = document.getElementById("password-msg");
+
+document.getElementById("change-password-btn").addEventListener("click", () => {
+  passwordForm.reset();
+  passwordMsg.innerHTML = "";
+  passwordPanel.classList.remove("hidden");
+});
+document.getElementById("cancel-password-btn").addEventListener("click", () => passwordPanel.classList.add("hidden"));
+
+passwordForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const currentPassword = document.getElementById("current-password").value;
+  const newPassword = document.getElementById("new-password").value;
+  if (newPassword !== document.getElementById("confirm-password").value) {
+    showMsg(passwordMsg, "The new passwords don't match.", "error");
+    return;
+  }
+  const saveBtn = document.getElementById("save-password-btn");
+  saveBtn.disabled = true;
+  try {
+    // Every other session is signed out server-side; the response is this panel's fresh token pair.
+    const tokens = await Api.request("/api/users/" + claims.sub + "/password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    Api.setTokens(tokens.accessToken, tokens.refreshToken);
+    passwordForm.reset();
+    showMsg(passwordMsg, "Password changed. All other sessions were signed out.", "success");
+  } catch (err) {
+    showMsg(passwordMsg, err.message, "error");
+  } finally {
+    saveBtn.disabled = false;
+  }
+});
+
 function showMsg(el, text, type) {
   if (!text) {
     el.innerHTML = "";
@@ -474,7 +515,51 @@ const userFormMsg = document.getElementById("user-form-msg");
 const cancelUserFormBtn = document.getElementById("cancel-user-form-btn");
 const deleteUserBtn = document.getElementById("delete-user-btn");
 const userFavoriteSpeciesSelect = document.getElementById("user-favoriteSpeciesId");
+const userProfilePictureSelect = document.getElementById("user-profilePicture");
 let userSpeciesOptionsLoaded = false;
+let avatarKeys = null;
+
+async function ensureAvatarOptionsLoaded() {
+  if (avatarKeys) return;
+  try {
+    avatarKeys = (await Api.request("/api/avatars")).map((a) => a.key);
+  } catch (err) {
+    avatarKeys = [];
+    showMsg(userFormMsg, "Failed to load avatar list: " + err.message, "error");
+  }
+}
+
+// PUT /api/admin/users/{id} replaces profilePicture, so the select must always hold the
+// user's current value - including a custom upload, which isn't one of the presets.
+function populateProfilePictureSelect(current) {
+  userProfilePictureSelect.innerHTML = '<option value="">None</option>';
+  avatarKeys.forEach((key) => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = key;
+    userProfilePictureSelect.appendChild(opt);
+  });
+  if (current && !avatarKeys.includes(current)) {
+    const opt = document.createElement("option");
+    opt.value = current;
+    opt.textContent = "Custom photo (" + current + ")";
+    userProfilePictureSelect.appendChild(opt);
+  }
+  userProfilePictureSelect.value = current || "";
+}
+
+function renderProfilePicture(container, value) {
+  if (!value) {
+    container.textContent = "None";
+    return;
+  }
+  if (value.startsWith("/uploads/")) {
+    container.innerHTML = '<img alt="Profile photo" style="max-width:96px;max-height:96px;border-radius:8px">';
+    container.querySelector("img").src = value;
+    return;
+  }
+  container.textContent = "Preset avatar: " + value;
+}
 
 async function ensureUserSpeciesOptionsLoaded() {
   if (userSpeciesOptionsLoaded) return;
@@ -554,8 +639,15 @@ async function openUserForm(user) {
   document.getElementById("user-lastName").value = user.lastName || "";
   document.getElementById("user-role").value = user.role;
   document.getElementById("user-emailVerified").value = String(!!user.emailVerified);
+  // The server refuses (409) an admin demoting or un-verifying themselves, since it would
+  // lock this panel session out on its next request - so don't offer it here either.
+  const editingSelf = !!claims && claims.sub === user.id;
+  document.getElementById("user-role").disabled = editingSelf;
+  document.getElementById("user-emailVerified").disabled = editingSelf;
   await ensureUserSpeciesOptionsLoaded();
   userFavoriteSpeciesSelect.value = user.favoriteSpeciesId || "";
+  await ensureAvatarOptionsLoaded();
+  populateProfilePictureSelect(user.profilePicture);
   usersListPanel.classList.add("hidden");
   userDetailPanel.classList.add("hidden");
   userFormPanel.classList.remove("hidden");
@@ -597,7 +689,7 @@ function renderUserDetailBadges(badges) {
 
 function renderUserDetailLogs(logs) {
   if (!logs.length) {
-    userDetailLogsTbody.innerHTML = '<tr><td colspan="6" class="muted">No bird logs yet.</td></tr>';
+    userDetailLogsTbody.innerHTML = '<tr><td colspan="7" class="muted">No bird logs yet.</td></tr>';
     return;
   }
   userDetailLogsTbody.innerHTML = "";
@@ -609,6 +701,7 @@ function renderUserDetailLogs(logs) {
       "<td>" + escapeHtml(log.gender) + "</td>" +
       "<td>" + (log.pet ? "Yes" : "No") + "</td>" +
       "<td>" + escapeHtml(formatDate(log.observedAt)) + "</td>" +
+      "<td>" + escapeHtml(formatDate(log.createdAt)) + "</td>" +
       "<td>" + escapeHtml(log.note || "") + "</td>";
     userDetailLogsTbody.appendChild(tr);
   });
@@ -619,8 +712,9 @@ async function openUserDetail(user) {
   userDetailTitle.textContent = (user.email || "") + " — details";
   showMsg(userDetailMsg, "", "");
   document.getElementById("user-detail-favorite-species").textContent = user.favoriteSpeciesName || "None set";
+  renderProfilePicture(document.getElementById("user-detail-profile-picture"), user.profilePicture);
   userDetailBadgesEl.innerHTML = '<li class="muted">Loading…</li>';
-  userDetailLogsTbody.innerHTML = '<tr><td colspan="6" class="muted">Loading…</td></tr>';
+  userDetailLogsTbody.innerHTML = '<tr><td colspan="7" class="muted">Loading…</td></tr>';
   usersListPanel.classList.add("hidden");
   userDetailPanel.classList.remove("hidden");
   try {
@@ -648,6 +742,7 @@ userForm.addEventListener("submit", async (e) => {
       role: document.getElementById("user-role").value,
       emailVerified: document.getElementById("user-emailVerified").value === "true",
       favoriteSpeciesId: userFavoriteSpeciesSelect.value || null,
+      profilePicture: userProfilePictureSelect.value || null,
     };
     await Api.request("/api/admin/users/" + currentUserId, {
       method: "PUT",
@@ -661,13 +756,26 @@ userForm.addEventListener("submit", async (e) => {
   }
 });
 
+document.getElementById("send-reset-code-btn").addEventListener("click", async () => {
+  if (!currentUserId) return;
+  const email = document.getElementById("user-email").value;
+  if (!confirm("Email a 6-digit password reset code to " + email + "? It's valid for 15 minutes.")) return;
+  try {
+    await Api.request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+    showMsg(userFormMsg, "Reset code sent to " + email + " (at most one per minute - a repeat within 60s sends nothing).", "success");
+  } catch (err) {
+    showMsg(userFormMsg, err.message, "error");
+  }
+});
+
 deleteUserBtn.addEventListener("click", async () => {
   if (!currentUserId) return;
   if (claims && claims.sub === currentUserId) {
     showMsg(userFormMsg, "You cannot delete your own account.", "error");
     return;
   }
-  if (!confirm("Delete this user account? This cannot be undone.")) return;
+  if (!confirm("Permanently delete this user and ALL of their data - bird logs, badge progress, " +
+      "settings, sessions and uploaded photos? They are signed out immediately. This cannot be undone.")) return;
   try {
     await Api.request("/api/admin/users/" + currentUserId, { method: "DELETE" });
     showUsersListView();
@@ -871,7 +979,7 @@ let logsDebounceTimer = null;
 
 async function loadLogsList() {
   showMsg(logsListMsg, "", "");
-  logsTbody.innerHTML = '<tr><td colspan="7" class="muted">Loading…</td></tr>';
+  logsTbody.innerHTML = '<tr><td colspan="8" class="muted">Loading…</td></tr>';
   try {
     const [logs, users] = await Promise.all([
       Api.request("/api/bird-logs"),
@@ -900,7 +1008,7 @@ function renderLogsList(filterText) {
       });
 
   if (!filtered.length) {
-    logsTbody.innerHTML = '<tr><td colspan="7" class="muted">No bird logs found.</td></tr>';
+    logsTbody.innerHTML = '<tr><td colspan="8" class="muted">No bird logs found.</td></tr>';
     return;
   }
 
@@ -915,6 +1023,7 @@ function renderLogsList(filterText) {
       "<td>" + escapeHtml(log.gender) + "</td>" +
       "<td>" + (log.pet ? "Yes" : "No") + "</td>" +
       "<td>" + escapeHtml(formatDate(log.observedAt)) + "</td>" +
+      "<td>" + escapeHtml(formatDate(log.createdAt)) + "</td>" +
       "<td>" + escapeHtml(log.note || "") + "</td>";
     logsTbody.appendChild(tr);
   });

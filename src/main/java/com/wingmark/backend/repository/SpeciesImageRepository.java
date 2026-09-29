@@ -11,4 +11,6 @@ public interface SpeciesImageRepository extends MongoRepository<SpeciesImage, UU
     List<SpeciesImage> findBySpeciesId(UUID speciesId);
 
     void deleteBySpeciesId(UUID speciesId);
+
+    boolean existsByImageUrlEndingWith(String suffix);
 }

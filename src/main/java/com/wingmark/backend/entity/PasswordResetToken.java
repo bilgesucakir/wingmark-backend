@@ -28,6 +28,9 @@ public class PasswordResetToken extends BaseEntity {
 
     private Instant usedAt;
 
+    /** Wrong guesses so far; the code is burned once this reaches the limit. Null on legacy tokens = 0. */
+    private Integer failedAttempts;
+
     public boolean isActive() {
         return usedAt == null && expiresAt.isAfter(Instant.now());
     }

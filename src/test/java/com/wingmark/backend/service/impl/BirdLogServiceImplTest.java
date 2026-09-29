@@ -7,6 +7,7 @@ import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.enums.Gender;
 import com.wingmark.backend.enums.LifeStage;
 import com.wingmark.backend.enums.SpeciesStatus;
+import com.wingmark.backend.exception.InvalidReferenceException;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
@@ -53,10 +54,10 @@ class BirdLogServiceImplTest {
 
         CreateBirdLogRequestDto request = new CreateBirdLogRequestDto(
                 speciesId, SpeciesStatus.CONFIDENT, false, "Tweety",
-                LifeStage.ADULT, Gender.MALE, null, null, 40.0, 29.0, null);
+                LifeStage.ADULT, Gender.MALE, null, null, 40.0, 29.0, null, null);
 
         assertThatThrownBy(() -> birdLogService.create(userId, request, Locale.ENGLISH))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(InvalidReferenceException.class);
     }
 
     @Test
@@ -69,7 +70,7 @@ class BirdLogServiceImplTest {
 
         CreateBirdLogRequestDto request = new CreateBirdLogRequestDto(
                 null, null, false, null,
-                LifeStage.UNKNOWN, Gender.UNKNOWN, null, "not sure what this was", 40.0, 29.0, null);
+                LifeStage.UNKNOWN, Gender.UNKNOWN, null, "not sure what this was", 40.0, 29.0, null, null);
 
         BirdLogResponseDto response = birdLogService.create(userId, request, Locale.ENGLISH);
 
@@ -84,7 +85,7 @@ class BirdLogServiceImplTest {
 
         CreateBirdLogRequestDto request = new CreateBirdLogRequestDto(
                 null, null, true, "Pico",
-                LifeStage.ADULT, Gender.MALE, null, null, 10.0, 20.0, null);
+                LifeStage.ADULT, Gender.MALE, null, null, 10.0, 20.0, null, null);
 
         birdLogService.create(userId, request, Locale.ENGLISH);
 
@@ -117,7 +118,7 @@ class BirdLogServiceImplTest {
 
         UpdateBirdLogRequestDto request = new UpdateBirdLogRequestDto(
                 null, null, false, "Renamed",
-                LifeStage.ADULT, Gender.FEMALE, null, "updated note", 2.0, 2.0, "Some park");
+                LifeStage.ADULT, Gender.FEMALE, null, "updated note", 2.0, 2.0, "Some park", null);
 
         BirdLogResponseDto response = birdLogService.update(userId, logId, request, Locale.ENGLISH);
 

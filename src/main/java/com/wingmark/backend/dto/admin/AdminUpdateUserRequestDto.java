@@ -10,6 +10,7 @@ public record AdminUpdateUserRequestDto(
         String lastName,
         @NotNull Role role,
         boolean emailVerified,
-        UUID favoriteSpeciesId
+        UUID favoriteSpeciesId,
+        String profilePicture
 ) {
 }

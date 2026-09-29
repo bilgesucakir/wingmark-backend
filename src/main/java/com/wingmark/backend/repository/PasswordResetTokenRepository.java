@@ -9,4 +9,8 @@ import java.util.UUID;
 public interface PasswordResetTokenRepository extends MongoRepository<PasswordResetToken, UUID> {
 
     Optional<PasswordResetToken> findByTokenHash(String tokenHash);
+
+    Optional<PasswordResetToken> findFirstByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    void deleteByUserId(UUID userId);
 }

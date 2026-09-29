@@ -5,6 +5,7 @@ import com.wingmark.backend.dto.auth.AuthResponseDto;
 import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
+import com.wingmark.backend.dto.auth.RegisterResponseDto;
 import com.wingmark.backend.dto.auth.ResendVerificationEmailRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 import com.wingmark.backend.entity.EmailVerificationToken;
@@ -14,6 +15,9 @@ import com.wingmark.backend.entity.User;
 import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.exception.DuplicateResourceException;
 import com.wingmark.backend.exception.InvalidCredentialsException;
+import com.wingmark.backend.exception.BadRequestException;
+import com.wingmark.backend.exception.ErrorCode;
+import com.wingmark.backend.exception.UnauthorizedActionException;
 import com.wingmark.backend.exception.InvalidTokenException;
 import com.wingmark.backend.exception.UnverifiedEmailException;
 import com.wingmark.backend.repository.EmailVerificationTokenRepository;
@@ -27,6 +31,7 @@ import com.wingmark.backend.util.TokenHasher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -39,6 +44,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,7 +103,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void registerSavesUserWithHashedPasswordAndIssuesTokens() {
+    void registerSavesUnverifiedUserAndSendsVerificationEmailWithoutIssuingTokens() {
         when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
         when(userRepository.existsByUsernameIgnoreCase(any())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(inv -> {
@@ -103,19 +111,17 @@ class AuthServiceImplTest {
             u.setId(UUID.randomUUID());
             return u;
         });
-        when(jwtTokenProvider.generateAccessToken(any(), any(), any())).thenReturn("access-token");
-        when(jwtTokenProvider.getRefreshTokenExpirationMs()).thenReturn(2_592_000_000L);
-        when(jwtTokenProvider.getAccessTokenExpirationMs()).thenReturn(900_000L);
 
         RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "password1", "freshuser", "A", "B");
-        AuthResponseDto response = authService.register(request);
+        RegisterResponseDto response = authService.register(request);
 
-        assertThat(response.accessToken()).isEqualTo("access-token");
-        assertThat(response.refreshToken()).isNotBlank();
+        assertThat(response.userId()).isNotNull();
+        assertThat(response.email()).isEqualTo("fresh@example.com");
+        assertThat(response.emailVerified()).isFalse();
 
         verify(userRepository).save(any(User.class));
         verify(userSettingsRepository).save(any());
-        verify(refreshTokenRepository).save(any(RefreshToken.class));
+        verify(refreshTokenRepository, org.mockito.Mockito.never()).save(any(RefreshToken.class));
         verify(emailVerificationTokenRepository).save(any(EmailVerificationToken.class));
         verify(emailService).sendVerificationEmail(org.mockito.ArgumentMatchers.eq("fresh@example.com"), any());
     }
@@ -159,7 +165,7 @@ class AuthServiceImplTest {
                 .build();
         when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(jwtTokenProvider.generateAccessToken(any(), any(), any())).thenReturn("access-token");
+        when(jwtTokenProvider.generateAccessToken(any(), any(), any(), anyInt())).thenReturn("access-token");
         when(jwtTokenProvider.getRefreshTokenExpirationMs()).thenReturn(2_592_000_000L);
         when(jwtTokenProvider.getAccessTokenExpirationMs()).thenReturn(900_000L);
 
@@ -216,12 +222,12 @@ class AuthServiceImplTest {
                 .tokenHash(TokenHasher.sha256("raw-token"))
                 .expiresAt(Instant.now().plusSeconds(3600))
                 .build();
-        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).build();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).emailVerified(true).build();
 
         when(refreshTokenRepository.findByTokenHash(TokenHasher.sha256("raw-token")))
                 .thenReturn(Optional.of(active));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(jwtTokenProvider.generateAccessToken(any(), any(), any())).thenReturn("new-access-token");
+        when(jwtTokenProvider.generateAccessToken(any(), any(), any(), anyInt())).thenReturn("new-access-token");
         when(jwtTokenProvider.getRefreshTokenExpirationMs()).thenReturn(2_592_000_000L);
         when(jwtTokenProvider.getAccessTokenExpirationMs()).thenReturn(900_000L);
 
@@ -229,6 +235,25 @@ class AuthServiceImplTest {
 
         assertThat(response.accessToken()).isEqualTo("new-access-token");
         assertThat(active.getRevokedAt()).isNotNull();
+    }
+
+    @Test
+    void refreshRejectsUnverifiedUserWithoutRevokingTheToken() {
+        UUID userId = UUID.randomUUID();
+        RefreshToken active = RefreshToken.builder()
+                .userId(userId)
+                .tokenHash(TokenHasher.sha256("raw-token"))
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .build();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).emailVerified(false).build();
+
+        when(refreshTokenRepository.findByTokenHash(TokenHasher.sha256("raw-token")))
+                .thenReturn(Optional.of(active));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> authService.refresh("raw-token"))
+                .isInstanceOf(UnverifiedEmailException.class);
+        assertThat(active.getRevokedAt()).isNull();
     }
 
     @Test
@@ -241,76 +266,168 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void forgotPasswordIssuesTokenForKnownEmail() {
-        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).build();
+    void forgotPasswordEmailsASixDigitCodeAndStoresOnlyItsSaltedHash() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).build();
         when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)).thenReturn(Optional.empty());
 
         authService.forgotPassword(new ForgotPasswordRequestDto("user@example.com"));
 
-        verify(passwordResetTokenRepository).save(any(PasswordResetToken.class));
+        ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
+        verify(emailService).sendPasswordResetCode(eq("user@example.com"), code.capture(), eq(15));
+        assertThat(code.getValue()).matches("\\d{6}");
+
+        ArgumentCaptor<PasswordResetToken> saved = ArgumentCaptor.forClass(PasswordResetToken.class);
+        verify(passwordResetTokenRepository).deleteByUserId(userId);
+        verify(passwordResetTokenRepository).save(saved.capture());
+        assertThat(saved.getValue().getTokenHash()).isEqualTo(TokenHasher.sha256(userId + ":" + code.getValue()));
+        assertThat(saved.getValue().getExpiresAt()).isBefore(Instant.now().plusSeconds(15 * 60 + 5));
     }
 
     @Test
-    void resetPasswordRejectsExpiredToken() {
-        PasswordResetToken expired = PasswordResetToken.builder()
-                .userId(UUID.randomUUID())
-                .tokenHash(TokenHasher.sha256("reset-token"))
-                .expiresAt(Instant.now().minusSeconds(60))
-                .build();
-        when(passwordResetTokenRepository.findByTokenHash(TokenHasher.sha256("reset-token")))
-                .thenReturn(Optional.of(expired));
+    void forgotPasswordIsThrottledWithinSixtySecondsOfTheLastCode() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).build();
+        PasswordResetToken recent = activeCode(userId, "123456");
+        recent.setCreatedAt(Instant.now().minusSeconds(10));
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)).thenReturn(Optional.of(recent));
 
-        assertThatThrownBy(() -> authService.resetPassword(new ResetPasswordRequestDto("reset-token", "newpassword1")))
-                .isInstanceOf(InvalidTokenException.class);
+        authService.forgotPassword(new ForgotPasswordRequestDto("user@example.com"));
+
+        verify(passwordResetTokenRepository, never()).save(any());
+        verify(emailService, never()).sendPasswordResetCode(any(), any(), anyInt());
+    }
+
+    @Test
+    void resetPasswordRejectsExpiredCode() {
+        UUID userId = UUID.randomUUID();
+        User user = userWithPassword(userId, "current-password1");
+        PasswordResetToken expired = activeCode(userId, "123456");
+        expired.setExpiresAt(Instant.now().minusSeconds(60));
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)).thenReturn(Optional.of(expired));
+
+        assertThatThrownBy(() -> authService.resetPassword(new ResetPasswordRequestDto("user@example.com", "123456", "brand-new-password1")))
+                .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.INVALID_OR_EXPIRED_CODE));
+    }
+
+    @Test
+    void resetPasswordForUnknownEmailLooksExactlyLikeAWrongCode() {
+        when(userRepository.findByEmailIgnoreCase("nobody@example.com")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.resetPassword(new ResetPasswordRequestDto("nobody@example.com", "123456", "brand-new-password1")))
+                .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.INVALID_OR_EXPIRED_CODE));
+    }
+
+    @Test
+    void wrongCodesCountUpAndTheFifthBurnsTheCode() {
+        UUID userId = UUID.randomUUID();
+        User user = userWithPassword(userId, "current-password1");
+        PasswordResetToken code = activeCode(userId, "123456");
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)).thenReturn(Optional.of(code));
+
+        for (int i = 1; i <= 5; i++) {
+            assertThatThrownBy(() -> authService.resetPassword(new ResetPasswordRequestDto("user@example.com", "000000", "brand-new-password1")))
+                    .isInstanceOf(BadRequestException.class);
+            assertThat(code.getFailedAttempts()).isEqualTo(i);
+        }
+        assertThat(code.getUsedAt()).isNotNull();
+
+        // Even the right code is useless now.
+        assertThatThrownBy(() -> authService.resetPassword(new ResetPasswordRequestDto("user@example.com", "123456", "brand-new-password1")))
+                .isInstanceOf(BadRequestException.class);
+        assertThat(passwordEncoder.matches("current-password1", user.getPasswordHash())).isTrue();
     }
 
     @Test
     void resetPasswordRejectsSameAsCurrentPassword() {
         UUID userId = UUID.randomUUID();
-        User user = User.builder()
-                .id(userId)
-                .email("user@example.com")
-                .passwordHash(passwordEncoder.encode("current-password1"))
-                .role(Role.USER)
-                .build();
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .userId(userId)
-                .tokenHash(TokenHasher.sha256("reset-token"))
-                .expiresAt(Instant.now().plusSeconds(3600))
-                .build();
+        User user = userWithPassword(userId, "current-password1");
+        PasswordResetToken code = activeCode(userId, "123456");
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)).thenReturn(Optional.of(code));
 
-        when(passwordResetTokenRepository.findByTokenHash(TokenHasher.sha256("reset-token")))
-                .thenReturn(Optional.of(resetToken));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
-        assertThatThrownBy(() -> authService.resetPassword(new ResetPasswordRequestDto("reset-token", "current-password1")))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> authService.resetPassword(new ResetPasswordRequestDto("user@example.com", "123456", "current-password1")))
+                .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.SAME_PASSWORD));
+        assertThat(code.getUsedAt()).isNull();
     }
 
     @Test
-    void resetPasswordSucceedsAndRevokesExistingSessions() {
+    void resetPasswordSucceedsAndEndsEveryExistingSession() {
         UUID userId = UUID.randomUUID();
-        User user = User.builder()
-                .id(userId)
-                .email("user@example.com")
-                .passwordHash(passwordEncoder.encode("current-password1"))
-                .role(Role.USER)
-                .build();
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .userId(userId)
-                .tokenHash(TokenHasher.sha256("reset-token"))
-                .expiresAt(Instant.now().plusSeconds(3600))
-                .build();
+        User user = userWithPassword(userId, "current-password1");
+        PasswordResetToken code = activeCode(userId, "123456");
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)).thenReturn(Optional.of(code));
 
-        when(passwordResetTokenRepository.findByTokenHash(TokenHasher.sha256("reset-token")))
-                .thenReturn(Optional.of(resetToken));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
-        authService.resetPassword(new ResetPasswordRequestDto("reset-token", "brand-new-password1"));
+        authService.resetPassword(new ResetPasswordRequestDto("user@example.com", "123456", "brand-new-password1"));
 
         assertThat(passwordEncoder.matches("brand-new-password1", user.getPasswordHash())).isTrue();
-        assertThat(resetToken.getUsedAt()).isNotNull();
-        verify(refreshTokenRepository).revokeAllForUser(org.mockito.ArgumentMatchers.eq(userId), any());
+        assertThat(code.getUsedAt()).isNotNull();
+        assertThat(user.currentTokenVersion()).isEqualTo(1);
+        verify(refreshTokenRepository).revokeAllForUser(eq(userId), any());
+    }
+
+    @Test
+    void changePasswordRejectsWrongCurrentPassword() {
+        UUID userId = UUID.randomUUID();
+        User user = userWithPassword(userId, "current-password1");
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> authService.changePassword(userId, "not-it-1", "brand-new-password1"))
+                .isInstanceOfSatisfying(UnauthorizedActionException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.WRONG_PASSWORD));
+        assertThat(passwordEncoder.matches("current-password1", user.getPasswordHash())).isTrue();
+    }
+
+    @Test
+    void changePasswordRejectsSamePassword() {
+        UUID userId = UUID.randomUUID();
+        User user = userWithPassword(userId, "current-password1");
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> authService.changePassword(userId, "current-password1", "current-password1"))
+                .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.SAME_PASSWORD));
+    }
+
+    @Test
+    void changePasswordEndsOtherSessionsAndReturnsAFreshPair() {
+        UUID userId = UUID.randomUUID();
+        User user = userWithPassword(userId, "current-password1");
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(jwtTokenProvider.generateAccessToken(any(), any(), any(), anyInt())).thenReturn("fresh-access");
+        when(jwtTokenProvider.getRefreshTokenExpirationMs()).thenReturn(2_592_000_000L);
+        when(jwtTokenProvider.getAccessTokenExpirationMs()).thenReturn(900_000L);
+
+        AuthResponseDto response = authService.changePassword(userId, "current-password1", "brand-new-password1");
+
+        assertThat(response.accessToken()).isEqualTo("fresh-access");
+        assertThat(passwordEncoder.matches("brand-new-password1", user.getPasswordHash())).isTrue();
+        assertThat(user.currentTokenVersion()).isEqualTo(1);
+        verify(refreshTokenRepository).revokeAllForUser(eq(userId), any());
+    }
+
+    private User userWithPassword(UUID userId, String password) {
+        return User.builder()
+                .id(userId)
+                .email("user@example.com")
+                .passwordHash(passwordEncoder.encode(password))
+                .role(Role.USER)
+                .emailVerified(true)
+                .build();
+    }
+
+    private static PasswordResetToken activeCode(UUID userId, String code) {
+        PasswordResetToken token = PasswordResetToken.builder()
+                .userId(userId)
+                .tokenHash(TokenHasher.sha256(userId + ":" + code))
+                .expiresAt(Instant.now().plusSeconds(900))
+                .failedAttempts(0)
+                .build();
+        token.setCreatedAt(Instant.now().minusSeconds(120));
+        return token;
     }
 
     @Test

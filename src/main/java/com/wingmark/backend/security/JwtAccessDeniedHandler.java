@@ -1,6 +1,7 @@
 package com.wingmark.backend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wingmark.backend.exception.ErrorCode;
 import com.wingmark.backend.exception.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,6 +29,7 @@ public class JwtAccessDeniedHandler implements AccessDeniedHandler {
         ErrorResponse body = ErrorResponse.of(
                 HttpStatus.FORBIDDEN.value(),
                 HttpStatus.FORBIDDEN.getReasonPhrase(),
+                ErrorCode.FORBIDDEN,
                 "You do not have permission to access this resource",
                 request.getRequestURI()
         );

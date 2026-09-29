@@ -17,5 +17,13 @@ public interface BirdLogRepositoryCustom {
      * user's logs (the admin "get all" endpoint); non-null scopes to one user.
      * hasSpecies true/false filters on speciesId being set/unset.
      */
+    /**
+     * A user's logs inside a lat/lng box, most recently observed first, at most {@code limit}.
+     * minLng > maxLng means the box crosses the antimeridian (e.g. 170 to -170).
+     * Filters behave as in findFiltered (null = no filter).
+     */
+    List<BirdLog> findWithinBounds(UUID userId, double minLat, double maxLat, double minLng, double maxLng,
+                                   Boolean hasSpecies, Gender gender, LifeStage lifeStage, int limit);
+
     List<BirdLog> findFiltered(UUID userId, Boolean hasSpecies, Gender gender, LifeStage lifeStage, Sort.Direction observedAtDirection);
 }

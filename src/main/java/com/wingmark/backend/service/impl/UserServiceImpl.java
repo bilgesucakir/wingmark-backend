@@ -8,13 +8,23 @@ import com.wingmark.backend.dto.user.UserProfileResponseDto;
 import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.entity.UserSettings;
+import com.wingmark.backend.enums.Role;
+import com.wingmark.backend.exception.ErrorCode;
+import com.wingmark.backend.exception.BadRequestException;
+import com.wingmark.backend.exception.ConflictException;
+import com.wingmark.backend.exception.InvalidReferenceException;
 import com.wingmark.backend.exception.ResourceNotFoundException;
+import com.wingmark.backend.exception.UnauthorizedActionException;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
+import com.wingmark.backend.service.AccountDeletionService;
+import com.wingmark.backend.service.AvatarCatalog;
+import com.wingmark.backend.service.FileStorageService;
 import com.wingmark.backend.service.UserService;
 import com.wingmark.backend.util.LocalizedTextResolver;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +38,10 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserSettingsRepository userSettingsRepository;
     private final SpeciesRepository speciesRepository;
+    private final AccountDeletionService accountDeletionService;
+    private final PasswordEncoder passwordEncoder;
+    private final AvatarCatalog avatarCatalog;
+    private final FileStorageService fileStorageService;
 
     @Override
     public UserProfileResponseDto getProfile(UUID userId, Locale locale) {
@@ -39,12 +53,12 @@ public class UserServiceImpl implements UserService {
         User user = findUser(userId);
 
         if (request.favoriteSpeciesId() != null && !speciesRepository.existsById(request.favoriteSpeciesId())) {
-            throw ResourceNotFoundException.of("Species", request.favoriteSpeciesId());
+            throw InvalidReferenceException.of("favoriteSpeciesId", "species", request.favoriteSpeciesId());
         }
 
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
-        user.setProfilePicture(request.profilePicture());
+        user.setProfilePicture(validateProfilePicture(request.profilePicture(), user.getProfilePicture()));
         user.setFavoriteSpeciesId(request.favoriteSpeciesId());
 
         return toResponse(userRepository.save(user), locale);
@@ -75,7 +89,7 @@ public class UserServiceImpl implements UserService {
         User user = findUser(userId);
 
         if (request.favoriteSpeciesId() != null && !speciesRepository.existsById(request.favoriteSpeciesId())) {
-            throw ResourceNotFoundException.of("Species", request.favoriteSpeciesId());
+            throw InvalidReferenceException.of("favoriteSpeciesId", "species", request.favoriteSpeciesId());
         }
 
         user.setFirstName(request.firstName());
@@ -83,15 +97,55 @@ public class UserServiceImpl implements UserService {
         user.setRole(request.role());
         user.setEmailVerified(request.emailVerified());
         user.setFavoriteSpeciesId(request.favoriteSpeciesId());
+        user.setProfilePicture(validateProfilePicture(request.profilePicture(), user.getProfilePicture()));
         return toResponse(userRepository.save(user), locale);
     }
 
     @Override
     public void deleteUser(UUID userId) {
-        if (!userRepository.existsById(userId)) {
-            throw ResourceNotFoundException.of("User", userId);
+        accountDeletionService.deleteAccount(userId);
+    }
+
+    @Override
+    public void deleteOwnAccount(UUID userId, String password) {
+        User user = findUser(userId);
+
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new UnauthorizedActionException(ErrorCode.WRONG_PASSWORD, "Password is incorrect");
         }
-        userRepository.deleteById(userId);
+        if (user.getRole() == Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1) {
+            throw new ConflictException(ErrorCode.LAST_ADMIN, "You are the only admin - make another user an admin before deleting this account");
+        }
+
+        accountDeletionService.deleteAccount(userId);
+    }
+
+    /**
+     * A profile picture is null (none), a preset avatar key, or the relative URL of a photo
+     * uploaded through /api/uploads/photo that still exists. Anything else - an external
+     * URL, a typo'd key, a deleted upload - is rejected so clients never get a dangling value.
+     * Re-sending the value already stored is always accepted, so a profile saved before this
+     * validation existed can still be edited without being forced to change its picture.
+     */
+    private String validateProfilePicture(String profilePicture, String current) {
+        if (profilePicture == null || profilePicture.isBlank()) {
+            return null;
+        }
+        if (profilePicture.equals(current)) {
+            return profilePicture;
+        }
+        if (avatarCatalog.contains(profilePicture)) {
+            return profilePicture;
+        }
+        boolean isOwnUpload = fileStorageService.storedFilename(profilePicture)
+                .filter(filename -> profilePicture.equals("/uploads/" + filename))
+                .filter(fileStorageService::exists)
+                .isPresent();
+        if (isOwnUpload) {
+            return profilePicture;
+        }
+        throw new BadRequestException(ErrorCode.INVALID_PROFILE_PICTURE,
+                "profilePicture must be a preset avatar key (see GET /api/avatars), a /uploads/... URL from POST /api/uploads/photo, or null");
     }
 
     private User findUser(UUID userId) {

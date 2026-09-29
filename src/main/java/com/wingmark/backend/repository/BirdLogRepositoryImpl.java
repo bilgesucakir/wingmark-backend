@@ -26,7 +26,33 @@ public class BirdLogRepositoryImpl implements BirdLogRepositoryCustom {
     }
 
     @Override
+    public List<BirdLog> findWithinBounds(UUID userId, double minLat, double maxLat, double minLng, double maxLng,
+                                          Boolean hasSpecies, Gender gender, LifeStage lifeStage, int limit) {
+        Criteria criteria = filterCriteria(userId, hasSpecies, gender, lifeStage)
+                .and("latitude").gte(minLat).lte(maxLat);
+        if (minLng <= maxLng) {
+            criteria = criteria.and("longitude").gte(minLng).lte(maxLng);
+        } else {
+            // Box wraps around the antimeridian: east of minLng OR west of maxLng.
+            criteria = criteria.orOperator(
+                    Criteria.where("longitude").gte(minLng).lte(180),
+                    Criteria.where("longitude").gte(-180).lte(maxLng));
+        }
+
+        Query query = Query.query(criteria)
+                .with(Sort.by(Sort.Direction.DESC, "observedAt"))
+                .limit(limit);
+        return mongoTemplate.find(query, BirdLog.class);
+    }
+
+    @Override
     public List<BirdLog> findFiltered(UUID userId, Boolean hasSpecies, Gender gender, LifeStage lifeStage, Sort.Direction observedAtDirection) {
+        Query query = Query.query(filterCriteria(userId, hasSpecies, gender, lifeStage))
+                .with(Sort.by(observedAtDirection, "observedAt"));
+        return mongoTemplate.find(query, BirdLog.class);
+    }
+
+    private static Criteria filterCriteria(UUID userId, Boolean hasSpecies, Gender gender, LifeStage lifeStage) {
         Criteria criteria = new Criteria();
         if (userId != null) {
             criteria = criteria.and("userId").is(userId);
@@ -40,8 +66,6 @@ public class BirdLogRepositoryImpl implements BirdLogRepositoryCustom {
         if (lifeStage != null) {
             criteria = criteria.and("lifeStage").is(lifeStage);
         }
-
-        Query query = Query.query(criteria).with(Sort.by(observedAtDirection, "observedAt"));
-        return mongoTemplate.find(query, BirdLog.class);
+        return criteria;
     }
 }

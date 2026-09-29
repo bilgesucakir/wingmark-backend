@@ -41,4 +41,29 @@ public class EmailServiceImpl implements EmailService {
             log.error("Failed to send verification email to {}. Verification link: {}", toEmail, verifyUrl, e);
         }
     }
+
+    @Override
+    public void sendPasswordResetCode(String toEmail, String code, int validMinutes) {
+        String html = """
+                <p>Someone asked to reset the password for your Wingmark account.</p>
+                <p>Enter this code in the app:</p>
+                <p style="font-size:28px;font-weight:bold;letter-spacing:6px">%s</p>
+                <p>It expires in %d minutes and can only be used once. If you didn't ask for this, you can ignore this email - your password hasn't changed.</p>
+                """.formatted(code, validMinutes);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+            helper.setTo(toEmail);
+            helper.setFrom(mailProperties.from());
+            helper.setSubject("Your Wingmark password reset code");
+            helper.setText(html, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            // Same policy as verification: a mail failure doesn't fail the request (it
+            // always answers 202 anyway). The code is logged so local dev without SMTP
+            // can still exercise the flow.
+            log.error("Failed to send password reset code to {}. Code: {}", toEmail, code, e);
+        }
+    }
 }

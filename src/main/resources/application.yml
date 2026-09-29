@@ -8,6 +8,9 @@ spring:
       # scientificName/tokenHash etc.) are inert - Spring Data Mongo does not create
       # indexes from annotations unless this is on.
       auto-index-creation: true
+      # Uploaded images live in GridFS in this same database (uploads.files / uploads.chunks).
+      gridfs:
+        bucket: uploads
   servlet:
     multipart:
       max-file-size: 10MB
@@ -63,6 +66,9 @@ wingmark:
     access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000}
     refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:2592000000}
   storage:
+    # Legacy only: uploads are stored in MongoDB (GridFS). If this directory exists at
+    # startup, any images in it that aren't in GridFS yet are imported once (see
+    # LegacyUploadImporter) - that's how Render's old /data/uploads disk gets migrated.
     upload-dir: ${UPLOAD_DIR:uploads}
   xeno-canto:
     base-url: ${XENO_CANTO_BASE_URL:https://xeno-canto.org/api/3}

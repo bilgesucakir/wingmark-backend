@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface EmailVerificationTokenRepository extends MongoRepository<EmailVerificationToken, UUID> {
 
     Optional<EmailVerificationToken> findByTokenHash(String tokenHash);
+
+    void deleteByUserId(UUID userId);
 }

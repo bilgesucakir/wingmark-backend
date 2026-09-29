@@ -12,6 +12,7 @@ import com.wingmark.backend.repository.BadgeRepository;
 import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserRepository;
+import com.wingmark.backend.support.TestAuth;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,14 +20,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -98,7 +104,8 @@ class BirdLogControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
-        return objectMapper.readTree(response).get("accessToken").asText();
+        String registeredEmail = objectMapper.readTree(response).get("email").asText();
+        return TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, registeredEmail, "password1");
     }
 
     private UUID extractUserId(String accessToken) throws Exception {
@@ -273,7 +280,7 @@ class BirdLogControllerTest {
 
     @Test
     void missingRequiredQueryParamReturnsBadRequestNotServerError() throws Exception {
-        String token = registerAndGetToken("missingparam");
+        String token = registerAndGetToken("missing");
 
         mockMvc.perform(get("/api/bird-logs/location")
                         .header("Authorization", "Bearer " + token)
@@ -388,6 +395,187 @@ class BirdLogControllerTest {
                 .andReturn().getResponse().getContentAsString();
 
         return objectMapper.readTree(created).get("id").asText();
+    }
+
+    @Test
+    void createStoresGivenObservedAtOrDefaultsToUploadTime() throws Exception {
+        String token = registerAndGetToken("obscreate");
+
+        Map<String, Object> backdated = sightingBody();
+        backdated.put("observedAt", "2026-09-18T09:45:00+03:00");
+        mockMvc.perform(post("/api/bird-logs")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(backdated)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.observedAt").value("2026-09-18T06:45:00Z"));
+
+        Instant before = Instant.now();
+        String created = mockMvc.perform(post("/api/bird-logs")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(sightingBody())))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        Instant defaulted = Instant.parse(objectMapper.readTree(created).get("observedAt").asText());
+        assertThat(defaulted).isBetween(before.minusSeconds(1), Instant.now().plusSeconds(1));
+    }
+
+    @Test
+    void unknownSpeciesIdIsUnprocessableNotNotFound() throws Exception {
+        String token = registerAndGetToken("badspecies");
+
+        Map<String, Object> body = sightingBody();
+        body.put("speciesId", UUID.randomUUID().toString());
+        mockMvc.perform(post("/api/bird-logs")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void futureObservedAtIsRejected() throws Exception {
+        String token = registerAndGetToken("obsfuture");
+
+        Map<String, Object> body = sightingBody();
+        body.put("observedAt", Instant.now().plus(Duration.ofDays(1)).toString());
+        mockMvc.perform(post("/api/bird-logs")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("OBSERVED_AT_IN_FUTURE"))
+                .andExpect(jsonPath("$.message").value("observedAt cannot be in the future"));
+    }
+
+    @Test
+    void updateKeepsObservedAtWhenOmittedAndChangesItWhenGiven() throws Exception {
+        String token = registerAndGetToken("obsupdate");
+
+        Map<String, Object> body = sightingBody();
+        body.put("observedAt", "2026-09-01T08:00:00Z");
+        String created = mockMvc.perform(post("/api/bird-logs")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String logId = objectMapper.readTree(created).get("id").asText();
+
+        Map<String, Object> edit = sightingBody();
+        edit.put("note", "Edited note");
+        mockMvc.perform(put("/api/bird-logs/" + logId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(edit)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.note").value("Edited note"))
+                .andExpect(jsonPath("$.observedAt").value("2026-09-01T08:00:00Z"));
+
+        edit.put("observedAt", "2026-08-15T17:30:00Z");
+        mockMvc.perform(put("/api/bird-logs/" + logId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(edit)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.observedAt").value("2026-08-15T17:30:00Z"));
+    }
+
+    // ---------------------------------------------------------------- map viewport
+
+    private void logAt(String token, double lat, double lng, String gender) throws Exception {
+        Map<String, Object> body = sightingBody();
+        body.put("latitude", lat);
+        body.put("longitude", lng);
+        body.put("gender", gender);
+        mockMvc.perform(post("/api/bird-logs")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void locationQueryHandlesTheAntimeridianAndFilters() throws Exception {
+        String token = registerAndGetToken("mapdl");
+        logAt(token, -17.7, 178.0, "MALE");    // Fiji, east of the date line
+        logAt(token, -14.3, -170.7, "FEMALE"); // American Samoa, west of it
+        logAt(token, 41.0, 29.0, "MALE");      // Istanbul, far outside the box
+
+        // minLng > maxLng: a box from 170E across the date line to 170W.
+        mockMvc.perform(get("/api/bird-logs/location")
+                        .param("minLat", "-30").param("maxLat", "0")
+                        .param("minLng", "170").param("maxLng", "-170")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Result-Truncated", "false"))
+                .andExpect(jsonPath("$.length()").value(2));
+
+        mockMvc.perform(get("/api/bird-logs/location")
+                        .param("minLat", "-30").param("maxLat", "0")
+                        .param("minLng", "170").param("maxLng", "-170")
+                        .param("gender", "FEMALE")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].gender").value("FEMALE"));
+    }
+
+    @Test
+    void locationQueryCapsResultsAndReportsTruncation() throws Exception {
+        String token = registerAndGetToken("mapcap");
+        for (int i = 0; i < 3; i++) {
+            logAt(token, 10.0 + i * 0.01, 20.0, "UNKNOWN");
+        }
+
+        mockMvc.perform(get("/api/bird-logs/location")
+                        .param("minLat", "9").param("maxLat", "11").param("minLng", "19").param("maxLng", "21")
+                        .param("limit", "2")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Result-Truncated", "true"))
+                .andExpect(jsonPath("$.length()").value(2));
+
+        mockMvc.perform(get("/api/bird-logs/location")
+                        .param("minLat", "9").param("maxLat", "11").param("minLng", "19").param("maxLng", "21")
+                        .param("limit", "3")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(header().string("X-Result-Truncated", "false"))
+                .andExpect(jsonPath("$.length()").value(3));
+    }
+
+    @Test
+    void locationQueryRejectsNonsenseBoundsAndLimits() throws Exception {
+        String token = registerAndGetToken("mapbad");
+        String[][] badBoxes = {
+                {"-91", "0", "0", "10"},   // latitude out of range
+                {"0", "10", "0", "181"},   // longitude out of range
+                {"20", "10", "0", "10"},   // minLat > maxLat
+        };
+        for (String[] box : badBoxes) {
+            mockMvc.perform(get("/api/bird-logs/location")
+                            .param("minLat", box[0]).param("maxLat", box[1]).param("minLng", box[2]).param("maxLng", box[3])
+                            .header("Authorization", "Bearer " + token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_BOUNDS"));
+        }
+        mockMvc.perform(get("/api/bird-logs/location")
+                        .param("minLat", "0").param("maxLat", "1").param("minLng", "0").param("maxLng", "1")
+                        .param("limit", "5000")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));
+    }
+
+    private Map<String, Object> sightingBody() {
+        Map<String, Object> body = new HashMap<>();
+        body.put("pet", false);
+        body.put("lifeStage", "ADULT");
+        body.put("gender", "MALE");
+        body.put("latitude", 41.01);
+        body.put("longitude", 28.97);
+        return body;
     }
 
     private void setObservedAt(String logId, Instant observedAt) {

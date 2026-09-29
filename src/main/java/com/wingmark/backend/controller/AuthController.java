@@ -5,6 +5,7 @@ import com.wingmark.backend.dto.auth.ForgotPasswordRequestDto;
 import com.wingmark.backend.dto.auth.LoginRequestDto;
 import com.wingmark.backend.dto.auth.RefreshTokenRequestDto;
 import com.wingmark.backend.dto.auth.RegisterRequestDto;
+import com.wingmark.backend.dto.auth.RegisterResponseDto;
 import com.wingmark.backend.dto.auth.ResendVerificationEmailRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 import com.wingmark.backend.security.UserPrincipal;
@@ -33,10 +34,11 @@ public class AuthController {
 
     private final AuthService authService;
 
-    /** Creates a new account and immediately returns a token pair, same as logging in. */
-    @Operation(summary = "Register", description = "Creates a new account and returns an access/refresh token pair.")
+    /** Creates a new, unverified account and emails a verification link. No tokens are issued until the email is verified. */
+    @Operation(summary = "Register", description = "Creates a new, unverified account and emails a verification link. Returns the new account's id/email/username " +
+            "but no tokens - the client must verify the email, then call POST /api/auth/login.")
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequestDto request) {
+    public ResponseEntity<RegisterResponseDto> register(@Valid @RequestBody RegisterRequestDto request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
@@ -62,16 +64,18 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Revokes every refresh token belonging to the caller (signs out of all devices). */
-    @Operation(summary = "Logout everywhere", description = "Revokes every refresh token belonging to the caller, signing out of all devices/sessions.")
+    /** Signs the caller out of every device: revokes all refresh tokens and invalidates already-issued access tokens. */
+    @Operation(summary = "Logout everywhere", description = "Revokes every refresh token belonging to the caller and invalidates every access token issued so far " +
+            "(including the one used for this call), signing out of all devices/sessions immediately.")
     @PostMapping("/logout-all")
     public ResponseEntity<Void> logoutAll(@AuthenticationPrincipal UserPrincipal principal) {
         authService.logoutAll(principal.getId());
         return ResponseEntity.noContent().build();
     }
 
-    /** Issues a password-reset token for the given email, if an account with that email exists. Always responds the same way either way to avoid leaking which emails are registered. */
-    @Operation(summary = "Request password reset", description = "Issues a password-reset token for the given email if an account exists. " +
+    /** Emails a 6-digit password-reset code, if an account with that email exists. Always responds the same way either way to avoid leaking which emails are registered. */
+    @Operation(summary = "Request password reset", description = "Emails a 6-digit reset code (valid 15 minutes, single use) if an account exists. " +
+            "Only the newest code is valid; a request within 60 seconds of the last code sends nothing. " +
             "Always responds 202 regardless, to avoid revealing which emails are registered.")
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto request) {
@@ -79,8 +83,9 @@ public class AuthController {
         return ResponseEntity.accepted().build();
     }
 
-    /** Consumes a password-reset token to set a new password. Rejects the new password if it's identical to the current one. */
-    @Operation(summary = "Reset password", description = "Consumes a password-reset token to set a new password. Rejects a new password identical to the current one.")
+    /** Consumes an emailed reset code to set a new password, ending every existing session. */
+    @Operation(summary = "Reset password", description = "Body: {email, code, newPassword}. Consumes the emailed 6-digit code to set a new password and signs out every session. " +
+            "400 INVALID_OR_EXPIRED_CODE for a wrong/expired/used code (the code is burned after 5 wrong guesses), 400 SAME_PASSWORD, 400 VALIDATION_FAILED.")
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequestDto request) {
         authService.resetPassword(request);

@@ -26,13 +26,27 @@ class JwtTokenProviderTest {
     @Test
     void generatedTokenRoundTripsUserIdAndRole() {
         UUID userId = UUID.randomUUID();
-        String token = provider.generateAccessToken(userId, "someone@example.com", "USER");
+        String token = provider.generateAccessToken(userId, "someone@example.com", "USER", 3);
 
         Claims claims = provider.parseClaims(token);
 
         assertThat(provider.getUserId(claims)).isEqualTo(userId);
         assertThat(provider.getRole(claims)).isEqualTo("USER");
+        assertThat(provider.getTokenVersion(claims)).isEqualTo(3);
         assertThat(claims.get("email", String.class)).isEqualTo("someone@example.com");
+    }
+
+    @Test
+    void tokensMintedBeforeTheVersionClaimExistedCountAsVersionZero() {
+        String legacyToken = Jwts.builder()
+                .subject(UUID.randomUUID().toString())
+                .claim("role", "USER")
+                .issuedAt(Date.from(Instant.now()))
+                .expiration(Date.from(Instant.now().plusSeconds(60)))
+                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8)))
+                .compact();
+
+        assertThat(provider.getTokenVersion(provider.parseClaims(legacyToken))).isZero();
     }
 
     @Test
