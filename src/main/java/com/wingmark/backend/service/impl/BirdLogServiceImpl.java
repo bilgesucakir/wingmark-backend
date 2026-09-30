@@ -196,7 +196,9 @@ public class BirdLogServiceImpl implements BirdLogService {
                 log.getLatitude(),
                 log.getLongitude(),
                 log.getLocationName(),
-                log.getObservedAt(),
+                // Legacy logs saved before observedAt existed are backfilled on startup
+                // (LegacyTimestampBackfill); this keeps the API from ever sending null meanwhile.
+                log.getObservedAt() != null ? log.getObservedAt() : log.getCreatedAt(),
                 log.getVisibility(),
                 log.getCreatedAt()
         );

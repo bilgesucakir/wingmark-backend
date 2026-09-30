@@ -128,6 +128,20 @@ class BirdLogServiceImplTest {
     }
 
     @Test
+    void legacyLogWithoutObservedAtReportsItsCreatedAtInstead() {
+        UUID logId = UUID.randomUUID();
+        BirdLog legacy = BirdLog.builder().id(logId).userId(userId)
+                .lifeStage(LifeStage.ADULT).gender(Gender.UNKNOWN).latitude(1.0).longitude(1.0)
+                .build();
+        legacy.setCreatedAt(java.time.Instant.parse("2025-11-20T10:00:00Z"));
+        when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(legacy));
+
+        BirdLogResponseDto response = birdLogService.getById(userId, logId, Locale.ENGLISH);
+
+        assertThat(response.observedAt()).isEqualTo(java.time.Instant.parse("2025-11-20T10:00:00Z"));
+    }
+
+    @Test
     void deleteReEvaluatesBadgesAfterRemoval() {
         UUID logId = UUID.randomUUID();
         BirdLog existing = BirdLog.builder().id(logId).userId(userId).build();

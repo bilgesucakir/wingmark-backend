@@ -979,6 +979,10 @@ only ever appended; an existing key is never renamed or removed.
   field, no universal links. A 6-digit code is only safe with limits, so it expires in 15
   minutes, is single use, is burned after 5 wrong guesses, and is hashed with the user's
   id (codes can repeat across users).
+- **Legacy timestamps are backfilled on startup**: documents saved before auditing worked
+  have no `createdAt` (and very old bird logs no `observedAt`). `LegacyTimestampBackfill`
+  fills `createdAt` from the earliest timestamp the document already has (or now), and a
+  bird log's `observedAt` from its `createdAt` - only where missing, so it's safe to rerun.
 - **Account deletion is a full cascade**: the user document is removed first (cutting
   off access), then everything keyed by their id, then their uploaded files - skipping
   any file another account or a species image still references, since upload URLs aren't
