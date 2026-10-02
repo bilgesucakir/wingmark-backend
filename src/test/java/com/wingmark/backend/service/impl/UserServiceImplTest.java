@@ -8,6 +8,7 @@ import com.wingmark.backend.dto.user.UserProfileResponseDto;
 import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.entity.UserSettings;
+import com.wingmark.backend.enums.DeletionInitiator;
 import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.enums.UnitPreference;
 import com.wingmark.backend.exception.ResourceNotFoundException;
@@ -221,7 +222,7 @@ class UserServiceImplTest {
     void deleteUserDelegatesToTheFullAccountDeletion() {
         userService.deleteUser(userId);
 
-        verify(accountDeletionService).deleteAccount(userId);
+        verify(accountDeletionService).deleteAccount(userId, DeletionInitiator.ADMIN);
     }
 
     @Test
@@ -232,7 +233,7 @@ class UserServiceImplTest {
 
         assertThatThrownBy(() -> userService.deleteOwnAccount(userId, "wrong"))
                 .isInstanceOf(UnauthorizedActionException.class);
-        verify(accountDeletionService, never()).deleteAccount(any());
+        verify(accountDeletionService, never()).deleteAccount(any(), any());
     }
 
     @Test
@@ -244,7 +245,7 @@ class UserServiceImplTest {
 
         assertThatThrownBy(() -> userService.deleteOwnAccount(userId, "right"))
                 .isInstanceOf(ConflictException.class);
-        verify(accountDeletionService, never()).deleteAccount(any());
+        verify(accountDeletionService, never()).deleteAccount(any(), any());
     }
 
     @Test
@@ -255,7 +256,7 @@ class UserServiceImplTest {
 
         userService.deleteOwnAccount(userId, "right");
 
-        verify(accountDeletionService).deleteAccount(userId);
+        verify(accountDeletionService).deleteAccount(userId, DeletionInitiator.SELF);
     }
 
     @Test

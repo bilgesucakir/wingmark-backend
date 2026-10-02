@@ -165,7 +165,7 @@ class SpeciesServiceImplTest {
         when(speciesRepository.existsById(speciesId)).thenReturn(false);
 
         CreateSpeciesImageRequestDto request = new CreateSpeciesImageRequestDto(
-                LifeStageImage.ADULT, ImageGender.MALE, "https://example.com/photo.jpg", null);
+                LifeStageImage.ADULT, ImageGender.MALE, "https://example.com/photo.jpg", null, null, null, null);
 
         assertThatThrownBy(() -> speciesService.addImage(speciesId, request)).isInstanceOf(ResourceNotFoundException.class);
     }
@@ -181,9 +181,13 @@ class SpeciesServiceImplTest {
         });
 
         CreateSpeciesImageRequestDto request = new CreateSpeciesImageRequestDto(
-                LifeStageImage.ADULT, ImageGender.MALE, "https://example.com/photo.jpg", "caption");
+                LifeStageImage.ADULT, ImageGender.MALE, "https://example.com/photo.jpg", "caption",
+                "cc-by", "(c) Jane Birder, some rights reserved (CC BY)", "https://www.inaturalist.org/observations/1");
 
         SpeciesImageResponseDto response = speciesService.addImage(speciesId, request);
+        assertThat(response.licenseCode()).isEqualTo("cc-by");
+        assertThat(response.attribution()).isEqualTo("(c) Jane Birder, some rights reserved (CC BY)");
+        assertThat(response.sourceUrl()).isEqualTo("https://www.inaturalist.org/observations/1");
 
         assertThat(response.imageUrl()).isEqualTo("https://example.com/photo.jpg");
     }

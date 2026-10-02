@@ -8,6 +8,7 @@ import com.wingmark.backend.dto.user.UserProfileResponseDto;
 import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.entity.User;
 import com.wingmark.backend.entity.UserSettings;
+import com.wingmark.backend.enums.DeletionInitiator;
 import com.wingmark.backend.enums.Role;
 import com.wingmark.backend.exception.ErrorCode;
 import com.wingmark.backend.exception.BadRequestException;
@@ -103,7 +104,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(UUID userId) {
-        accountDeletionService.deleteAccount(userId);
+        accountDeletionService.deleteAccount(userId, DeletionInitiator.ADMIN);
     }
 
     @Override
@@ -117,7 +118,7 @@ public class UserServiceImpl implements UserService {
             throw new ConflictException(ErrorCode.LAST_ADMIN, "You are the only admin - make another user an admin before deleting this account");
         }
 
-        accountDeletionService.deleteAccount(userId);
+        accountDeletionService.deleteAccount(userId, DeletionInitiator.SELF);
     }
 
     /**

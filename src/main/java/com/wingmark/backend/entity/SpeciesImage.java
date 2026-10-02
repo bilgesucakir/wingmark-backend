@@ -30,4 +30,15 @@ public class SpeciesImage extends BaseEntity {
     private String imageUrl;
 
     private String caption;
+
+    /**
+     * Where the image came from and under what terms - needed to credit third-party photos
+     * (e.g. iNaturalist's CC licenses require attribution). licenseCode is e.g. "cc-by";
+     * all three are null for images the operator uploaded themselves.
+     */
+    private String licenseCode;
+
+    private String attribution;
+
+    private String sourceUrl;
 }

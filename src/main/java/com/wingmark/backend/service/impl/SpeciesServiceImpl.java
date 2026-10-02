@@ -114,6 +114,9 @@ public class SpeciesServiceImpl implements SpeciesService {
                 .gender(request.gender())
                 .imageUrl(request.imageUrl())
                 .caption(request.caption())
+                .licenseCode(request.licenseCode())
+                .attribution(request.attribution())
+                .sourceUrl(request.sourceUrl())
                 .build();
 
         image = speciesImageRepository.save(image);
@@ -171,7 +174,10 @@ public class SpeciesServiceImpl implements SpeciesService {
                 image.getLifeStage(),
                 image.getGender(),
                 image.getImageUrl(),
-                image.getCaption()
+                image.getCaption(),
+                image.getLicenseCode(),
+                image.getAttribution(),
+                image.getSourceUrl()
         );
     }
 }

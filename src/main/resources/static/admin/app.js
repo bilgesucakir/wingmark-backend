@@ -358,6 +358,9 @@ function renderImages(images) {
       '<div class="meta">' +
       '<div class="tags">' + escapeHtml(img.lifeStage) + " · " + escapeHtml(img.gender) + "</div>" +
       (img.caption ? '<div>' + escapeHtml(img.caption) + "</div>" : "") +
+      (img.licenseCode
+        ? '<div class="muted">License: ' + escapeHtml(img.licenseCode.toUpperCase()) + "</div>"
+        : '<div class="muted">Own upload (no third-party license)</div>') +
       '<button class="danger remove-img-btn">Remove</button>' +
       "</div>";
     card.querySelector(".remove-img-btn").addEventListener("click", () => removeImage(img.id));
@@ -487,6 +490,10 @@ function renderCandidates(candidates, lifeStage, gender) {
             gender,
             imageUrl: c.photoUrl,
             caption: c.attribution || null,
+            // Kept so the app can credit the photographer - iNaturalist's CC licenses require it.
+            licenseCode: c.licenseCode || null,
+            attribution: c.attribution || null,
+            sourceUrl: c.observationUrl || null,
           }),
         });
         await refreshImages();

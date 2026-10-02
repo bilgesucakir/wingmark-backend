@@ -30,6 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -60,6 +61,9 @@ class UserControllerTest {
 
     @Autowired
     private FileStorageService fileStorageService;
+
+    @Autowired
+    private com.wingmark.backend.repository.AccountDeletionRepository accountDeletionRepository;
 
     private record Registered(String userId, String accessToken) {}
 
@@ -325,5 +329,48 @@ class UserControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("INVALID_PROFILE_PICTURE"));
         }
+    }
+
+    @Test
+    void exportReturnsAllOfTheCallersDataAsADownload() throws Exception {
+        Registered user = register("exporter");
+        createLog(user.accessToken(), null);
+        createLog(user.accessToken(), null);
+
+        mockMvc.perform(get("/api/users/" + user.userId() + "/export").header("Authorization", "Bearer " + user.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")))
+                .andExpect(jsonPath("$.exportedAt").exists())
+                .andExpect(jsonPath("$.profile.id").value(user.userId()))
+                .andExpect(jsonPath("$.settings").exists())
+                .andExpect(jsonPath("$.birdLogs.length()").value(2))
+                .andExpect(jsonPath("$.badges").isArray())
+                .andExpect(jsonPath("$.consents").isArray());
+    }
+
+    @Test
+    void cannotExportSomeoneElsesData() throws Exception {
+        Registered caller = register("expcaller");
+        Registered other = register("expother");
+
+        mockMvc.perform(get("/api/users/" + other.userId() + "/export").header("Authorization", "Bearer " + caller.accessToken()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void selfDeletionLeavesOnlyAPersonalDataFreeAuditRecord() throws Exception {
+        Registered user = register("audited");
+
+        mockMvc.perform(delete("/api/users/" + user.userId())
+                        .header("Authorization", "Bearer " + user.accessToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("password", "password1"))))
+                .andExpect(status().isNoContent());
+
+        var audit = accountDeletionRepository.findAll().stream()
+                .filter(a -> a.getUserId().toString().equals(user.userId()))
+                .findFirst().orElseThrow();
+        assertThat(audit.getInitiatedBy()).isEqualTo(com.wingmark.backend.enums.DeletionInitiator.SELF);
+        assertThat(audit.getCompletedAt()).isNotNull();
     }
 }

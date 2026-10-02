@@ -25,8 +25,8 @@ public class RefreshToken extends BaseEntity {
     @Indexed(unique = true)
     private String tokenHash;
 
-    private String deviceInfo;
-
+    /** TTL index: Mongo deletes the token once it has expired - an expired token can never be used again. */
+    @Indexed(expireAfterSeconds = 0)
     private Instant expiresAt;
 
     private Instant revokedAt;

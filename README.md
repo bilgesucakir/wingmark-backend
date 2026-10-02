@@ -38,8 +38,10 @@ Everything else has a working default for local development.
 never commit it.
 
 Without `SMTP_HOST`/`SMTP_USERNAME`/`SMTP_PASSWORD` set, registration still works but
-the verification email fails to send silently (logged as an error, with the raw link
-included so you can still click through it locally) - see
+emails fail to send (logged as an error, without the secret). To still get the
+verification link or reset code locally, run with `LOG_LEVEL=DEBUG`: they're then logged
+at DEBUG. Logging defaults to INFO, so they're never written in production - never set
+`LOG_LEVEL=DEBUG` there. See
 [`EmailServiceImpl`](src/main/java/com/wingmark/backend/service/impl/EmailServiceImpl.java).
 Any SMTP provider works (a Gmail app password, Mailtrap/Ethereal for testing,
 SendGrid/Mailgun/SES's SMTP relay, etc). Also set `APP_BASE_URL` to wherever this
@@ -80,6 +82,13 @@ so it always deploys as a container). To deploy:
      user would be locked out with no visible error**. See "Configuration" above for
      provider options; `MAIL_FROM` must be an address your provider is authorized to
      send from.
+   - `BUSINESS_LEGAL_NAME` / `BUSINESS_ADDRESS` / `BUSINESS_CONTACT_EMAIL` — your legal
+     sender details, shown in every email's footer once `BUSINESS_LEGAL_NAME` is set.
+     Empty by default; nothing is shown until you fill them in.
+   - `TERMS_VERSION` / `TERMS_URL` / `PRIVACY_VERSION` / `PRIVACY_URL` — set these once
+     the documents are published; see [Legal](#legal-apilegal).
+   - `LOG_LEVEL` — leave unset (INFO). **Never set `DEBUG` in production**: at DEBUG,
+     undelivered verification links and reset codes are logged.
    - `XENO_CANTO_API_KEY` — optional, only needed for the sound-recordings endpoint.
    - `JWT_SECRET` is generated automatically by Render on first deploy; everything else
      (`UPLOAD_DIR`, `SMTP_PORT`, port, JWT expirations) is already wired to sensible
@@ -257,9 +266,17 @@ Request:
   "password": "correcthorse8",
   "username": "amelia_birds",
   "firstName": "Amelia",
-  "lastName": "Rivera"
+  "lastName": "Rivera",
+  "acceptedTermsVersion": "2026-10-01",
+  "acceptedPrivacyVersion": "2026-10-01"
 }
 ```
+
+`acceptedTermsVersion` / `acceptedPrivacyVersion` are the exact versions from
+[`GET /api/legal`](#legal-apilegal) that the user ticked "I accept" for. They're **required
+once that document is published** (`400 TERMS_NOT_ACCEPTED` / `PRIVACY_NOT_ACCEPTED`
+otherwise, and nothing is created) and ignored while it isn't. Each acceptance is stored
+as a consent record (type, version, timestamp).
 
 Response:
 ```json
@@ -289,9 +306,15 @@ Response:
 {
   "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIz...",
   "refreshToken": "8f14e45fceea167a5a36dedd4bea2543",
-  "expiresInMs": 900000
+  "expiresInMs": 900000,
+  "pendingConsents": []
 }
 ```
+
+`pendingConsents` lists legal documents (`TERMS`, `PRIVACY`) whose **current** version the
+user hasn't accepted yet, e.g. after the terms changed. When it's non-empty, show the
+acceptance screen and call `POST /api/users/{id}/consents`. It's always empty while no
+document is published. `/refresh` and change-password return the same shape.
 
 **POST `/refresh`** → `200 OK`
 
@@ -367,6 +390,9 @@ No response body.
 | GET    | `/settings`  | Get the caller's app settings                  |
 | PUT    | `/settings`  | Update the caller's app settings               |
 | POST   | `/password`  | Change the caller's password (current password required); returns a fresh token pair |
+| GET    | `/consents`  | The caller's legal-document acceptances (type, version, acceptedAt), oldest first |
+| POST   | `/consents`  | Accept the current version of a document: `{"type":"TERMS","version":"2026-10-01"}` → `{"pendingConsents":[...]}`; `400 CONSENT_VERSION_MISMATCH` for any other version |
+| GET    | `/export`    | Download everything Wingmark holds about the caller (profile, settings, every bird log, badge progress, consent history) as `wingmark-data-export.json` |
 | DELETE | ``           | Permanently delete the caller's account and all of its data (password required) |
 
 A `favoriteSpeciesId` that doesn't exist is rejected with `422 INVALID_REFERENCE`. A
@@ -791,7 +817,10 @@ Request:
   "lifeStage": "ADULT",
   "gender": "MALE",
   "imageUrl": "/uploads/sparrow-male.jpg",
-  "caption": "Adult male"
+  "caption": "Adult male",
+  "licenseCode": null,
+  "attribution": null,
+  "sourceUrl": null
 }
 ```
 
@@ -802,9 +831,19 @@ Response:
   "lifeStage": "ADULT",
   "gender": "MALE",
   "imageUrl": "/uploads/sparrow-male.jpg",
-  "caption": "Adult male"
+  "caption": "Adult male",
+  "licenseCode": null,
+  "attribution": null,
+  "sourceUrl": null
 }
 ```
+
+For a third-party photo (an iNaturalist candidate), send its `licenseCode` (e.g.
+`cc-by`), `attribution` and `sourceUrl` (the observation page). Every species image in the
+API carries these three fields; **the app must show the attribution under photos that have
+a `licenseCode`**, since Creative Commons licenses require crediting the author. They're null
+for photos you uploaded yourself. Photo candidates only include openly licensed
+photos; "all rights reserved" photos are filtered out.
 
 **GET `/{id}/photo-candidates?lifeStage=ADULT&gender=MALE`** → `200 OK`. No request body.
 
@@ -945,6 +984,21 @@ non-multipart request is `400 MALFORMED_REQUEST`.
 
 </details>
 
+### Legal (`/api/legal`)
+
+| Method | Path | Auth | Description |
+|--------|------|:----:|-------------|
+| GET    | ``   |      | Current Terms of Service / Privacy Policy versions and URLs |
+
+```json
+{ "termsVersion": "2026-10-01", "termsUrl": "https://...", "privacyVersion": "2026-10-01", "privacyUrl": "https://..." }
+```
+
+A `null` version means that document isn't published yet, so no acceptance is needed.
+Versions are set by the operator with `TERMS_VERSION` / `TERMS_URL` / `PRIVACY_VERSION` /
+`PRIVACY_URL`. Setting or bumping one makes signup require it and puts it in existing
+users' `pendingConsents` on their next login.
+
 ### Avatars (`/api/avatars`)
 
 | Method | Path | Auth | Description |
@@ -987,6 +1041,12 @@ only ever appended; an existing key is never renamed or removed.
   off access), then everything keyed by their id, then their uploaded files - skipping
   any file another account or a species image still references, since upload URLs aren't
   owner-tagged.
+  Consent records go too. What remains is a single `account_deletions` audit entry
+  (opaque user id, SELF/ADMIN, requested/completed times, no personal data), and the
+  former account holder gets a confirmation email.
+- **Expired tokens delete themselves**: refresh, password-reset and email-verification
+  tokens have a TTL index on `expiresAt`, so MongoDB removes each one once it can no
+  longer be used, instead of keeping them forever.
 - **Badges recompute on every log change**: create/update/delete a bird log and every
   badge's progress is recalculated for that user in the same request — no background
   job, no separate "sync" step.

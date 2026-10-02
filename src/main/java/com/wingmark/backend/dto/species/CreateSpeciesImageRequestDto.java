@@ -9,6 +9,10 @@ public record CreateSpeciesImageRequestDto(
         @NotNull LifeStageImage lifeStage,
         @NotNull ImageGender gender,
         @NotBlank String imageUrl,
-        String caption
+        String caption,
+        // Set when attaching a third-party photo (e.g. an iNaturalist candidate); null for your own uploads.
+        String licenseCode,
+        String attribution,
+        String sourceUrl
 ) {
 }

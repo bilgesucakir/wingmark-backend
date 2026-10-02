@@ -1,7 +1,9 @@
 package com.wingmark.backend.config;
 
+import com.wingmark.backend.entity.AccountDeletion;
 import com.wingmark.backend.entity.Badge;
 import com.wingmark.backend.entity.BirdLog;
+import com.wingmark.backend.entity.Consent;
 import com.wingmark.backend.entity.EmailVerificationToken;
 import com.wingmark.backend.entity.PasswordResetToken;
 import com.wingmark.backend.entity.RefreshToken;
@@ -47,7 +49,7 @@ public class LegacyTimestampBackfill implements ApplicationRunner {
     static final List<Class<?>> AUDITED_ENTITIES = List.of(
             User.class, UserSettings.class, BirdLog.class, Species.class, SpeciesImage.class,
             Badge.class, UserBadge.class, RefreshToken.class, PasswordResetToken.class,
-            EmailVerificationToken.class);
+            EmailVerificationToken.class, Consent.class, AccountDeletion.class);
 
     /** Fields that, when present, record a moment at or after the document's creation. */
     private static final List<String> LATER_TIMESTAMPS = List.of(
