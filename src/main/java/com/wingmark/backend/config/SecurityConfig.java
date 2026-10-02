@@ -67,6 +67,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/species/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/badges/catalog").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/avatars").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/legal").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

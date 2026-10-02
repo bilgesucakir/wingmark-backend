@@ -1,9 +1,13 @@
 package com.wingmark.backend.service.impl;
 
+import com.wingmark.backend.entity.AccountDeletion;
 import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.entity.User;
+import com.wingmark.backend.enums.DeletionInitiator;
 import com.wingmark.backend.exception.ResourceNotFoundException;
+import com.wingmark.backend.repository.AccountDeletionRepository;
 import com.wingmark.backend.repository.BirdLogRepository;
+import com.wingmark.backend.repository.ConsentRepository;
 import com.wingmark.backend.repository.EmailVerificationTokenRepository;
 import com.wingmark.backend.repository.PasswordResetTokenRepository;
 import com.wingmark.backend.repository.RefreshTokenRepository;
@@ -12,11 +16,13 @@ import com.wingmark.backend.repository.UserBadgeRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.service.AccountDeletionService;
+import com.wingmark.backend.service.EmailService;
 import com.wingmark.backend.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -35,11 +41,17 @@ public class AccountDeletionServiceImpl implements AccountDeletionService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final SpeciesImageRepository speciesImageRepository;
     private final FileStorageService fileStorageService;
+    private final ConsentRepository consentRepository;
+    private final AccountDeletionRepository accountDeletionRepository;
+    private final EmailService emailService;
 
     @Override
-    public void deleteAccount(UUID userId) {
+    public void deleteAccount(UUID userId, DeletionInitiator initiatedBy) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> ResourceNotFoundException.of("User", userId));
+        Instant requestedAt = Instant.now();
+        // Kept only in memory, to send the confirmation after the account is gone.
+        String email = user.getEmail();
 
         // Collected before anything is deleted, since the logs are about to go.
         Set<String> uploadedFiles = new LinkedHashSet<>();
@@ -58,6 +70,7 @@ public class AccountDeletionServiceImpl implements AccountDeletionService {
         userSettingsRepository.deleteByUserId(userId);
         userBadgeRepository.deleteByUserId(userId);
         birdLogRepository.deleteByUserId(userId);
+        consentRepository.deleteByUserId(userId);
 
         for (String filename : uploadedFiles) {
             if (isStillReferenced(filename)) {
@@ -69,7 +82,16 @@ public class AccountDeletionServiceImpl implements AccountDeletionService {
             fileStorageService.delete(filename);
         }
 
-        log.info("Deleted user {} and all associated data ({} uploaded file(s) considered)", userId, uploadedFiles.size());
+        accountDeletionRepository.save(AccountDeletion.builder()
+                .userId(userId)
+                .initiatedBy(initiatedBy)
+                .requestedAt(requestedAt)
+                .completedAt(Instant.now())
+                .build());
+        emailService.sendAccountDeletedEmail(email);
+
+        log.info("Deleted user {} ({}) and all associated data ({} uploaded file(s) considered)",
+                userId, initiatedBy, uploadedFiles.size());
     }
 
     private boolean isStillReferenced(String filename) {

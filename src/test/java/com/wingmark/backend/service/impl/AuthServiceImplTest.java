@@ -26,6 +26,7 @@ import com.wingmark.backend.repository.RefreshTokenRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.security.JwtTokenProvider;
+import com.wingmark.backend.service.ConsentService;
 import com.wingmark.backend.service.EmailService;
 import com.wingmark.backend.util.TokenHasher;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,6 +68,8 @@ class AuthServiceImplTest {
     private JwtTokenProvider jwtTokenProvider;
     @Mock
     private EmailService emailService;
+    @Mock
+    private ConsentService consentService;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final AppProperties appProperties = new AppProperties("http://localhost:8080");
@@ -78,14 +81,14 @@ class AuthServiceImplTest {
         authService = new AuthServiceImpl(
                 userRepository, userSettingsRepository, refreshTokenRepository,
                 passwordResetTokenRepository, emailVerificationTokenRepository,
-                passwordEncoder, jwtTokenProvider, emailService, appProperties);
+                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService);
     }
 
     @Test
     void registerRejectsDuplicateEmail() {
         when(userRepository.existsByEmailIgnoreCase("taken@example.com")).thenReturn(true);
 
-        RegisterRequestDto request = new RegisterRequestDto("taken@example.com", "password1", "newuser", "A", "B");
+        RegisterRequestDto request = new RegisterRequestDto("taken@example.com", "password1", "newuser", "A", "B", null, null);
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(DuplicateResourceException.class);
@@ -96,7 +99,7 @@ class AuthServiceImplTest {
         when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
         when(userRepository.existsByUsernameIgnoreCase("takenname")).thenReturn(true);
 
-        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "password1", "takenname", "A", "B");
+        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "password1", "takenname", "A", "B", null, null);
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(DuplicateResourceException.class);
@@ -112,7 +115,7 @@ class AuthServiceImplTest {
             return u;
         });
 
-        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "password1", "freshuser", "A", "B");
+        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "password1", "freshuser", "A", "B", null, null);
         RegisterResponseDto response = authService.register(request);
 
         assertThat(response.userId()).isNotNull();
@@ -124,6 +127,23 @@ class AuthServiceImplTest {
         verify(refreshTokenRepository, org.mockito.Mockito.never()).save(any(RefreshToken.class));
         verify(emailVerificationTokenRepository).save(any(EmailVerificationToken.class));
         verify(emailService).sendVerificationEmail(org.mockito.ArgumentMatchers.eq("fresh@example.com"), any());
+        verify(consentService).requireAcceptedAtSignup(null, null);
+        verify(consentService).recordSignupConsents(response.userId());
+    }
+
+    @Test
+    void registerFailsBeforeCreatingAnythingWhenTermsAreNotAccepted() {
+        when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
+        when(userRepository.existsByUsernameIgnoreCase(any())).thenReturn(false);
+        org.mockito.Mockito.doThrow(new BadRequestException(ErrorCode.TERMS_NOT_ACCEPTED, "accept the terms"))
+                .when(consentService).requireAcceptedAtSignup(null, null);
+
+        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "password1", "freshuser", "A", "B", null, null);
+
+        assertThatThrownBy(() -> authService.register(request))
+                .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.TERMS_NOT_ACCEPTED));
+        verify(userRepository, never()).save(any(User.class));
+        verify(emailService, never()).sendVerificationEmail(any(), any());
     }
 
     @Test

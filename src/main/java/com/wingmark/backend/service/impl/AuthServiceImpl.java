@@ -29,6 +29,7 @@ import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.security.JwtTokenProvider;
 import com.wingmark.backend.service.AuthService;
+import com.wingmark.backend.service.ConsentService;
 import com.wingmark.backend.service.EmailService;
 import com.wingmark.backend.util.RandomTokenGenerator;
 import com.wingmark.backend.util.TokenHasher;
@@ -59,6 +60,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
     private final AppProperties appProperties;
+    private final ConsentService consentService;
 
     @Override
     public RegisterResponseDto register(RegisterRequestDto request) {
@@ -68,6 +70,7 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByUsernameIgnoreCase(request.username())) {
             throw new DuplicateResourceException(ErrorCode.USERNAME_TAKEN, "This username is already taken");
         }
+        consentService.requireAcceptedAtSignup(request.acceptedTermsVersion(), request.acceptedPrivacyVersion());
 
         User user = User.builder()
                 .email(request.email())
@@ -83,6 +86,7 @@ public class AuthServiceImpl implements AuthService {
         userSettingsRepository.save(UserSettings.builder()
                 .userId(user.getId())
                 .build());
+        consentService.recordSignupConsents(user.getId());
 
         issueVerificationEmail(user);
 
@@ -299,6 +303,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         refreshTokenRepository.save(refreshToken);
 
-        return new AuthResponseDto(accessToken, rawRefreshToken, jwtTokenProvider.getAccessTokenExpirationMs());
+        return new AuthResponseDto(accessToken, rawRefreshToken, jwtTokenProvider.getAccessTokenExpirationMs(),
+                consentService.pendingConsents(user.getId()));
     }
 }

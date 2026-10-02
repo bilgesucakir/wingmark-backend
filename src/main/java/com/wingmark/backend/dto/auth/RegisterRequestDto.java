@@ -12,6 +12,10 @@ public record RegisterRequestDto(
         String password,
         @NotBlank @Size(min = 3, max = 30) String username,
         String firstName,
-        String lastName
+        String lastName,
+        // Exact versions the user ticked "I accept" for (see GET /api/legal). Required once
+        // that document is published; ignored while it isn't.
+        String acceptedTermsVersion,
+        String acceptedPrivacyVersion
 ) {
 }

@@ -10,6 +10,10 @@ public record SpeciesImageResponseDto(
         LifeStageImage lifeStage,
         ImageGender gender,
         String imageUrl,
-        String caption
+        String caption,
+        // Credit to show under third-party photos ("© name, CC BY"); null for operator uploads.
+        String licenseCode,
+        String attribution,
+        String sourceUrl
 ) {
 }

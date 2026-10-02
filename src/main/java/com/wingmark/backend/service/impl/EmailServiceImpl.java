@@ -1,5 +1,6 @@
 package com.wingmark.backend.service.impl;
 
+import com.wingmark.backend.config.BusinessProperties;
 import com.wingmark.backend.config.MailProperties;
 import com.wingmark.backend.service.EmailService;
 import jakarta.mail.internet.MimeMessage;
@@ -8,7 +9,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.util.HtmlUtils;
 
+/**
+ * Transactional email only (verification, password reset, account-deletion confirmation) -
+ * no marketing content, so no unsubscribe link or marketing consent is involved.
+ *
+ * A failed send never fails the request. Verification links and reset codes are secrets, so
+ * they're only ever logged at DEBUG level - off by default and in production (LOG_LEVEL is
+ * INFO unless set); turn it on locally (LOG_LEVEL=DEBUG) to read them without a mail server.
+ * Recipient addresses are masked in every log line.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -16,6 +28,7 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
     private final MailProperties mailProperties;
+    private final BusinessProperties businessProperties;
 
     @Override
     public void sendVerificationEmail(String toEmail, String verifyUrl) {
@@ -26,20 +39,8 @@ public class EmailServiceImpl implements EmailService {
                 <p>Or paste this link into your browser:<br>%s</p>
                 <p>This link expires in 24 hours. If you didn't create a Wingmark account, you can ignore this email.</p>
                 """.formatted(verifyUrl, verifyUrl);
-
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
-            helper.setTo(toEmail);
-            helper.setFrom(mailProperties.from());
-            helper.setSubject("Verify your Wingmark email");
-            helper.setText(html, true);
-            mailSender.send(message);
-        } catch (Exception e) {
-            // Don't let a mail-provider hiccup fail registration - the user can still
-            // request a fresh link via POST /api/auth/resend-verification-email.
-            log.error("Failed to send verification email to {}. Verification link: {}", toEmail, verifyUrl, e);
-        }
+        // A user whose email failed can request a fresh link via POST /api/auth/resend-verification-email.
+        send(toEmail, "Verify your Wingmark email", html, "verification link", verifyUrl);
     }
 
     @Override
@@ -50,20 +51,62 @@ public class EmailServiceImpl implements EmailService {
                 <p style="font-size:28px;font-weight:bold;letter-spacing:6px">%s</p>
                 <p>It expires in %d minutes and can only be used once. If you didn't ask for this, you can ignore this email - your password hasn't changed.</p>
                 """.formatted(code, validMinutes);
+        send(toEmail, "Your Wingmark password reset code", html, "reset code", code);
+    }
 
+    @Override
+    public void sendAccountDeletedEmail(String toEmail) {
+        String html = """
+                <p>Your Wingmark account has been deleted.</p>
+                <p>Your profile, bird logs, badge progress, settings, sign-in sessions and uploaded photos have been permanently removed from our database. This can't be undone.</p>
+                <p>If you didn't request this, please contact us by replying to this email.</p>
+                """;
+        send(toEmail, "Your Wingmark account has been deleted", html, null, null);
+    }
+
+    private void send(String toEmail, String subject, String bodyHtml, String secretLabel, String secret) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
             helper.setTo(toEmail);
             helper.setFrom(mailProperties.from());
-            helper.setSubject("Your Wingmark password reset code");
-            helper.setText(html, true);
+            helper.setSubject(subject);
+            helper.setText(bodyHtml + footer(), true);
             mailSender.send(message);
         } catch (Exception e) {
-            // Same policy as verification: a mail failure doesn't fail the request (it
-            // always answers 202 anyway). The code is logged so local dev without SMTP
-            // can still exercise the flow.
-            log.error("Failed to send password reset code to {}. Code: {}", toEmail, code, e);
+            log.error("Failed to send '{}' email to {}", subject, maskEmail(toEmail), e);
+            if (secret != null) {
+                // DEBUG only (off in production): lets local development proceed without a mail server.
+                log.debug("Undelivered {} for {}: {}", secretLabel, maskEmail(toEmail), secret);
+            }
         }
+    }
+
+    /** Legal sender details, once configured (see BusinessProperties); empty otherwise. */
+    String footer() {
+        if (!businessProperties.isConfigured()) {
+            return "";
+        }
+        StringBuilder footer = new StringBuilder("<hr><p style=\"color:#595959;font-size:12px\">")
+                .append(HtmlUtils.htmlEscape(businessProperties.legalName()));
+        if (StringUtils.hasText(businessProperties.address())) {
+            footer.append("<br>").append(HtmlUtils.htmlEscape(businessProperties.address()));
+        }
+        if (StringUtils.hasText(businessProperties.contactEmail())) {
+            footer.append("<br>").append(HtmlUtils.htmlEscape(businessProperties.contactEmail()));
+        }
+        return footer.append("</p>").toString();
+    }
+
+    /** "yildirim@gmail.com" -> "y***@gmail.com": enough to correlate, not enough to identify. */
+    static String maskEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        int at = email.indexOf('@');
+        if (at <= 0) {
+            return "***";
+        }
+        return email.charAt(0) + "***" + email.substring(at);
     }
 }

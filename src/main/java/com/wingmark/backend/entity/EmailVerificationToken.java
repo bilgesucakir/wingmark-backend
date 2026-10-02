@@ -24,6 +24,8 @@ public class EmailVerificationToken extends BaseEntity {
     @Indexed(unique = true)
     private String tokenHash;
 
+    /** TTL index: Mongo deletes the token once it has expired - an expired token can never be used again. */
+    @Indexed(expireAfterSeconds = 0)
     private Instant expiresAt;
 
     private Instant usedAt;

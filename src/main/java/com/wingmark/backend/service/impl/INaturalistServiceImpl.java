@@ -76,6 +76,8 @@ public class INaturalistServiceImpl implements INaturalistService {
                     .filter(obs -> sexValueId == null || hasAnnotation(obs, TERM_LIFE_STAGE, lifeStageValueId))
                     .flatMap(obs -> obs.photos() == null ? java.util.stream.Stream.empty() : obs.photos().stream()
                             .filter(photo -> !photo.hidden())
+                            // No license code means "all rights reserved": not ours to reuse.
+                            .filter(photo -> photo.licenseCode() != null && !photo.licenseCode().isBlank())
                             .map(photo -> toResponse(obs, photo)))
                     .limit(MAX_CANDIDATES_RETURNED)
                     .toList();

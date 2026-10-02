@@ -43,6 +43,13 @@ server:
     include-message: always
     include-binding-errors: always
 
+logging:
+  level:
+    # INFO by default and in production. Set LOG_LEVEL=DEBUG locally to see dev-only
+    # details - e.g. undelivered verification links and reset codes when SMTP isn't set up.
+    # Never set DEBUG in production: those are account-takeover secrets.
+    com.wingmark.backend: ${LOG_LEVEL:INFO}
+
 management:
   endpoints:
     web:
@@ -77,6 +84,20 @@ wingmark:
     base-url: ${INATURALIST_BASE_URL:https://api.inaturalist.org/v1}
   mail:
     from: ${MAIL_FROM:no-reply@wingmark.app}
+  # Shown in email footers once set. Legal facts only the operator can supply - left
+  # empty rather than guessed; nothing is shown until LEGAL_NAME is configured.
+  business:
+    legal-name: ${BUSINESS_LEGAL_NAME:}
+    address: ${BUSINESS_ADDRESS:}
+    contact-email: ${BUSINESS_CONTACT_EMAIL:}
+  # Current Terms of Service / Privacy Policy versions. Blank = not published yet, so
+  # acceptance isn't enforced; set a version (e.g. 2026-10-01) to require it at signup
+  # and to ask existing users to accept it on their next login.
+  legal:
+    terms-version: ${TERMS_VERSION:}
+    terms-url: ${TERMS_URL:}
+    privacy-version: ${PRIVACY_VERSION:}
+    privacy-url: ${PRIVACY_URL:}
   app:
     # This backend's own public URL, used to build the link in verification emails
     # (the GET /api/auth/verify-email?token=... endpoint lives here, not on a frontend).

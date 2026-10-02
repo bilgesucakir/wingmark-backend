@@ -111,6 +111,6 @@ class LegacyTimestampBackfillTest {
 
     @Test
     void coversEveryBaseEntityCollection() {
-        assertThat(LegacyTimestampBackfill.AUDITED_ENTITIES).hasSize(10);
+        assertThat(LegacyTimestampBackfill.AUDITED_ENTITIES).hasSize(12);
     }
 }
