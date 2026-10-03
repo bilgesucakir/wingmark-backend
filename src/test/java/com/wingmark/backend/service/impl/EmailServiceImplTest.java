@@ -85,6 +85,29 @@ class EmailServiceImplTest {
     }
 
     @Test
+    void contactLineNamesTheSupportAddressInsteadOfAskingForAReplyToANoReplySender() {
+        assertThat(service(new BusinessProperties("Wingmark", "", "support.wingmark@gmail.com")).contactSupport())
+                .isEqualTo("contact us at support.wingmark@gmail.com");
+        assertThat(service(new BusinessProperties("", "", "")).contactSupport())
+                .doesNotContain("reply").contains("support");
+    }
+
+    @Test
+    void repliesGoToTheSupportAddressWhenConfigured() throws Exception {
+        MimeMessage message = new MimeMessage(Session.getInstance(new Properties()));
+        when(mailSender.createMimeMessage()).thenReturn(message);
+
+        service(new BusinessProperties("", "", "support.wingmark@gmail.com")).sendAccountDeletedEmail("a@b.com");
+        assertThat(message.getReplyTo()[0].toString()).isEqualTo("support.wingmark@gmail.com");
+
+        MimeMessage plain = new MimeMessage(Session.getInstance(new Properties()));
+        when(mailSender.createMimeMessage()).thenReturn(plain);
+        service(UNCONFIGURED).sendAccountDeletedEmail("a@b.com");
+        // No Reply-To header: javax falls back to From.
+        assertThat(plain.getHeader("Reply-To")).isNull();
+    }
+
+    @Test
     void maskEmailKeepsOnlyTheFirstLetterAndDomain() {
         assertThat(EmailServiceImpl.maskEmail("yildirim@gmail.com")).isEqualTo("y***@gmail.com");
         assertThat(EmailServiceImpl.maskEmail("nope")).isEqualTo("***");

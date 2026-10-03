@@ -59,8 +59,8 @@ public class EmailServiceImpl implements EmailService {
         String html = """
                 <p>The password for your Wingmark account was just changed, and every device was signed out.</p>
                 <p>If this was you, there's nothing else to do.</p>
-                <p>If it wasn't, reset your password right away from the Wingmark app (Forgot password) and reply to this email so we can help.</p>
-                """;
+                <p>If it wasn't, reset your password right away from the Wingmark app (Forgot password) and %s so we can help.</p>
+                """.formatted(contactSupport());
         send(toEmail, "Your Wingmark password was changed", html, null, null);
     }
 
@@ -69,8 +69,8 @@ public class EmailServiceImpl implements EmailService {
         String html = """
                 <p>Your Wingmark account has been deleted.</p>
                 <p>Your profile, bird logs, badge progress, settings, sign-in sessions and uploaded photos have been permanently removed from our database. This can't be undone.</p>
-                <p>If you didn't request this, please contact us by replying to this email.</p>
-                """;
+                <p>If you didn't request this, please %s.</p>
+                """.formatted(contactSupport());
         send(toEmail, "Your Wingmark account has been deleted", html, null, null);
     }
 
@@ -80,6 +80,10 @@ public class EmailServiceImpl implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
             helper.setTo(toEmail);
             helper.setFrom(mailProperties.from());
+            if (StringUtils.hasText(businessProperties.contactEmail())) {
+                // The sender is a no-reply address; replies should reach support.
+                helper.setReplyTo(businessProperties.contactEmail());
+            }
             helper.setSubject(subject);
             helper.setText(bodyHtml + footer(), true);
             mailSender.send(message);
@@ -90,6 +94,14 @@ public class EmailServiceImpl implements EmailService {
                 log.debug("Undelivered {} for {}: {}", secretLabel, maskEmail(toEmail), secret);
             }
         }
+    }
+
+    /** Replies go to a no-reply sender, so point users at the support address when one is configured. */
+    String contactSupport() {
+        String email = businessProperties.contactEmail();
+        return StringUtils.hasText(email)
+                ? "contact us at " + HtmlUtils.htmlEscape(email)
+                : "contact support through the Wingmark app";
     }
 
     /** Legal sender details, once configured (see BusinessProperties); empty otherwise. */
