@@ -26,6 +26,7 @@ import com.wingmark.backend.repository.RefreshTokenRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.security.JwtTokenProvider;
+import com.wingmark.backend.security.PasswordPolicy;
 import com.wingmark.backend.service.ConsentService;
 import com.wingmark.backend.service.EmailService;
 import com.wingmark.backend.util.TokenHasher;
@@ -70,6 +71,8 @@ class AuthServiceImplTest {
     private EmailService emailService;
     @Mock
     private ConsentService consentService;
+    @Mock
+    private PasswordPolicy passwordPolicy;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final AppProperties appProperties = new AppProperties("http://localhost:8080");
@@ -81,14 +84,14 @@ class AuthServiceImplTest {
         authService = new AuthServiceImpl(
                 userRepository, userSettingsRepository, refreshTokenRepository,
                 passwordResetTokenRepository, emailVerificationTokenRepository,
-                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService);
+                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy);
     }
 
     @Test
     void registerRejectsDuplicateEmail() {
         when(userRepository.existsByEmailIgnoreCase("taken@example.com")).thenReturn(true);
 
-        RegisterRequestDto request = new RegisterRequestDto("taken@example.com", "password1", "newuser", "A", "B", null, null);
+        RegisterRequestDto request = new RegisterRequestDto("taken@example.com", "birdsong2026", "newuser", "A", "B", null, null);
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(DuplicateResourceException.class);
@@ -99,7 +102,7 @@ class AuthServiceImplTest {
         when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
         when(userRepository.existsByUsernameIgnoreCase("takenname")).thenReturn(true);
 
-        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "password1", "takenname", "A", "B", null, null);
+        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "birdsong2026", "takenname", "A", "B", null, null);
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(DuplicateResourceException.class);
@@ -115,7 +118,7 @@ class AuthServiceImplTest {
             return u;
         });
 
-        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "password1", "freshuser", "A", "B", null, null);
+        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "birdsong2026", "freshuser", "A", "B", null, null);
         RegisterResponseDto response = authService.register(request);
 
         assertThat(response.userId()).isNotNull();
@@ -138,7 +141,7 @@ class AuthServiceImplTest {
         org.mockito.Mockito.doThrow(new BadRequestException(ErrorCode.TERMS_NOT_ACCEPTED, "accept the terms"))
                 .when(consentService).requireAcceptedAtSignup(null, null);
 
-        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "password1", "freshuser", "A", "B", null, null);
+        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "birdsong2026", "freshuser", "A", "B", null, null);
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.TERMS_NOT_ACCEPTED));
@@ -389,6 +392,8 @@ class AuthServiceImplTest {
         assertThat(code.getUsedAt()).isNotNull();
         assertThat(user.currentTokenVersion()).isEqualTo(1);
         verify(refreshTokenRepository).revokeAllForUser(eq(userId), any());
+        verify(passwordPolicy).validate("brand-new-password1", "user@example.com", null);
+        verify(emailService).sendPasswordChangedEmail("user@example.com");
     }
 
     @Test
@@ -424,6 +429,8 @@ class AuthServiceImplTest {
         AuthResponseDto response = authService.changePassword(userId, "current-password1", "brand-new-password1");
 
         assertThat(response.accessToken()).isEqualTo("fresh-access");
+        verify(passwordPolicy).validate("brand-new-password1", "user@example.com", null);
+        verify(emailService).sendPasswordChangedEmail("user@example.com");
         assertThat(passwordEncoder.matches("brand-new-password1", user.getPasswordHash())).isTrue();
         assertThat(user.currentTokenVersion()).isEqualTo(1);
         verify(refreshTokenRepository).revokeAllForUser(eq(userId), any());

@@ -51,7 +51,7 @@ class AuthControllerTest {
 
         String registerBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
             put("email", email);
-            put("password", "password1");
+            put("password", "birdsong2026");
             put("username", username);
             put("firstName", "Flow");
             put("lastName", "User");
@@ -70,7 +70,7 @@ class AuthControllerTest {
 
         String loginBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
             put("email", email);
-            put("password", "password1");
+            put("password", "birdsong2026");
         }});
 
         // The verification link hasn't been clicked yet, so login is refused.
@@ -112,7 +112,7 @@ class AuthControllerTest {
         String email = "unverify-" + System.nanoTime() + "@example.com";
         String registerBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
             put("email", email);
-            put("password", "password1");
+            put("password", "birdsong2026");
             put("username", "unv" + System.nanoTime() % 1_000_000_000L);
         }});
         mockMvc.perform(post("/api/auth/register")
@@ -126,7 +126,7 @@ class AuthControllerTest {
 
         String loginResponse = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(java.util.Map.of("email", email, "password", "password1"))))
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("email", email, "password", "birdsong2026"))))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         JsonNode tokens = objectMapper.readTree(loginResponse);
@@ -155,7 +155,7 @@ class AuthControllerTest {
 
         String registerBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
             put("email", email);
-            put("password", "password1");
+            put("password", "birdsong2026");
             put("username", username);
         }});
         mockMvc.perform(post("/api/auth/register")
@@ -178,7 +178,7 @@ class AuthControllerTest {
 
         String loginBody = objectMapper.writeValueAsString(new java.util.HashMap<>() {{
             put("email", email);
-            put("password", "password1");
+            put("password", "birdsong2026");
         }});
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -234,12 +234,12 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(java.util.Map.of(
-                                "email", email, "password", "password1", "username", label + System.nanoTime() % 1_000_000))))
+                                "email", email, "password", "birdsong2026", "username", label + System.nanoTime() % 1_000_000))))
                 .andExpect(status().isCreated());
         User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
         user.setEmailVerified(true);
         userRepository.save(user);
-        return login(email, "password1", user.getId());
+        return login(email, "birdsong2026", user.getId());
     }
 
     private Session login(String email, String password, UUID userId) throws Exception {
@@ -261,7 +261,7 @@ class AuthControllerTest {
     @Test
     void errorResponsesCarryMachineReadableCodes() throws Exception {
         String email = "codes-" + System.nanoTime() + "@example.com";
-        String register = objectMapper.writeValueAsString(java.util.Map.of("email", email, "password", "password1", "username", "codes" + System.nanoTime() % 1_000_000));
+        String register = objectMapper.writeValueAsString(java.util.Map.of("email", email, "password", "birdsong2026", "username", "codes" + System.nanoTime() % 1_000_000));
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(register))
                 .andExpect(status().isCreated());
 
@@ -270,7 +270,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.code").value("EMAIL_TAKEN"));
 
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(java.util.Map.of("email", email, "password", "password1"))))
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("email", email, "password", "birdsong2026"))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("EMAIL_NOT_VERIFIED"));
 
@@ -331,7 +331,7 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(java.util.Map.of("refreshToken", session.refreshToken()))))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(java.util.Map.of("email", session.email(), "password", "password1"))))
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("email", session.email(), "password", "birdsong2026"))))
                 .andExpect(status().isUnauthorized());
 
         // The code is single-use.
@@ -356,7 +356,7 @@ class AuthControllerTest {
     @Test
     void changePasswordKeepsThisDeviceAndSignsOutTheOthers() throws Exception {
         Session phone = verifiedSession("chpw");
-        Session tablet = login(phone.email(), "password1", phone.userId());
+        Session tablet = login(phone.email(), "birdsong2026", phone.userId());
 
         mockMvc.perform(post("/api/users/" + phone.userId() + "/password")
                         .header("Authorization", "Bearer " + phone.accessToken())
@@ -368,14 +368,14 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/users/" + phone.userId() + "/password")
                         .header("Authorization", "Bearer " + phone.accessToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(java.util.Map.of("currentPassword", "password1", "newPassword", "password1"))))
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("currentPassword", "birdsong2026", "newPassword", "birdsong2026"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("SAME_PASSWORD"));
 
         JsonNode fresh = objectMapper.readTree(mockMvc.perform(post("/api/users/" + phone.userId() + "/password")
                         .header("Authorization", "Bearer " + phone.accessToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(java.util.Map.of("currentPassword", "password1", "newPassword", "brandnew123"))))
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("currentPassword", "birdsong2026", "newPassword", "brandnew123"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").exists())
                 .andExpect(jsonPath("$.refreshToken").exists())
@@ -395,7 +395,7 @@ class AuthControllerTest {
     @Test
     void logoutAllInvalidatesAccessTokensImmediately() throws Exception {
         Session phone = verifiedSession("logoutall");
-        Session tablet = login(phone.email(), "password1", phone.userId());
+        Session tablet = login(phone.email(), "birdsong2026", phone.userId());
 
         mockMvc.perform(post("/api/auth/logout-all").header("Authorization", "Bearer " + phone.accessToken()))
                 .andExpect(status().isNoContent());
@@ -403,6 +403,6 @@ class AuthControllerTest {
         expectProfile(phone, 401);
         expectProfile(tablet, 401);
         // Logging in again works normally and isn't affected by the cut-off.
-        expectProfile(login(phone.email(), "password1", phone.userId()), 200);
+        expectProfile(login(phone.email(), "birdsong2026", phone.userId()), 200);
     }
 }

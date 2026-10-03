@@ -15,7 +15,10 @@ public interface SpeciesRepository extends MongoRepository<Species, UUID> {
 
     boolean existsByScientificNameIgnoreCase(String scientificName);
 
-    /** Matches the search term against the common name in any translated locale. */
+    /**
+     * Matches the search term against the common name in any translated locale. The argument
+     * is used as a regex - callers must pass it through Pattern.quote (see SpeciesServiceImpl).
+     */
     @Query("{ $or: [ {'commonName.en': {$regex: ?0, $options: 'i'}}, {'commonName.tr': {$regex: ?0, $options: 'i'}} ] }")
     Page<Species> findByCommonNameContainingIgnoreCase(String commonName, Pageable pageable);
 }

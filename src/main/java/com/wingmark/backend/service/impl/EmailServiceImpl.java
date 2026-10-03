@@ -55,6 +55,16 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendPasswordChangedEmail(String toEmail) {
+        String html = """
+                <p>The password for your Wingmark account was just changed, and every device was signed out.</p>
+                <p>If this was you, there's nothing else to do.</p>
+                <p>If it wasn't, reset your password right away from the Wingmark app (Forgot password) and reply to this email so we can help.</p>
+                """;
+        send(toEmail, "Your Wingmark password was changed", html, null, null);
+    }
+
+    @Override
     public void sendAccountDeletedEmail(String toEmail) {
         String html = """
                 <p>Your Wingmark account has been deleted.</p>

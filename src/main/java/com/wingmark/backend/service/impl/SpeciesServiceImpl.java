@@ -21,6 +21,7 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +32,10 @@ public class SpeciesServiceImpl implements SpeciesService {
 
     @Override
     public Page<SpeciesResponseDto> getAll(String search, Pageable pageable) {
+        // The repository query feeds this into $regex, so escape it: a public search box must
+        // match the text literally, never run a caller-supplied (possibly catastrophic) pattern.
         Page<Species> species = StringUtils.hasText(search)
-                ? speciesRepository.findByCommonNameContainingIgnoreCase(search, pageable)
+                ? speciesRepository.findByCommonNameContainingIgnoreCase(Pattern.quote(search.trim()), pageable)
                 : speciesRepository.findAll(pageable);
         return species.map(this::toResponse);
     }

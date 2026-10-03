@@ -9,8 +9,10 @@ import com.wingmark.backend.dto.auth.RegisterResponseDto;
 import com.wingmark.backend.dto.auth.ResendVerificationEmailRequestDto;
 import com.wingmark.backend.dto.auth.ResetPasswordRequestDto;
 import com.wingmark.backend.security.UserPrincipal;
+import com.wingmark.backend.security.ratelimit.AuthRateLimits;
 import com.wingmark.backend.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,26 +35,30 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final AuthRateLimits authRateLimits;
 
     /** Creates a new, unverified account and emails a verification link. No tokens are issued until the email is verified. */
     @Operation(summary = "Register", description = "Creates a new, unverified account and emails a verification link. Returns the new account's id/email/username " +
             "but no tokens - the client must verify the email, then call POST /api/auth/login.")
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponseDto> register(@Valid @RequestBody RegisterRequestDto request) {
+    public ResponseEntity<RegisterResponseDto> register(@Valid @RequestBody RegisterRequestDto request, HttpServletRequest http) {
+        authRateLimits.register(http);
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
     /** Authenticates with email + password and returns a fresh token pair. */
     @Operation(summary = "Login", description = "Authenticates with email + password and returns a fresh access/refresh token pair.")
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto request) {
+    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto request, HttpServletRequest http) {
+        authRateLimits.login(http, request.email());
         return ResponseEntity.ok(authService.login(request));
     }
 
     /** Exchanges a still-valid refresh token for a new token pair, revoking the old refresh token. */
     @Operation(summary = "Refresh access token", description = "Exchanges a still-valid refresh token for a new token pair; the old refresh token is revoked.")
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponseDto> refresh(@Valid @RequestBody RefreshTokenRequestDto request) {
+    public ResponseEntity<AuthResponseDto> refresh(@Valid @RequestBody RefreshTokenRequestDto request, HttpServletRequest http) {
+        authRateLimits.refresh(http);
         return ResponseEntity.ok(authService.refresh(request.refreshToken()));
     }
 
@@ -78,7 +84,8 @@ public class AuthController {
             "Only the newest code is valid; a request within 60 seconds of the last code sends nothing. " +
             "Always responds 202 regardless, to avoid revealing which emails are registered.")
     @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto request) {
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto request, HttpServletRequest http) {
+        authRateLimits.emailSending(http, "forgot-password", request.email());
         authService.forgotPassword(request);
         return ResponseEntity.accepted().build();
     }
@@ -87,7 +94,8 @@ public class AuthController {
     @Operation(summary = "Reset password", description = "Body: {email, code, newPassword}. Consumes the emailed 6-digit code to set a new password and signs out every session. " +
             "400 INVALID_OR_EXPIRED_CODE for a wrong/expired/used code (the code is burned after 5 wrong guesses), 400 SAME_PASSWORD, 400 VALIDATION_FAILED.")
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequestDto request) {
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequestDto request, HttpServletRequest http) {
+        authRateLimits.resetConfirm(http, request.email());
         authService.resetPassword(request);
         return ResponseEntity.noContent().build();
     }
@@ -113,7 +121,8 @@ public class AuthController {
     @Operation(summary = "Resend verification email", description = "Issues and emails a fresh verification link for the given email, if an account exists and isn't already verified. " +
             "Always responds 202 regardless, to avoid revealing which emails are registered.")
     @PostMapping("/resend-verification-email")
-    public ResponseEntity<Void> resendVerificationEmail(@Valid @RequestBody ResendVerificationEmailRequestDto request) {
+    public ResponseEntity<Void> resendVerificationEmail(@Valid @RequestBody ResendVerificationEmailRequestDto request, HttpServletRequest http) {
+        authRateLimits.emailSending(http, "resend-verification", request.email());
         authService.resendVerificationEmail(request);
         return ResponseEntity.accepted().build();
     }

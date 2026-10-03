@@ -65,11 +65,13 @@ class SpeciesServiceImplTest {
     @Test
     void getAllWithSearchFiltersByCommonName() {
         Pageable pageable = PageRequest.of(0, 20);
-        when(speciesRepository.findByCommonNameContainingIgnoreCase("sparrow", pageable)).thenReturn(Page.empty());
+        String quoted = java.util.regex.Pattern.quote("sparrow");
+        when(speciesRepository.findByCommonNameContainingIgnoreCase(quoted, pageable)).thenReturn(Page.empty());
 
-        speciesService.getAll("sparrow", pageable);
+        speciesService.getAll(" sparrow ", pageable);
 
-        verify(speciesRepository).findByCommonNameContainingIgnoreCase("sparrow", pageable);
+        // Escaped (and trimmed) before it reaches the $regex query.
+        verify(speciesRepository).findByCommonNameContainingIgnoreCase(quoted, pageable);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.wingmark.backend.security;
 
+import com.wingmark.backend.config.AppProperties;
 import com.wingmark.backend.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -21,7 +22,7 @@ class JwtTokenProviderTest {
     private static final String SECRET = "unit-test-jwt-secret-key-must-be-long-enough-1234567890";
 
     private final JwtProperties properties = new JwtProperties(SECRET, 900_000L, 2_592_000_000L);
-    private final JwtTokenProvider provider = new JwtTokenProvider(properties);
+    private final JwtTokenProvider provider = new JwtTokenProvider(properties, new AppProperties("http://localhost:8080"));
 
     @Test
     void generatedTokenRoundTripsUserIdAndRole() {
@@ -89,5 +90,24 @@ class JwtTokenProviderTest {
     void exposesConfiguredExpirations() {
         assertThat(provider.getAccessTokenExpirationMs()).isEqualTo(900_000L);
         assertThat(provider.getRefreshTokenExpirationMs()).isEqualTo(2_592_000_000L);
+    }
+
+    @Test
+    void refusesToStartADeployedServerOnTheDevelopmentSecret() {
+        JwtTokenProvider deployed = new JwtTokenProvider(
+                new JwtProperties(JwtTokenProvider.DEV_SECRET, 900_000L, 2_592_000_000L),
+                new AppProperties("https://wingmark-backend.onrender.com"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(deployed::rejectDevelopmentSecretOutsideLocalhost)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("JWT_SECRET");
+    }
+
+    @Test
+    void developmentSecretIsFineLocallyAndARealSecretIsFineAnywhere() {
+        new JwtTokenProvider(new JwtProperties(JwtTokenProvider.DEV_SECRET, 1L, 1L), new AppProperties("http://localhost:8080"))
+                .rejectDevelopmentSecretOutsideLocalhost();
+        new JwtTokenProvider(new JwtProperties(SECRET, 1L, 1L), new AppProperties("https://wingmark-backend.onrender.com"))
+                .rejectDevelopmentSecretOutsideLocalhost();
     }
 }

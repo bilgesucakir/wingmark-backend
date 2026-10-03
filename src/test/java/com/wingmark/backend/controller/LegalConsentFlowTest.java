@@ -49,7 +49,7 @@ class LegalConsentFlowTest {
         String id = Long.toString(System.nanoTime() % 1_000_000);
         Map<String, Object> body = new HashMap<>();
         body.put("email", label + id + "@example.com");
-        body.put("password", "password1");
+        body.put("password", "birdsong2026");
         body.put("username", label + id);
         return body;
     }
@@ -96,7 +96,7 @@ class LegalConsentFlowTest {
                 .extracting(c -> c.getType() + "@" + c.getVersion())
                 .containsExactly("TERMS@2026-10-01", "PRIVACY@2026-09-15");
 
-        String loginBody = objectMapper.writeValueAsString(Map.of("email", email, "password", "password1"));
+        String loginBody = objectMapper.writeValueAsString(Map.of("email", email, "password", "birdsong2026"));
         JsonNode login = objectMapper.readTree(mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(loginBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.pendingConsents").isEmpty())

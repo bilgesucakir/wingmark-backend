@@ -13,6 +13,7 @@ import com.wingmark.backend.dto.user.UpdateSettingsRequestDto;
 import com.wingmark.backend.dto.user.UserProfileResponseDto;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.security.UserPrincipal;
+import com.wingmark.backend.security.ratelimit.AuthRateLimits;
 import com.wingmark.backend.service.AuthService;
 import com.wingmark.backend.service.ConsentService;
 import com.wingmark.backend.service.DataExportService;
@@ -51,6 +52,7 @@ public class UserController {
 
     private final UserService userService;
     private final AuthService authService;
+    private final AuthRateLimits authRateLimits;
     private final ConsentService consentService;
     private final DataExportService dataExportService;
 
@@ -109,6 +111,7 @@ public class UserController {
                                                           @PathVariable UUID userId,
                                                           @Valid @RequestBody ChangePasswordRequestDto request) {
         requireSelf(principal, userId);
+        authRateLimits.passwordCheck(userId);
         return ResponseEntity.ok(authService.changePassword(userId, request.currentPassword(), request.newPassword()));
     }
 
@@ -160,6 +163,7 @@ public class UserController {
                                               @PathVariable UUID userId,
                                               @Valid @RequestBody DeleteAccountRequestDto request) {
         requireSelf(principal, userId);
+        authRateLimits.passwordCheck(userId);
         userService.deleteOwnAccount(userId, request.password());
         return ResponseEntity.noContent().build();
     }
