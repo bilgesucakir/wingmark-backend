@@ -28,6 +28,7 @@ import com.wingmark.backend.repository.RefreshTokenRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.security.JwtTokenProvider;
+import com.wingmark.backend.security.PasswordPolicy;
 import com.wingmark.backend.service.AuthService;
 import com.wingmark.backend.service.ConsentService;
 import com.wingmark.backend.service.EmailService;
@@ -61,6 +62,7 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final AppProperties appProperties;
     private final ConsentService consentService;
+    private final PasswordPolicy passwordPolicy;
 
     @Override
     public RegisterResponseDto register(RegisterRequestDto request) {
@@ -71,6 +73,7 @@ public class AuthServiceImpl implements AuthService {
             throw new DuplicateResourceException(ErrorCode.USERNAME_TAKEN, "This username is already taken");
         }
         consentService.requireAcceptedAtSignup(request.acceptedTermsVersion(), request.acceptedPrivacyVersion());
+        passwordPolicy.validate(request.password(), request.email(), request.username());
 
         User user = User.builder()
                 .email(request.email())
@@ -208,6 +211,7 @@ public class AuthServiceImpl implements AuthService {
         if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
             throw new BadRequestException(ErrorCode.SAME_PASSWORD, "New password must be different from the current password");
         }
+        passwordPolicy.validate(request.newPassword(), user.getEmail(), user.getUsername());
 
         resetToken.setUsedAt(Instant.now());
         passwordResetTokenRepository.save(resetToken);
@@ -226,6 +230,7 @@ public class AuthServiceImpl implements AuthService {
         if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
             throw new BadRequestException(ErrorCode.SAME_PASSWORD, "New password must be different from the current password");
         }
+        passwordPolicy.validate(newPassword, user.getEmail(), user.getUsername());
 
         setPasswordAndEndSessions(user, newPassword);
         // Every other device is signed out; hand this one a fresh pair so it stays in.
@@ -238,6 +243,7 @@ public class AuthServiceImpl implements AuthService {
         user.invalidateIssuedTokens();
         userRepository.save(user);
         refreshTokenRepository.revokeAllForUser(user.getId(), Instant.now());
+        emailService.sendPasswordChangedEmail(user.getEmail());
     }
 
     /** Salted with the user id: codes are only 6 digits, so two users can draw the same one and tokenHash is unique. */

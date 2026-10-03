@@ -17,6 +17,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -32,6 +37,10 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+    private final CorsProperties corsProperties;
+
+    static final String ADMIN_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data:; "
+            + "connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/register",
@@ -54,7 +63,16 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
+                        .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                        // The admin panel loads only its own scripts and styles: no inline code, so an
+                        // injected <script> can't run even if some escaping were ever missed. Images
+                        // may come from https (iNaturalist candidates). Scoped to /admin/** because
+                        // Swagger UI relies on inline scripts.
+                        .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
+                                new AntPathRequestMatcher("/admin/**"),
+                                new StaticHeadersWriter("Content-Security-Policy", ADMIN_CSP))))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(handling -> handling
@@ -84,14 +102,19 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    /**
+     * The iOS app isn't a browser and the admin panel is same-origin, so neither needs CORS.
+     * Browsers on other origins are refused unless listed in CORS_ALLOWED_ORIGINS (e.g. a
+     * future web client). Auth is bearer tokens, never cookies, so credentials stay off.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOrigins(corsProperties.allowedOrigins().stream().filter(StringUtils::hasText).toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("X-Result-Truncated"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Accept-Language"));
+        configuration.setExposedHeaders(List.of("X-Result-Truncated", "Retry-After", "Content-Disposition"));
+        configuration.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

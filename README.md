@@ -89,6 +89,8 @@ so it always deploys as a container). To deploy:
      the documents are published; see [Legal](#legal-apilegal).
    - `LOG_LEVEL` — leave unset (INFO). **Never set `DEBUG` in production**: at DEBUG,
      undelivered verification links and reset codes are logged.
+   - `CORS_ALLOWED_ORIGINS` — leave unset. Only needed if a browser app on another origin
+     must call the API; the iOS app and the same-origin admin panel don't need it.
    - `XENO_CANTO_API_KEY` — optional, only needed for the sound-recordings endpoint.
    - `JWT_SECRET` is generated automatically by Render on first deploy; everything else
      (`UPLOAD_DIR`, `SMTP_PORT`, port, JWT expirations) is already wired to sensible
@@ -193,6 +195,8 @@ A `406` (client refuses JSON) has no body at all.
 | `BAD_REQUEST` | 400 | Other invalid values (e.g. a species/badge name without an `en` translation) |
 | `OBSERVED_AT_IN_FUTURE` | 400 | A bird log's `observedAt` is more than 5 minutes in the future |
 | `SAME_PASSWORD` | 400 | Reset/change password to the current password |
+| `WEAK_PASSWORD` | 400 | Password contains the email/username, or is a well-known password (see [Password rules](#password-rules)) |
+| `PASSWORD_BREACHED` | 400 | Password appears in a known data breach (Have I Been Pwned) - ask for a different one |
 | `INVALID_PROFILE_PICTURE` | 400 | `profilePicture` isn't null, a preset avatar key, or an existing upload |
 | `INVALID_BOUNDS` | 400 | Map box out of range or `minLat > maxLat` |
 | `INVALID_OR_EXPIRED_CODE` | 400 | Wrong, expired, used, or burned (5 wrong guesses) password-reset code |
@@ -210,8 +214,10 @@ A `406` (client refuses JSON) has no body at all.
 | `EMAIL_TAKEN` / `USERNAME_TAKEN` | 409 | Register with an email/username already in use |
 | `LAST_ADMIN` | 409 | The only admin tried to delete their own account |
 | `FILE_TOO_LARGE` | 413 | Upload over 10MB |
+| `REQUEST_TOO_LARGE` | 413 | Non-upload request body over 1MB |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Upload that isn't JPEG/PNG, or a request body in an unsupported content type |
 | `INVALID_REFERENCE` | 422 | Body points at a species that doesn't exist (`speciesId`, `favoriteSpeciesId`) |
+| `RATE_LIMITED` | 429 | Too many attempts - wait `Retry-After` seconds (see [Rate limits](#rate-limits)) |
 | `EXTERNAL_SERVICE_ERROR` | 502 | Xeno-canto / iNaturalist failed or isn't configured |
 | `INTERNAL_ERROR` | 500 | Unexpected server error (logged server-side) |
 
@@ -224,9 +230,43 @@ Status codes used across the API:
 | `403 Forbidden` | Authenticated but not allowed: non-admin on an admin endpoint, unverified email on login/refresh, wrong password on change-password/account deletion |
 | `404 Not Found` | The resource in the URL doesn't exist - or belongs to another user (never 403, so ids aren't confirmed) |
 | `409 Conflict` | Duplicate email/username/scientific name, or a state conflict (the last admin deleting themselves, an admin demoting/un-verifying themselves) |
-| `413 Payload Too Large` | Upload over 10MB |
+| `413 Payload Too Large` | Upload over 10MB, or any other request body over 1MB |
 | `415 Unsupported Media Type` | Upload that isn't a JPEG/PNG image |
 | `422 Unprocessable Entity` | The URL was found but the body points at something that doesn't exist, e.g. an unknown `speciesId` / `favoriteSpeciesId` |
+| `429 Too Many Requests` | Rate limit hit (`RATE_LIMITED`); the `Retry-After` header says how many seconds to wait |
+
+#### Password rules
+
+Enforced by the server on register, reset-password and change-password; the app should
+mirror them for instant feedback, but the server's check is the one that counts:
+- 10-72 characters, with at least one letter and one digit (`400 VALIDATION_FAILED`).
+  72 is bcrypt's limit, since it ignores anything longer.
+- Must not contain the email's name part or the username (`400 WEAK_PASSWORD`).
+- Must not be a well-known password like `Password123` (`400 WEAK_PASSWORD`).
+- Must not appear in a known data breach (`400 PASSWORD_BREACHED`). This is checked with Have I
+  Been Pwned's k-anonymity range API: only the first 5 characters of the password's SHA-1
+  leave the server. If the API is down, the check is skipped rather than blocking signups.
+
+Existing passwords keep working; the rules apply when a password is set.
+
+#### Rate limits
+
+Per account (email or user) **and** per client IP, counted whether or not the attempt succeeds.
+The same limits apply whether or not the email exists:
+
+| Endpoint | Limit |
+|---|---|
+| `POST /api/auth/login` | 10 per account and 50 per IP / 15 min |
+| `POST /api/auth/register` | 10 per IP / hour |
+| `POST /api/auth/forgot-password`, `/resend-verification-email` | 3 per email and 20 per IP / hour (each) |
+| `POST /api/auth/reset-password` | 10 per account and 30 per IP / 15 min (plus the 5-wrong-guesses limit per code) |
+| `POST /api/auth/refresh` | 120 per IP / 15 min |
+| `POST /api/users/{id}/password`, `DELETE /api/users/{id}` | 10 per user / 15 min |
+| Everything under `/api/` | 600 per IP / minute |
+
+Over the limit → `429 RATE_LIMITED` with `Retry-After`. Counters are in memory, which is
+right for one instance; more instances would need a shared store (e.g. Redis). All limits
+are configurable under `wingmark.rate-limit.*`.
 
 ### Auth (`/api/auth`)
 
@@ -474,7 +514,9 @@ Request:
 Response: a fresh token pair (same shape as `/api/auth/login`) - store it, since every
 other session, **including the access token used for this call**, is signed out.
 Errors: `403 WRONG_PASSWORD`, `400 SAME_PASSWORD`, `400 VALIDATION_FAILED`
-(`newPassword` needs 8-72 chars with a letter and a number).
+(`newPassword` must follow the [password rules](#password-rules): `400 WEAK_PASSWORD` /
+`PASSWORD_BREACHED` too). A "your password was changed" email goes to the account, as it
+does after a reset.
 
 **DELETE `` (delete own account)** → `204 No Content`
 
@@ -1047,6 +1089,16 @@ only ever appended; an existing key is never renamed or removed.
 - **Expired tokens delete themselves**: refresh, password-reset and email-verification
   tokens have a TTL index on `expiresAt`, so MongoDB removes each one once it can no
   longer be used, instead of keeping them forever.
+- **Hardening for App Store review** (`docs/appstore/05-backend-tasks.md`):
+  - rate limits and the password rules above;
+  - "password changed" emails after a reset or change;
+  - a strict Content-Security-Policy on the admin panel (no inline scripts or styles);
+  - CORS closed to other origins;
+  - non-upload bodies capped at 1MB;
+  - every admin change logged as `ADMIN_AUDIT admin=<id> <METHOD> <path> -> <status>`;
+  - the species search escapes its input before it reaches `$regex`;
+  - a deployed server (non-localhost `APP_BASE_URL`) refuses to start on the public
+    development `JWT_SECRET`.
 - **Badges recompute on every log change**: create/update/delete a bird log and every
   badge's progress is recalculated for that user in the same request — no background
   job, no separate "sync" step.

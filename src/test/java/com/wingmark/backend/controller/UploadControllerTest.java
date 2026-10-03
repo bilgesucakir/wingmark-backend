@@ -42,7 +42,7 @@ class UploadControllerTest {
         String email = "upload-" + id + "@example.com";
         String body = objectMapper.writeValueAsString(new HashMap<>() {{
             put("email", email);
-            put("password", "password1");
+            put("password", "birdsong2026");
             put("username", "upload" + id);
         }});
         String response = mockMvc.perform(post("/api/auth/register")
@@ -50,7 +50,7 @@ class UploadControllerTest {
                         .content(body))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
-        return TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, email, "password1");
+        return TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, email, "birdsong2026");
     }
 
     private byte[] jpegBytes() throws Exception {

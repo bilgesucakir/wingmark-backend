@@ -218,12 +218,14 @@ function renderSpeciesList(species) {
     const li = document.createElement("li");
     li.className = "species-row";
     li.innerHTML =
-      '<img class="species-thumb" src="' + escapeHtml(thumb) + '" onerror="this.style.visibility=\'hidden\'" />' +
+      '<img class="species-thumb" src="' + escapeHtml(thumb) + '" />' +
       '<div class="species-info">' +
       '<div class="common">' + escapeHtml(commonName(s)) + "</div>" +
       '<div class="scientific">' + escapeHtml(s.scientificName) + "</div>" +
       "</div>" +
       '<div class="row-actions"><button class="secondary edit-btn">Edit</button></div>';
+    // A listener rather than an inline onerror= attribute: the CSP forbids inline handlers.
+    li.querySelector(".species-thumb").addEventListener("error", (e) => { e.target.style.visibility = "hidden"; });
     li.querySelector(".edit-btn").addEventListener("click", () => openEditForm(s.id));
     speciesListEl.appendChild(li);
   });
@@ -561,7 +563,7 @@ function renderProfilePicture(container, value) {
     return;
   }
   if (value.startsWith("/uploads/")) {
-    container.innerHTML = '<img alt="Profile photo" style="max-width:96px;max-height:96px;border-radius:8px">';
+    container.innerHTML = '<img alt="Profile photo" class="profile-photo">';
     container.querySelector("img").src = value;
     return;
   }
@@ -1073,8 +1075,10 @@ function renderBarChart(container, items, labelFn, valueFn) {
     row.className = "bar-row";
     row.innerHTML =
       '<div class="bar-label" title="' + escapeHtml(label) + '">' + escapeHtml(label) + "</div>" +
-      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="bar-track"><div class="bar-fill"></div></div>' +
       '<div class="bar-value">' + value + "</div>";
+    // Set through the DOM, not a style="" attribute, which the CSP blocks.
+    row.querySelector(".bar-fill").style.width = pct + "%";
     container.appendChild(row);
   });
 }

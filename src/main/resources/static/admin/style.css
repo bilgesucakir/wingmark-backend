@@ -420,3 +420,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 560px) {
   .bar-row { grid-template-columns: 90px 1fr 36px; }
 }
+
+.profile-photo {
+  max-width: 96px;
+  max-height: 96px;
+  border-radius: 8px;
+}

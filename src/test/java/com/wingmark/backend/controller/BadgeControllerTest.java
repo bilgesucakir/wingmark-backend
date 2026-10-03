@@ -45,7 +45,7 @@ class BadgeControllerTest {
     private String registerLoginAsAdmin(String label) throws Exception {
         String id = shortId();
         String email = label + "-" + id + "@example.com";
-        String password = "password1";
+        String password = "birdsong2026";
         String username = label + id;
 
         String registerBody = objectMapper.writeValueAsString(new HashMap<>() {{
@@ -80,7 +80,7 @@ class BadgeControllerTest {
         String id = shortId();
         String body = objectMapper.writeValueAsString(new HashMap<>() {{
             put("email", label + "-" + id + "@example.com");
-            put("password", "password1");
+            put("password", "birdsong2026");
             put("username", label + id);
         }});
 
@@ -91,7 +91,7 @@ class BadgeControllerTest {
                 .andReturn().getResponse().getContentAsString();
 
         String registeredEmail = objectMapper.readTree(response).get("email").asText();
-        return TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, registeredEmail, "password1");
+        return TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, registeredEmail, "birdsong2026");
     }
 
     private UUID extractUserId(String accessToken) throws Exception {

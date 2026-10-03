@@ -42,7 +42,7 @@ class AdminUserControllerTest {
     private Registered register(String label) throws Exception {
         String id = shortId();
         String email = label + "-" + id + "@example.com";
-        String password = "password1";
+        String password = "birdsong2026";
         String username = label + id;
 
         String body = objectMapper.writeValueAsString(new HashMap<>() {{

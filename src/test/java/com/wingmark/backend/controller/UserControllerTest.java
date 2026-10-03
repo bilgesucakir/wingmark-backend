@@ -74,7 +74,7 @@ class UserControllerTest {
 
         String body = objectMapper.writeValueAsString(new HashMap<>() {{
             put("email", email);
-            put("password", "password1");
+            put("password", "birdsong2026");
             put("username", username);
         }});
         String response = mockMvc.perform(post("/api/auth/register")
@@ -84,7 +84,7 @@ class UserControllerTest {
                 .andReturn().getResponse().getContentAsString();
 
         String registeredEmail = objectMapper.readTree(response).get("email").asText();
-        String accessToken = TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, registeredEmail, "password1");
+        String accessToken = TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, registeredEmail, "birdsong2026");
         String payload = accessToken.split("\\.")[1];
         String subject = objectMapper.readTree(java.util.Base64.getUrlDecoder().decode(payload)).get("sub").asText();
         return new Registered(subject, accessToken);
@@ -187,12 +187,12 @@ class UserControllerTest {
         String email = "gone-" + id + "@example.com";
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", "password1", "username", "gone" + id))))
+                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", "birdsong2026", "username", "gone" + id))))
                 .andExpect(status().isCreated());
-        TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, email, "password1");
+        TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, email, "birdsong2026");
         JsonNode tokens = objectMapper.readTree(mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", "password1"))))
+                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", "birdsong2026"))))
                 .andReturn().getResponse().getContentAsString());
         String accessToken = tokens.get("accessToken").asText();
         String refreshToken = tokens.get("refreshToken").asText();
@@ -220,7 +220,7 @@ class UserControllerTest {
         mockMvc.perform(delete("/api/users/" + userId)
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("password", "password1"))))
+                        .content(objectMapper.writeValueAsString(Map.of("password", "birdsong2026"))))
                 .andExpect(status().isNoContent());
 
         assertThat(userRepository.findById(userId)).isEmpty();
@@ -252,7 +252,7 @@ class UserControllerTest {
         mockMvc.perform(delete("/api/users/" + owner.userId())
                         .header("Authorization", "Bearer " + owner.accessToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("password", "password1"))))
+                        .content(objectMapper.writeValueAsString(Map.of("password", "birdsong2026"))))
                 .andExpect(status().isNoContent());
 
         assertThat(storedInDb(sharedPhoto)).isTrue();
@@ -266,7 +266,7 @@ class UserControllerTest {
         mockMvc.perform(delete("/api/users/" + victim.userId())
                         .header("Authorization", "Bearer " + caller.accessToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("password", "password1"))))
+                        .content(objectMapper.writeValueAsString(Map.of("password", "birdsong2026"))))
                 .andExpect(status().isNotFound());
         assertThat(userRepository.findById(UUID.fromString(victim.userId()))).isPresent();
     }
@@ -364,7 +364,7 @@ class UserControllerTest {
         mockMvc.perform(delete("/api/users/" + user.userId())
                         .header("Authorization", "Bearer " + user.accessToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("password", "password1"))))
+                        .content(objectMapper.writeValueAsString(Map.of("password", "birdsong2026"))))
                 .andExpect(status().isNoContent());
 
         var audit = accountDeletionRepository.findAll().stream()

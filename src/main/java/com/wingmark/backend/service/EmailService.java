@@ -9,6 +9,9 @@ public interface EmailService {
     /** Sends the 6-digit password-reset code the user types into the app. */
     void sendPasswordResetCode(String toEmail, String code, int validMinutes);
 
+    /** Security notice after a password change or reset, so an unexpected change gets noticed. */
+    void sendPasswordChangedEmail(String toEmail);
+
     /** Confirms to the (former) account holder that their account and data were deleted. */
     void sendAccountDeletedEmail(String toEmail);
 }
