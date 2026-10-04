@@ -6,6 +6,7 @@ import com.wingmark.backend.dto.badge.UpdateBadgeRequestDto;
 import com.wingmark.backend.entity.Badge;
 import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.entity.Species;
+import com.wingmark.backend.entity.User;
 import com.wingmark.backend.entity.UserBadge;
 import com.wingmark.backend.enums.BadgeCriteriaType;
 import com.wingmark.backend.enums.BadgeTier;
@@ -14,6 +15,7 @@ import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.BadgeRepository;
 import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
+import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserBadgeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +46,8 @@ class BadgeServiceImplTest {
     private BirdLogRepository birdLogRepository;
     @Mock
     private SpeciesRepository speciesRepository;
+    @Mock
+    private UserRepository userRepository;
 
     private BadgeServiceImpl badgeService;
 
@@ -51,7 +55,7 @@ class BadgeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        badgeService = new BadgeServiceImpl(badgeRepository, userBadgeRepository, birdLogRepository, speciesRepository);
+        badgeService = new BadgeServiceImpl(badgeRepository, userBadgeRepository, birdLogRepository, speciesRepository, userRepository);
     }
 
     @Test
@@ -241,7 +245,7 @@ class BadgeServiceImplTest {
         when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateBadgeRequestDto request = new UpdateBadgeRequestDto(
-                Map.of("en", "New name"), Map.of("en", "New description"), "icon.png", BadgeCriteriaType.UNIQUE_SPECIES, 20, null, BadgeTier.GOLD);
+                Map.of("en", "New name"), Map.of("en", "New description"), "icon.png", BadgeCriteriaType.UNIQUE_SPECIES, 20, null, BadgeTier.GOLD, 3);
 
         BadgeResponseDto response = badgeService.update(badgeId, request);
 
@@ -249,6 +253,7 @@ class BadgeServiceImplTest {
         assertThat(response.criteriaType()).isEqualTo(BadgeCriteriaType.UNIQUE_SPECIES);
         assertThat(response.criteriaValue()).isEqualTo(20);
         assertThat(response.tier()).isEqualTo(BadgeTier.GOLD);
+        assertThat(response.displayOrder()).isEqualTo(3);
     }
 
     @Test
@@ -257,7 +262,7 @@ class BadgeServiceImplTest {
         when(badgeRepository.findById(badgeId)).thenReturn(Optional.empty());
 
         UpdateBadgeRequestDto request = new UpdateBadgeRequestDto(
-                Map.of("en", "Name"), null, null, BadgeCriteriaType.TOTAL_LOGS, 5, null, null);
+                Map.of("en", "Name"), null, null, BadgeCriteriaType.TOTAL_LOGS, 5, null, null, null);
 
         assertThatThrownBy(() -> badgeService.update(badgeId, request)).isInstanceOf(ResourceNotFoundException.class);
     }
@@ -404,7 +409,7 @@ class BadgeServiceImplTest {
     void sameGenusBadgeRejectsABlankOrNonTextGenus() {
         for (Object genus : new Object[]{"", "  ", 42}) {
             CreateBadgeRequestDto request = new CreateBadgeRequestDto(Map.of("en", "Twins"), null, null,
-                    BadgeCriteriaType.SAME_GENUS_SPECIES, 2, Map.of("genus", genus), BadgeTier.BRONZE);
+                    BadgeCriteriaType.SAME_GENUS_SPECIES, 2, Map.of("genus", genus), BadgeTier.BRONZE, null);
 
             assertThatThrownBy(() -> badgeService.create(request))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -418,9 +423,111 @@ class BadgeServiceImplTest {
 
         for (Map<String, Object> metadata : java.util.Arrays.asList(null, Map.<String, Object>of(), Map.<String, Object>of("genus", "Passer"))) {
             CreateBadgeRequestDto request = new CreateBadgeRequestDto(Map.of("en", "Twins"), null, null,
-                    BadgeCriteriaType.SAME_GENUS_SPECIES, 2, metadata, BadgeTier.BRONZE);
+                    BadgeCriteriaType.SAME_GENUS_SPECIES, 2, metadata, BadgeTier.BRONZE, null);
 
             assertThat(badgeService.create(request).criteriaType()).isEqualTo(BadgeCriteriaType.SAME_GENUS_SPECIES);
         }
+    }
+
+    private static Badge badgeWithOrder(String name, Integer displayOrder) {
+        return Badge.builder().id(UUID.randomUUID()).name(Map.of("en", name)).criteriaValue(1).displayOrder(displayOrder).build();
+    }
+
+    @Test
+    void catalogIsSortedByDisplayOrderWithUnorderedBadgesLastInStoredOrder() {
+        Badge third = badgeWithOrder("third", 3);
+        Badge unorderedA = badgeWithOrder("unorderedA", null);
+        Badge first = badgeWithOrder("first", 1);
+        Badge unorderedB = badgeWithOrder("unorderedB", null);
+        Badge second = badgeWithOrder("second", 2);
+        when(badgeRepository.findAll()).thenReturn(List.of(third, unorderedA, first, unorderedB, second));
+
+        List<BadgeResponseDto> catalog = badgeService.getAll();
+
+        assertThat(catalog).extracting(b -> b.name().get("en"))
+                .containsExactly("first", "second", "third", "unorderedA", "unorderedB");
+        assertThat(catalog.get(0).displayOrder()).isEqualTo(1);
+    }
+
+    @Test
+    void userBadgesFollowTheSameDisplayOrder() {
+        Badge second = badgeWithOrder("second", 2);
+        Badge first = badgeWithOrder("first", 1);
+        when(badgeRepository.findAll()).thenReturn(List.of(second, first));
+        when(userBadgeRepository.findByUserId(userId)).thenReturn(List.of());
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThat(badgeService.getByUserId(userId, java.util.Locale.ENGLISH))
+                .extracting(b -> b.badgeName()).containsExactly("first", "second");
+    }
+
+    @Test
+    void creatingABadgeStoresItsDisplayOrder() {
+        when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
+        CreateBadgeRequestDto request = new CreateBadgeRequestDto(Map.of("en", "Early"), null, null,
+                BadgeCriteriaType.TOTAL_LOGS, 1, null, null, 0);
+
+        assertThat(badgeService.create(request).displayOrder()).isZero();
+    }
+
+    private Badge favoriteBadge(int target) {
+        return Badge.builder().id(UUID.randomUUID()).name(Map.of("en", "Favorite " + target))
+                .criteriaType(BadgeCriteriaType.FAVORITE_SPECIES_LOGS).criteriaValue(target).build();
+    }
+
+    @Test
+    void favoriteSpeciesBadgeCountsLogsOfTheUsersFavoriteSpecies() {
+        UUID favorite = UUID.randomUUID();
+        Badge badge = favoriteBadge(5);
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).favoriteSpeciesId(favorite).build()));
+        when(birdLogRepository.countByUserIdAndSpeciesId(userId, favorite)).thenReturn(5L);
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        badgeService.evaluateForUser(userId);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isEqualTo(5);
+        assertThat(captor.getValue().getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void favoriteSpeciesBadgeHasNoProgressWithoutAFavoriteSpecies() {
+        Badge badge = favoriteBadge(1);
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).build()));
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        badgeService.evaluateForUser(userId);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isZero();
+        assertThat(captor.getValue().getEarnedAt()).isNull();
+    }
+
+    @Test
+    void favoriteSpeciesBadgesAreHiddenFromUsersWithoutAFavoriteSpecies() {
+        Badge favorite = favoriteBadge(1);
+        Badge total = badgeWithOrder("Total", null);
+        when(badgeRepository.findAll()).thenReturn(List.of(favorite, total));
+        when(userBadgeRepository.findByUserId(userId)).thenReturn(List.of());
+        when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).build()));
+
+        assertThat(badgeService.getByUserId(userId, java.util.Locale.ENGLISH))
+                .extracting(b -> b.badgeId()).containsExactly(total.getId());
+    }
+
+    @Test
+    void favoriteSpeciesBadgesAreShownToUsersWithAFavoriteSpecies() {
+        Badge favorite = favoriteBadge(1);
+        Badge total = badgeWithOrder("Total", null);
+        when(badgeRepository.findAll()).thenReturn(List.of(favorite, total));
+        when(userBadgeRepository.findByUserId(userId)).thenReturn(List.of());
+        when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).favoriteSpeciesId(UUID.randomUUID()).build()));
+
+        assertThat(badgeService.getByUserId(userId, java.util.Locale.ENGLISH))
+                .extracting(b -> b.badgeId()).containsExactly(favorite.getId(), total.getId());
     }
 }

@@ -448,6 +448,10 @@
               </select>
             </div>
           </div>
+          <div class="field">
+            <label for="badge-displayOrder">Display order (optional; lowest first in the app, empty = last)</label>
+            <input type="text" id="badge-displayOrder" inputmode="numeric" placeholder="e.g. 1" />
+          </div>
           <div class="grid-2">
             <div class="field">
               <label for="badge-criteriaType">Criteria type *</label>
@@ -461,6 +465,7 @@
                 <option value="SIGHTINGS_IN_RADIUS">Sightings in radius</option>
                 <option value="SPECIES_LOGS">Specific species logs</option>
                 <option value="SAME_GENUS_SPECIES">Same genus species</option>
+                <option value="FAVORITE_SPECIES_LOGS">Favorite species logs (only shown to users with a favorite species)</option>
               </select>
             </div>
             <div class="field">

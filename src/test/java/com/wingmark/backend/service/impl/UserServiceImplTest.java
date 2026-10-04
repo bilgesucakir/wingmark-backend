@@ -15,6 +15,7 @@ import com.wingmark.backend.exception.ResourceNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.wingmark.backend.service.AccountDeletionService;
 import com.wingmark.backend.service.AvatarCatalog;
+import com.wingmark.backend.service.BadgeService;
 import com.wingmark.backend.service.FileStorageService;
 import com.wingmark.backend.exception.UnauthorizedActionException;
 import com.wingmark.backend.exception.InvalidReferenceException;
@@ -58,6 +59,8 @@ class UserServiceImplTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private FileStorageService fileStorageService;
+    @Mock
+    private BadgeService badgeService;
 
     private UserServiceImpl userService;
 
@@ -66,7 +69,7 @@ class UserServiceImplTest {
     @BeforeEach
     void setUp() {
         userService = new UserServiceImpl(userRepository, userSettingsRepository, speciesRepository, accountDeletionService, passwordEncoder,
-                new AvatarCatalog(), fileStorageService);
+                new AvatarCatalog(), fileStorageService, badgeService);
     }
 
     @Test
@@ -131,6 +134,44 @@ class UserServiceImplTest {
 
         assertThat(response.firstName()).isEqualTo("First");
         assertThat(response.favoriteSpeciesId()).isEqualTo(speciesId);
+    }
+
+    @Test
+    void changingTheFavoriteSpeciesRecomputesBadgeProgress() {
+        UUID speciesId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(speciesRepository.existsById(speciesId)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        userService.updateProfile(userId, new UpdateProfileRequestDto("A", "B", null, speciesId), Locale.ENGLISH);
+
+        verify(badgeService).evaluateForUser(userId);
+    }
+
+    @Test
+    void keepingTheSameFavoriteSpeciesDoesNotRecomputeBadges() {
+        UUID speciesId = UUID.randomUUID();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).favoriteSpeciesId(speciesId).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(speciesRepository.existsById(speciesId)).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        userService.updateProfile(userId, new UpdateProfileRequestDto("A", "B", null, speciesId), Locale.ENGLISH);
+
+        verify(badgeService, never()).evaluateForUser(any());
+    }
+
+    @Test
+    void anAdminClearingTheFavoriteSpeciesRecomputesBadgeProgress() {
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER)
+                .favoriteSpeciesId(UUID.randomUUID()).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        userService.adminUpdateUser(userId, new AdminUpdateUserRequestDto("A", "B", Role.USER, true, null, null), Locale.ENGLISH);
+
+        verify(badgeService).evaluateForUser(userId);
     }
 
     @Test

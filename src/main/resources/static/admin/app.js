@@ -858,7 +858,7 @@ function renderBadgesList(badges) {
     li.className = "species-row";
     li.innerHTML =
       '<div class="species-info">' +
-      '<div class="common">' + escapeHtml(badgeName(b)) + (b.tier ? " · " + escapeHtml(b.tier) : "") + "</div>" +
+      '<div class="common">' + (b.displayOrder === null || b.displayOrder === undefined ? "" : "#" + escapeHtml(String(b.displayOrder)) + " · ") + escapeHtml(badgeName(b)) + (b.tier ? " · " + escapeHtml(b.tier) : "") + "</div>" +
       '<div class="scientific">' + escapeHtml(b.criteriaType) + " ≥ " + escapeHtml(String(b.criteriaValue)) + "</div>" +
       "</div>" +
       '<div class="row-actions"><button class="secondary edit-badge-btn">Edit</button></div>';
@@ -903,6 +903,8 @@ async function openBadgeForm(badge) {
   document.getElementById("badge-description-tr").value = (badge.description && badge.description.tr) || "";
   document.getElementById("badge-icon").value = badge.icon || "";
   document.getElementById("badge-tier").value = badge.tier || "";
+  document.getElementById("badge-displayOrder").value =
+    badge.displayOrder === null || badge.displayOrder === undefined ? "" : badge.displayOrder;
   document.getElementById("badge-criteriaType").value = badge.criteriaType;
   document.getElementById("badge-criteriaValue").value = badge.criteriaValue;
   document.getElementById("badge-radiusMeters").value =
@@ -919,6 +921,8 @@ function readBadgeFormPayload() {
   const criteriaType = document.getElementById("badge-criteriaType").value;
   const criteriaValue = parseInt(document.getElementById("badge-criteriaValue").value, 10);
   const tier = document.getElementById("badge-tier").value || null;
+  const displayOrderValue = parseInt(document.getElementById("badge-displayOrder").value, 10);
+  const displayOrder = isNaN(displayOrderValue) ? null : displayOrderValue;
   let criteriaMetadata = null;
   if (RADIUS_CRITERIA_TYPES.includes(criteriaType)) {
     const radius = parseFloat(document.getElementById("badge-radiusMeters").value);
@@ -938,6 +942,7 @@ function readBadgeFormPayload() {
     criteriaValue,
     criteriaMetadata,
     tier,
+    displayOrder,
   };
 }
 
