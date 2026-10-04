@@ -137,6 +137,20 @@ public class BadgeServiceImpl implements BadgeService {
         }
     }
 
+    @Override
+    public int recomputeForAllUsers() {
+        int processed = 0;
+        for (User user : userRepository.findAll()) {
+            try {
+                evaluateForUser(user.getId());
+                processed++;
+            } catch (RuntimeException e) {
+                log.error("Could not recompute badges for user {}", user.getId(), e);
+            }
+        }
+        return processed;
+    }
+
     /** Returns all badges by {@code displayOrder}, lowest first. Badges without one come last, in stored order. */
     private List<Badge> sortedBadges() {
         List<Badge> badges = new ArrayList<>(badgeRepository.findAll());
