@@ -481,6 +481,7 @@ class BadgeServiceImplTest {
         Badge badge = favoriteBadge(5);
         when(badgeRepository.findAll()).thenReturn(List.of(badge));
         when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).favoriteSpeciesId(favorite).build()));
+        when(speciesRepository.existsById(favorite)).thenReturn(true);
         when(birdLogRepository.countByUserIdAndSpeciesId(userId, favorite)).thenReturn(5L);
         when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
 
@@ -525,9 +526,41 @@ class BadgeServiceImplTest {
         Badge total = badgeWithOrder("Total", null);
         when(badgeRepository.findAll()).thenReturn(List.of(favorite, total));
         when(userBadgeRepository.findByUserId(userId)).thenReturn(List.of());
-        when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).favoriteSpeciesId(UUID.randomUUID()).build()));
+        UUID favoriteSpecies = UUID.randomUUID();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).favoriteSpeciesId(favoriteSpecies).build()));
+        when(speciesRepository.existsById(favoriteSpecies)).thenReturn(true);
 
         assertThat(badgeService.getByUserId(userId, java.util.Locale.ENGLISH))
                 .extracting(b -> b.badgeId()).containsExactly(favorite.getId(), total.getId());
+    }
+
+    @Test
+    void aFavoriteSpeciesThatNoLongerExistsCountsAsNoFavorite() {
+        UUID deleted = UUID.randomUUID();
+        Badge favorite = favoriteBadge(1);
+        Badge total = badgeWithOrder("Total", null);
+        when(badgeRepository.findAll()).thenReturn(List.of(favorite, total));
+        when(userBadgeRepository.findByUserId(userId)).thenReturn(List.of());
+        when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).favoriteSpeciesId(deleted).build()));
+        when(speciesRepository.existsById(deleted)).thenReturn(false);
+
+        assertThat(badgeService.getByUserId(userId, java.util.Locale.ENGLISH))
+                .extracting(b -> b.badgeId()).containsExactly(total.getId());
+    }
+
+    @Test
+    void favoriteSpeciesProgressIsZeroWhenTheFavoriteSpeciesWasDeleted() {
+        UUID deleted = UUID.randomUUID();
+        Badge badge = favoriteBadge(1);
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).favoriteSpeciesId(deleted).build()));
+        when(speciesRepository.existsById(deleted)).thenReturn(false);
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        badgeService.evaluateForUser(userId);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isZero();
     }
 }
