@@ -38,14 +38,14 @@ public class BadgeController {
     private final BadgeService badgeService;
 
     /** Returns every badge definition in the catalog. Public - lets the app show badge artwork/descriptions before login. */
-    @Operation(summary = "Get all badges", description = "Returns every badge definition in the catalog (name, icon, criteria). Public endpoint.")
+    @Operation(summary = "Get all badges", description = "Public. Returns every badge definition (name, icon, criteria, tier, displayOrder), sorted by displayOrder, lowest first; badges without one come last. Includes favorite-species badges, which the per-user list hides for users without a favorite species.")
     @GetMapping("/catalog")
     public ResponseEntity<List<BadgeResponseDto>> getAll() {
         return ResponseEntity.ok(badgeService.getAll());
     }
 
     /** Returns every badge with the user's progress. A userId other than the caller's gives 404, except for admins. */
-    @Operation(summary = "Get badges by user", description = "Returns every badge with this user's progress and earned status. userId must match the authenticated caller, unless the caller is an admin.")
+    @Operation(summary = "Get badges by user", description = "Returns the badges with this user's progress and earned status, sorted by displayOrder. FAVORITE_SPECIES_LOGS badges are left out for users without a favorite species (or whose favorite species was deleted). A userId that is not the caller's gives 404, except for admins.")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<UserBadgeResponseDto>> getByUserId(@AuthenticationPrincipal UserPrincipal principal,
                                                                     @PathVariable UUID userId,
@@ -57,7 +57,7 @@ public class BadgeController {
     }
 
     /** Admin-only: adds a new badge definition to the catalog. */
-    @Operation(summary = "Create a badge", description = "Admin-only. Adds a new badge definition to the catalog.")
+    @Operation(summary = "Create a badge", description = "Admin-only. Adds a badge and computes its progress for every existing user. criteriaType decides what is counted; criteriaMetadata is optional: radiusMeters for the *_IN_RADIUS types, speciesId for SPECIES_LOGS, genus for SAME_GENUS_SPECIES (400 BAD_REQUEST if given but blank or not text). displayOrder (0 or more) is optional.")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BadgeResponseDto> create(@Valid @RequestBody CreateBadgeRequestDto request) {
@@ -65,7 +65,7 @@ public class BadgeController {
     }
 
     /** Admin-only: updates an existing badge definition. */
-    @Operation(summary = "Update a badge", description = "Admin-only. Updates an existing badge definition.")
+    @Operation(summary = "Update a badge", description = "Admin-only. Replaces a badge definition (same fields as create) and recomputes it for every user. Users who already earned it keep it even if the target is raised.")
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BadgeResponseDto> update(@PathVariable UUID id, @Valid @RequestBody UpdateBadgeRequestDto request) {
