@@ -24,9 +24,7 @@ public interface BirdLogRepository extends MongoRepository<BirdLog, UUID>, BirdL
 
     long countByUserIdAndSpeciesId(UUID userId, UUID speciesId);
 
-    List<BirdLog> findByUserIdAndSpeciesIdIsNotNullAndPetFalse(UUID userId);
-
-    List<BirdLog> findByUserIdAndPetFalse(UUID userId);
+    List<BirdLog> findByUserIdAndSpeciesIdIsNotNull(UUID userId);
 
     List<BirdLog> findByUserId(UUID userId);
 

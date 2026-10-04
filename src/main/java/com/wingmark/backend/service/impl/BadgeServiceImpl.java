@@ -177,12 +177,12 @@ public class BadgeServiceImpl implements BadgeService {
 
     /**
      * Returns the largest number of distinct species the user logged within one genus (the first word of the
-     * scientific name, case-insensitive), or within {@code criteriaMetadata.genus} when set. Pet logs and logs
-     * without a species are ignored.
+     * scientific name, case-insensitive), or within {@code criteriaMetadata.genus} when set. Logs without a
+     * species are ignored; pet logs count like any other.
      */
     private int computeSameGenusSpecies(UUID userId, Badge badge) {
         Set<UUID> speciesIds = new HashSet<>();
-        birdLogRepository.findByUserIdAndSpeciesIdIsNotNullAndPetFalse(userId)
+        birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId)
                 .forEach(birdLog -> speciesIds.add(birdLog.getSpeciesId()));
         if (speciesIds.isEmpty()) {
             return 0;
@@ -261,7 +261,7 @@ public class BadgeServiceImpl implements BadgeService {
 
     private int computeMaxSpeciesInRadius(UUID userId, Badge badge) {
         double radiusMeters = extractRadiusMeters(badge.getCriteriaMetadata());
-        List<BirdLog> logs = birdLogRepository.findByUserIdAndSpeciesIdIsNotNullAndPetFalse(userId);
+        List<BirdLog> logs = birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId);
 
         int maxDistinctSpecies = 0;
         for (BirdLog center : logs) {
@@ -280,7 +280,7 @@ public class BadgeServiceImpl implements BadgeService {
     /** Returns the size of the densest cluster of sightings, counting raw sightings rather than distinct species. Every log is tried as a cluster center. Progress can drop but a badge once earned is never revoked. */
     private int computeMaxSightingsInRadius(UUID userId, Badge badge) {
         double radiusMeters = extractRadiusMeters(badge.getCriteriaMetadata());
-        List<BirdLog> logs = birdLogRepository.findByUserIdAndPetFalse(userId);
+        List<BirdLog> logs = birdLogRepository.findByUserId(userId);
 
         int maxSightings = 0;
         for (BirdLog center : logs) {
