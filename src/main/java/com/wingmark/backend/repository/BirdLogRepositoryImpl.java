@@ -21,8 +21,7 @@ public class BirdLogRepositoryImpl implements BirdLogRepositoryCustom {
     @Override
     public long countDistinctSpeciesByUserId(UUID userId) {
         Query query = Query.query(Criteria.where("userId").is(userId)
-                .and("speciesId").ne(null)
-                .and("pet").is(false));
+                .and("speciesId").ne(null));
         return mongoTemplate.findDistinct(query, "speciesId", BirdLog.class, UUID.class).size();
     }
 

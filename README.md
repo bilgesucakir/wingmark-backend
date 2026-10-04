@@ -928,7 +928,7 @@ also need extra parameters in `criteriaMetadata`:
 | `SIGHTINGS_IN_RADIUS`    | Max raw sightings (any species) clustered within a radius     | `{ "radiusMeters": <number> }` (default 5000) |
 | `SPECIES_LOGS`           | Logs of one specific species                                 | `{ "speciesId": "<uuid>" }` |
 | `FAVORITE_SPECIES_LOGS`  | Logs of the user's favorite species; 0 without one. `/user/{userId}` omits these badges for users who have no favorite species | — |
-| `SAME_GENUS_SPECIES`     | Max distinct (non-pet) species logged within one genus, the first word of the scientific name, case-insensitive | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
+| `SAME_GENUS_SPECIES`     | Max distinct species logged within one genus (pet logs count), the first word of the scientific name, case-insensitive | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
 
 The admin panel's badge form exposes all of these, including the species picker for
 `SPECIES_LOGS`, the radius field for the two `*_IN_RADIUS` types and the optional genus

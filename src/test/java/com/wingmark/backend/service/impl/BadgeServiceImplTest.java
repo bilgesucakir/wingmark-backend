@@ -147,7 +147,7 @@ class BadgeServiceImplTest {
                 .latitude(10.0).longitude(10.0).build();
 
         when(badgeRepository.findAll()).thenReturn(List.of(badge));
-        when(birdLogRepository.findByUserIdAndSpeciesIdIsNotNullAndPetFalse(userId))
+        when(birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId))
                 .thenReturn(List.of(logA, logB, logC));
         when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
 
@@ -181,7 +181,7 @@ class BadgeServiceImplTest {
                 .latitude(10.0).longitude(10.0).build();
 
         when(badgeRepository.findAll()).thenReturn(List.of(badge));
-        when(birdLogRepository.findByUserIdAndPetFalse(userId))
+        when(birdLogRepository.findByUserId(userId))
                 .thenReturn(List.of(logA, logB, logC, logFar));
         when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
 
@@ -289,7 +289,7 @@ class BadgeServiceImplTest {
                 .criteriaMetadata(metadata)
                 .build();
         when(badgeRepository.findAll()).thenReturn(List.of(badge));
-        when(birdLogRepository.findByUserIdAndSpeciesIdIsNotNullAndPetFalse(userId)).thenReturn(logs);
+        when(birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId)).thenReturn(logs);
         if (!logs.isEmpty()) {
             when(speciesRepository.findAllById(any())).thenReturn(List.of(species));
         }
@@ -397,12 +397,12 @@ class BadgeServiceImplTest {
     }
 
     @Test
-    void sameGenusBadgeOnlyLooksAtNonPetLogsWithASpecies() {
+    void sameGenusBadgeOnlyLooksAtLogsWithASpecies() {
         Species house = species("Passer domesticus");
 
         evaluateSameGenus(2, null, logsOf(house), house);
 
-        verify(birdLogRepository).findByUserIdAndSpeciesIdIsNotNullAndPetFalse(userId);
+        verify(birdLogRepository).findByUserIdAndSpeciesIdIsNotNull(userId);
     }
 
     @Test
@@ -620,5 +620,42 @@ class BadgeServiceImplTest {
         verify(userBadgeRepository).save(captor.capture());
         assertThat(captor.getValue().getProgress()).isEqualTo(4);
         assertThat(captor.getValue().getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void speciesInRadiusCountsPetLogsLikeAnyOtherSpecies() {
+        Badge badge = Badge.builder().id(UUID.randomUUID()).criteriaType(BadgeCriteriaType.SPECIES_IN_RADIUS)
+                .criteriaValue(2).criteriaMetadata(Map.of("radiusMeters", 1000)).build();
+        BirdLog petParrotlet = BirdLog.builder().speciesId(UUID.randomUUID()).pet(true)
+                .latitude(40.93977).longitude(29.11957).build();
+        BirdLog wildSparrow = BirdLog.builder().speciesId(UUID.randomUUID()).pet(false)
+                .latitude(40.93974).longitude(29.11961).build();
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId)).thenReturn(List.of(petParrotlet, wildSparrow));
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        badgeService.evaluateForUser(userId);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isEqualTo(2);
+        assertThat(captor.getValue().getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void sightingsInRadiusCountsPetSightingsToo() {
+        Badge badge = Badge.builder().id(UUID.randomUUID()).criteriaType(BadgeCriteriaType.SIGHTINGS_IN_RADIUS)
+                .criteriaValue(2).criteriaMetadata(Map.of("radiusMeters", 1000)).build();
+        BirdLog pet = BirdLog.builder().pet(true).latitude(40.93977).longitude(29.11957).build();
+        BirdLog wild = BirdLog.builder().pet(false).latitude(40.93974).longitude(29.11961).build();
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(birdLogRepository.findByUserId(userId)).thenReturn(List.of(pet, wild));
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        badgeService.evaluateForUser(userId);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isEqualTo(2);
     }
 }
