@@ -13,6 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.UUID;
 
+/** A user account. */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -46,12 +47,7 @@ public class User extends BaseEntity {
 
     private Instant lastLoginAt;
 
-    /**
-     * Stamped into every access token as the "tv" claim; the JWT filter rejects tokens whose
-     * stamp is lower. Incremented on password change/reset and logout-all so existing
-     * sessions end immediately rather than when their access token expires. Null (all
-     * pre-existing users) counts as 0, as does a token minted before this claim existed.
-     */
+    /** Token version stamped into access tokens as the {@code tv} claim. Tokens with a lower value are rejected; it is bumped on password change, reset and logout-all. Null counts as 0. */
     private Integer tokenVersion;
 
     public int currentTokenVersion() {

@@ -34,9 +34,6 @@ public interface UserService {
     /** Admin-only: permanently deletes a user account and all of its data. */
     void deleteUser(UUID userId);
 
-    /**
-     * Permanently deletes the caller's own account and all of its data, after re-checking
-     * their password. The last remaining admin can't delete themselves this way.
-     */
+    /** Deletes the caller's account and data after checking their password. The last admin cannot delete themselves. */
     void deleteOwnAccount(UUID userId, String password);
 }

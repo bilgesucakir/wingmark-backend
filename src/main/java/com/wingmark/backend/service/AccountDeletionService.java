@@ -7,11 +7,6 @@ import java.util.UUID;
 /** Permanently removes a user account together with everything that belongs to it. */
 public interface AccountDeletionService {
 
-    /**
-     * Deletes the user and all their data: bird logs, badge progress, settings, consent
-     * records, refresh / password-reset / email-verification tokens, and uploaded photos no
-     * one else references. Then records a personal-data-free audit entry and emails the
-     * former account holder a confirmation. The caller is responsible for authorization checks.
-     */
+    /** Deletes the user, their data and uploaded photos nobody else uses, records an audit entry without personal data and emails a confirmation. Callers check authorization. */
     void deleteAccount(UUID userId, DeletionInitiator initiatedBy);
 }

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+/** Species guide entries and images. */
 @Service
 @RequiredArgsConstructor
 public class SpeciesServiceImpl implements SpeciesService {

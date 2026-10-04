@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Map;
 
+/** A badge definition: criteria, tier and localized texts. */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,11 +32,7 @@ public class Badge extends BaseEntity {
 
     private Integer criteriaValue;
 
-    /**
-     * Free-form parameters for criteria that need more than the plain count in
-     * criteriaValue, e.g. SPECIES_IN_RADIUS needs a radius in meters: {"radiusMeters": 5000}.
-     * Stored as a native embedded document.
-     */
+    /** Extra criteria parameters, e.g. {@code {"radiusMeters": 5000}} for {@code SPECIES_IN_RADIUS}. */
     private Map<String, Object> criteriaMetadata;
 
     private BadgeTier tier;

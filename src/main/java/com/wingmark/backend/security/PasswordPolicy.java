@@ -8,13 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Server-side password rules, applied on sign-up, reset and change. The request DTOs already
- * enforce length (10-72; bcrypt ignores bytes past 72) and "a letter and a digit"; this adds
- * the rules that need context: not derived from the email or username, not a well-known
- * password, and not found in a known data breach. The app checks the same rules for UX,
- * but only this check counts - a client check can always be bypassed.
- */
+/** Server-side password rules applied at signup, reset and change: not derived from the email or username, not a common password, and not in a known breach. */
 @Component
 @RequiredArgsConstructor
 public class PasswordPolicy {
@@ -33,6 +27,7 @@ public class PasswordPolicy {
 
     private final PwnedPasswordChecker pwnedPasswordChecker;
 
+/** Rejects a password that contains the email or username, is a common password or appears in a breach. */
     public void validate(String password, String email, String username) {
         String lower = password.toLowerCase(Locale.ROOT);
         String emailLocal = email == null ? "" : email.toLowerCase(Locale.ROOT).split("@")[0];

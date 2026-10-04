@@ -27,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
+/** Deletes a user and everything that belongs to them. */
 @Slf4j
 @Service
 @RequiredArgsConstructor

@@ -24,9 +24,6 @@ services:
       # (https://xeno-canto.org/account). Leave blank to skip it.
       - key: XENO_CANTO_API_KEY
         sync: false
-      # Matches the disk mounted above, so uploaded photos survive deploys/restarts.
-      - key: UPLOAD_DIR
-        value: /data/uploads
       # Required to actually deliver the registration-verification email - without
       # these, users can register but never receive the link, and login() rejects
       # unverified accounts (see EmailServiceImpl / README "Deploying"). Any SMTP

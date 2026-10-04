@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+/** The authenticated user as seen by Spring Security. */
 public class UserPrincipal implements UserDetails {
 
     private final UUID id;
@@ -23,6 +24,7 @@ public class UserPrincipal implements UserDetails {
         this.authorities = authorities;
     }
 
+/** Creates a principal from a user, with the user's role as authority. */
     public static UserPrincipal from(User user) {
         return new UserPrincipal(
                 user.getId(),
@@ -32,10 +34,12 @@ public class UserPrincipal implements UserDetails {
         );
     }
 
+/** Returns the user id. */
     public UUID getId() {
         return id;
     }
 
+/** Whether the user has the admin role. */
     public boolean isAdmin() {
         return authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }

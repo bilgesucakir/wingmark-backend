@@ -4,12 +4,9 @@ import com.wingmark.backend.dto.metrics.AdminMetricsResponseDto;
 
 import java.util.Locale;
 
-/**
- * Admin-only aggregate usage metrics. Computed fresh on every call rather than cached,
- * since the admin panel's "reload" action is just re-fetching this endpoint.
- */
+/** Admin-only usage metrics, computed on every call. */
 public interface AdminMetricsService {
 
-    /** Computes favorite-species, badge-completion, top-region and locale-usage metrics, with names resolved to the given locale. */
+    /** Computes favorite-species, badge-completion, top-region and locale metrics, with names in the given locale. */
     AdminMetricsResponseDto compute(Locale locale);
 }

@@ -29,12 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Stores uploaded images in MongoDB GridFS (bucket "uploads"), so every backend instance -
- * Render, a laptop, a test - sees the same files through the same database instead of each
- * having its own disk. Files keep their public /uploads/{uuid}.{ext} URLs and are served by
- * UploadsController.
- */
+/** Stores uploaded images in the MongoDB GridFS bucket {@code uploads}, served at {@code /uploads/{uuid}.{ext}} by {@code UploadsController}. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -48,7 +43,7 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
             "jpg", "image/jpeg",
             "jpeg", "image/jpeg",
             "png", "image/png");
-    /** Longest edge after re-encoding. Phone photos are ~4000px; this keeps each one to a few hundred KB of database storage. */
+    /** Longest edge in pixels after re-encoding. */
     static final int MAX_DIMENSION = 1600;
 
     private final GridFsTemplate gridFsTemplate;
@@ -88,8 +83,8 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
         return UPLOADS_PREFIX + filename;
     }
 
-    /** Saves bytes as-is under the given name; used by store() and by the one-off legacy disk import. */
-    public void saveRaw(String filename, byte[] content, String contentType) {
+    /** Saves bytes unchanged in GridFS under the given filename. */
+    private void saveRaw(String filename, byte[] content, String contentType) {
         try {
             gridFsTemplate.store(new ByteArrayInputStream(content), filename, contentType,
                     new Document("contentType", contentType));
@@ -142,8 +137,8 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
         }
     }
 
-    /** Content type for a legacy file on disk, by extension; null if it isn't an image type we serve. */
-    public static String contentTypeForExtension(String filename) {
+    /** Content type for a filename extension; null if it is not a served image type. */
+    private static String contentTypeForExtension(String filename) {
         int dot = filename.lastIndexOf('.');
         return dot < 0 ? null : CONTENT_TYPES_BY_EXTENSION.get(filename.substring(dot + 1).toLowerCase());
     }

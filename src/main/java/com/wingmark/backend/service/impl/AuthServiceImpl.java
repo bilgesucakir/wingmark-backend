@@ -43,6 +43,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
+/** Registration, login, tokens, password reset and email verification. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -237,7 +238,7 @@ public class AuthServiceImpl implements AuthService {
         return issueTokens(user);
     }
 
-    /** Sets the new password and ends every existing session - refresh tokens and already-issued access tokens alike. */
+    /** Sets the new password and ends every session, including issued access tokens. */
     private void setPasswordAndEndSessions(User user, String newPassword) {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.invalidateIssuedTokens();
@@ -246,7 +247,7 @@ public class AuthServiceImpl implements AuthService {
         emailService.sendPasswordChangedEmail(user.getEmail());
     }
 
-    /** Salted with the user id: codes are only 6 digits, so two users can draw the same one and tokenHash is unique. */
+    /** Hashes the reset code salted with the user id, since 6-digit codes can collide and the hash is unique. */
     private static String resetCodeHash(UUID userId, String code) {
         return TokenHasher.sha256(userId + ":" + code);
     }

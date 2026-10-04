@@ -34,16 +34,10 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * Bird sighting logs. Regular users can only ever reach their own logs - either
- * implicitly (create/update/delete/getById/getByLocation, scoped via the JWT principal)
- * or explicitly by their own id (getByUserId, ownership-checked like
- * UserController/BadgeController). The one true "all logs, everyone's" endpoint
- * (getAll) is admin-only, since there's no cross-user viewing feature for regular
- * users.
+ * Bird sighting logs. Users reach only their own logs; listing everyone's logs is admin-only.
  * <p>
- * getAll and getByUserId both take the same optional filter/sort query params:
- * hasSpecies, gender, lifeStage (each unset = no filter) and sortDirection
- * (defaults to DESC, i.e. most recently observed first).
+ * The list endpoints take optional {@code hasSpecies}, {@code gender} and {@code lifeStage} filters and a
+ * {@code sortDirection} (default {@code DESC}, newest first).
  */
 @Tag(name = "Bird Logs", description = "Bird sighting logs (photo, species, location, notes)")
 @RestController
@@ -55,10 +49,7 @@ public class BirdLogController {
 
     private final BirdLogService birdLogService;
 
-    /**
-     * Admin-only: returns every log across every user, optionally filtered by
-     * hasSpecies/gender/lifeStage and sorted by observedAt (default: most recent first).
-     */
+    /** Admin-only: returns every user's logs, filtered and sorted by {@code observedAt}. */
     @Operation(summary = "Get all bird logs", description = "Admin-only. Returns every log across every user. " +
             "Optional filters: ?hasSpecies=true|false (species selected or not), ?gender=MALE|FEMALE|UNKNOWN, " +
             "?lifeStage=ADULT|BABY|UNKNOWN - each omitted means no filter on it. " +
@@ -74,11 +65,7 @@ public class BirdLogController {
         return ResponseEntity.ok(birdLogService.getAll(hasSpecies, gender, lifeStage, sortDirection, locale));
     }
 
-    /**
-     * Returns all of the given user's own logs, optionally filtered by
-     * hasSpecies/gender/lifeStage and sorted by observedAt (default: most recent first).
-     * userId must match the authenticated caller, unless the caller is an admin.
-     */
+    /** Returns the user's logs, filtered and sorted by {@code observedAt}. The userId must be the caller's unless admin. */
     @Operation(summary = "Get bird logs by user", description = "Returns all of this user's own logs. userId must match the authenticated caller, " +
             "unless the caller is an admin (used by the admin panel's user detail view). " +
             "Optional filters: ?hasSpecies=true|false (species selected or not), ?gender=MALE|FEMALE|UNKNOWN, " +
@@ -99,11 +86,7 @@ public class BirdLogController {
         return ResponseEntity.ok(birdLogService.getByUserId(userId, hasSpecies, gender, lifeStage, sortDirection, locale));
     }
 
-    /**
-     * Returns the caller's own logs inside the visible map region, newest first and capped at
-     * {@code limit}. The body stays a plain array; whether more logs matched than were
-     * returned is reported in the X-Result-Truncated header.
-     */
+    /** Returns the caller's logs in the visible map region, newest first, up to {@code limit}; {@code X-Result-Truncated} says if more matched. */
     @Operation(summary = "Get bird logs by location", description = "Returns the caller's own logs inside a lat/lng box (the visible map region), most recently observed first. " +
             "minLng > maxLng means the box crosses the antimeridian (e.g. minLng=170&maxLng=-170). Latitudes must be in [-90, 90], longitudes in [-180, 180], " +
             "and minLat <= maxLat, otherwise 400 INVALID_BOUNDS. Optional filters as on /user/{userId}: ?hasSpecies, ?gender, ?lifeStage. " +

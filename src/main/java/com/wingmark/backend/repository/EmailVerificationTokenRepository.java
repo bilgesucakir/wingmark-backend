@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.Optional;
 import java.util.UUID;
 
+/** Email verification tokens. */
 public interface EmailVerificationTokenRepository extends MongoRepository<EmailVerificationToken, UUID> {
 
     Optional<EmailVerificationToken> findByTokenHash(String tokenHash);

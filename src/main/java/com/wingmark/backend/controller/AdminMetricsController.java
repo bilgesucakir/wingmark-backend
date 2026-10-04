@@ -26,7 +26,8 @@ public class AdminMetricsController {
 
     private final AdminMetricsService adminMetricsService;
 
-    /** Computes metrics fresh on every call - there is no server-side caching, so this endpoint doubles as the "recalculate" action. */
+    /** Computes metrics fresh on every call - there is no server-side caching, 
+     * so this endpoint doubles as the "recalculate" action. */
     @Operation(summary = "Get admin metrics", description = "Admin-only. Computes aggregate usage metrics fresh on every call: favorite-species counts, " +
             "badge completion counts, the most-logged regions, and the EN/TR (and other) locale split across users.")
     @GetMapping

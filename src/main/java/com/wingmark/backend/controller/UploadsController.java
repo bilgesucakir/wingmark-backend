@@ -15,11 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 
-/**
- * Serves uploaded images from GridFS at the same /uploads/{filename} URLs the static disk
- * handler used to, so stored photoUrl/profilePicture/imageUrl values keep working. Public,
- * like before - the filenames are random UUIDs.
- */
+/** Serves uploaded images from GridFS at {@code /uploads/{filename}}. Public. */
 @Tag(name = "Uploads", description = "File uploads (currently just bird-log photos)")
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +23,7 @@ public class UploadsController {
 
     private final FileStorageService fileStorageService;
 
+/** Returns the stored image, or 404 if it does not exist. */
     @Operation(summary = "Get an uploaded image", description = "Public. Returns an image previously stored via POST /api/uploads/photo. 404 if it doesn't exist.")
     @GetMapping("/uploads/{filename:.+}")
     public ResponseEntity<byte[]> get(@PathVariable String filename) {

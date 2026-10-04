@@ -5,5 +5,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.UUID;
 
+/** Audit records of deleted accounts. */
 public interface AccountDeletionRepository extends MongoRepository<AccountDeletion, UUID> {
 }

@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
 
+/** Request to create a bird log. */
 public record CreateBirdLogRequestDto(
         UUID speciesId,
         SpeciesStatus speciesStatus,

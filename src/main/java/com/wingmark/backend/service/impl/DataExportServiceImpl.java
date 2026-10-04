@@ -14,11 +14,7 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
 
-/**
- * Built from the same services the app's own screens use, so the export always shows the
- * user exactly what Wingmark returns about them - nothing hidden, nothing extra.
- * Uploaded photos appear as their /uploads/... URLs inside the profile and logs.
- */
+/** Builds the export from the same services the app uses; photos appear as their {@code /uploads/...} URLs. */
 @Service
 @RequiredArgsConstructor
 public class DataExportServiceImpl implements DataExportService {

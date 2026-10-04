@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.UUID;
 
+/** Hashed password-reset code with an expiry and attempt count. */
 @Getter
 @Setter
 @NoArgsConstructor

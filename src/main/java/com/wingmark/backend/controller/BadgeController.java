@@ -44,13 +44,7 @@ public class BadgeController {
         return ResponseEntity.ok(badgeService.getAll());
     }
 
-    /**
-     * Returns every badge with the given user's current progress and earned status.
-     * Regular users have no concept of viewing another user's badges, so a userId
-     * that isn't the caller's own is treated as not found - consistent with
-     * UserController and BirdLogController's ownership scoping - to avoid confirming
-     * other ids exist. Admins are exempt, for the admin panel's user detail view.
-     */
+    /** Returns every badge with the user's progress. A userId other than the caller's gives 404, except for admins. */
     @Operation(summary = "Get badges by user", description = "Returns every badge with this user's progress and earned status. userId must match the authenticated caller, unless the caller is an admin.")
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<UserBadgeResponseDto>> getByUserId(@AuthenticationPrincipal UserPrincipal principal,

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/** Per-user badge progress. */
 public interface UserBadgeRepository extends MongoRepository<UserBadge, UUID> {
 
     List<UserBadge> findByUserId(UUID userId);

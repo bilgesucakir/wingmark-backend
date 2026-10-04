@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import java.util.List;
 import java.util.UUID;
 
+/** Builds bird log queries from optional filters. */
 @RequiredArgsConstructor
 public class BirdLogRepositoryImpl implements BirdLogRepositoryCustom {
 

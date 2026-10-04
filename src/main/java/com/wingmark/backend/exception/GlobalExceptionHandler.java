@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/** Maps exceptions to {@link ErrorResponse} bodies with the right status and error code. */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -174,12 +175,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
     }
 
-    /**
-     * Anything not matched above. Spring's own MVC exceptions (406, missing path variable,
-     * ResponseStatusException, ...) carry their proper status, so keep it rather than
-     * flattening them to 500; only genuinely unexpected failures are 500s, and those are
-     * logged with their stack trace.
-     */
+    /** Fallback: keeps the status of Spring MVC exceptions, returns 500 and logs the stack trace for anything else. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
         if (ex instanceof org.springframework.web.ErrorResponse springError) {

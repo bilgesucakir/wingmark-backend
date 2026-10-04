@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/** Request to change the caller's password. */
 public record ChangePasswordRequestDto(
         @NotBlank String currentPassword,
         @NotBlank @Size(min = 10, max = 72, message = "Password must be between 10 and 72 characters")

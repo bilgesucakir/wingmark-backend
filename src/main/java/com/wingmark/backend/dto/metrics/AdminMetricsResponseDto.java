@@ -3,6 +3,7 @@ package com.wingmark.backend.dto.metrics;
 import java.time.Instant;
 import java.util.List;
 
+/** Admin usage metrics. */
 public record AdminMetricsResponseDto(
         long totalUsers,
         List<SpeciesFavoriteCountDto> favoriteSpecies,

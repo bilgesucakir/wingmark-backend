@@ -16,10 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * Caps non-upload request bodies at 1 MB (uploads have their own 10 MB multipart limit). No
- * JSON body in this API comes close, so anything larger is rejected before it's parsed.
- */
+/** Rejects non-upload request bodies over 1 MB with 413 before they are parsed. */
 @Component
 @RequiredArgsConstructor
 public class RequestSizeLimitFilter extends OncePerRequestFilter {
@@ -28,6 +25,7 @@ public class RequestSizeLimitFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
 
+    /** Multipart uploads are skipped; they have their own limit. */
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String contentType = request.getContentType();

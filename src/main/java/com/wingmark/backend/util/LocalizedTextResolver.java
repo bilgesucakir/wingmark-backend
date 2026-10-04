@@ -5,19 +5,16 @@ import org.springframework.util.StringUtils;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Resolves a {@code {"en": "...", "tr": "..."}}-style translation map down to a single
- * display string for convenience fields embedded in other resources (e.g. a bird log's
- * species name). Falls back from the requested locale to English, then to whatever
- * translation exists, since content is not guaranteed to be translated into every locale.
- */
+/** Picks one display string from a locale-to-text map: the requested locale, else English, else any translation. */
 public final class LocalizedTextResolver {
 
+/** Fallback locale. */
     public static final String DEFAULT_LOCALE = "en";
 
     private LocalizedTextResolver() {
     }
 
+/** Returns the text for the locale, else English, else any translation; null if there are none. */
     public static String resolve(Map<String, String> translations, Locale locale) {
         if (translations == null || translations.isEmpty()) {
             return null;

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/** Request to set a new password with an emailed reset code. */
 public record ResetPasswordRequestDto(
         @NotBlank @Email String email,
         @NotBlank @Pattern(regexp = "^\\d{6}$", message = "Code must be 6 digits") String code,

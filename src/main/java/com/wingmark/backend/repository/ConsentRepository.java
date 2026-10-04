@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.List;
 import java.util.UUID;
 
+/** Recorded consents. */
 public interface ConsentRepository extends MongoRepository<Consent, UUID> {
 
     List<Consent> findByUserIdOrderByCreatedAtAsc(UUID userId);

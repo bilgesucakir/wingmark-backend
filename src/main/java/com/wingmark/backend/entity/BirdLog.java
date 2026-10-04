@@ -16,13 +16,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.UUID;
 
+/** A bird sighting recorded by a user, indexed for map-box and diary queries. */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 @Document(collection = "bird_logs")
-// Map viewport queries (userId + lat/lng box) and the per-user diary list (sorted by observedAt).
 @CompoundIndex(name = "user_location", def = "{'userId': 1, 'latitude': 1, 'longitude': 1}")
 @CompoundIndex(name = "user_observed_at", def = "{'userId': 1, 'observedAt': -1}")
 public class BirdLog extends BaseEntity {

@@ -5,6 +5,7 @@ import com.wingmark.backend.enums.LifeStageImage;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+/** Admin request to attach a reference image to a species. */
 public record CreateSpeciesImageRequestDto(
         @NotNull LifeStageImage lifeStage,
         @NotNull ImageGender gender,

@@ -16,19 +16,13 @@ import org.springframework.web.reactive.function.client.WebClientException;
 import java.time.Duration;
 import java.util.List;
 
-/**
- * Wraps iNaturalist's public observations API (no API key required). Life stage and
- * sex are both stored on each observation as "controlled term" annotations, but the
- * API does not reliably AND multiple annotation filters together in one query - so
- * this queries by the sex filter alone (when a gender is requested) and then filters
- * the results client-side for the matching life-stage annotation.
- */
+/** Queries iNaturalist's observations API (no key needed). Filters by sex in the query and by life stage client-side, because the API does not combine annotation filters reliably. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class INaturalistServiceImpl implements INaturalistService {
 
-    // iNaturalist controlled term ids, confirmed via GET /v1/controlled_terms
+    /** iNaturalist controlled-term ids (from {@code GET /v1/controlled_terms}). */
     private static final int TERM_LIFE_STAGE = 1;
     private static final int VALUE_ADULT = 2;
     private static final int VALUE_JUVENILE = 8;

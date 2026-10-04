@@ -8,6 +8,7 @@ import com.wingmark.backend.enums.Visibility;
 import java.time.Instant;
 import java.util.UUID;
 
+/** A bird sighting log as returned by the API. */
 public record BirdLogResponseDto(
         UUID id,
         UUID userId,

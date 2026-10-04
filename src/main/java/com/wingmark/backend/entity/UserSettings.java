@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
+/** A user's app settings. */
 @Getter
 @Setter
 @NoArgsConstructor

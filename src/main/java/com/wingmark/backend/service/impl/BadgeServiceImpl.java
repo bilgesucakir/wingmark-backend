@@ -26,6 +26,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+/** Badge catalog and per-user badge progress. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -174,14 +175,7 @@ public class BadgeServiceImpl implements BadgeService {
         return maxDistinctSpecies;
     }
 
-    /**
-     * Counts raw sightings rather than distinct species: every log
-     * is a candidate cluster center, and we take the densest cluster found so far.
-     * There is no fixed "home" location - each evaluation re-scans all of the user's logs, so
-     * the qualifying cluster can shift as new logs are added; a badge already earned keeps its
-     * earnedAt regardless (see upsertUserBadge), so moving away or deleting logs afterwards
-     * can lower progress but never revokes it.
-     */
+    /** Returns the size of the densest cluster of sightings, counting raw sightings rather than distinct species. Every log is tried as a cluster center. Progress can drop but a badge once earned is never revoked. */
     private int computeMaxSightingsInRadius(UUID userId, Badge badge) {
         double radiusMeters = extractRadiusMeters(badge.getCriteriaMetadata());
         List<BirdLog> logs = birdLogRepository.findByUserIdAndPetFalse(userId);

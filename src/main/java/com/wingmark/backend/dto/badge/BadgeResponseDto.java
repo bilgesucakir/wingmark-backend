@@ -6,6 +6,7 @@ import com.wingmark.backend.enums.BadgeTier;
 import java.util.Map;
 import java.util.UUID;
 
+/** A badge definition from the catalog. */
 public record BadgeResponseDto(
         UUID id,
         Map<String, String> name,

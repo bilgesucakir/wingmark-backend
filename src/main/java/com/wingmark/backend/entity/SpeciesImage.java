@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
+/** A reference image of a species with license details. */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,11 +32,7 @@ public class SpeciesImage extends BaseEntity {
 
     private String caption;
 
-    /**
-     * Where the image came from and under what terms - needed to credit third-party photos
-     * (e.g. iNaturalist's CC licenses require attribution). licenseCode is e.g. "cc-by";
-     * all three are null for images the operator uploaded themselves.
-     */
+    /** Source license, attribution and URL of the image; all null for the operator's own uploads. */
     private String licenseCode;
 
     private String attribution;

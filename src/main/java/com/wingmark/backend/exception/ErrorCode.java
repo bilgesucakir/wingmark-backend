@@ -1,11 +1,6 @@
 package com.wingmark.backend.exception;
 
-/**
- * Stable, machine-readable error identifiers returned as ErrorResponse.code, so clients can
- * branch on a specific failure (e.g. show the verify-email screen) without parsing the
- * human-readable message. Values are part of the API contract: add new ones freely, but
- * never rename or repurpose an existing one.
- */
+/** Machine-readable error codes returned as {@code ErrorResponse.code}. Never rename or repurpose one. */
 public enum ErrorCode {
     // 400
     VALIDATION_FAILED,

@@ -10,11 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Fixed-window counters held in memory. That's correct for the single Render instance this
- * runs on; with several instances each would count separately (effective limit x N), at
- * which point this should move to a shared store such as Redis.
- */
+/** In-memory fixed-window counters; correct for a single instance only. */
 @Component
 @RequiredArgsConstructor
 public class RateLimiter {

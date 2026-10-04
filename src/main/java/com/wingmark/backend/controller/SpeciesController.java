@@ -49,11 +49,7 @@ public class SpeciesController {
     private final XenoCantoService xenoCantoService;
     private final INaturalistService iNaturalistService;
 
-    /**
-     * Returns a page of species in the guide, optionally filtered by a common-name
-     * substring. Public. Sortable via the standard ?sort=<field>,<asc|desc> param on
-     * commonName.tr, commonName.en, or scientificName (or any other declared field).
-     */
+    /** Returns a page of species, optionally filtered by common-name substring and sortable. Public. */
     @Operation(summary = "Get all species", description = "Returns a page of species in the guide, optionally filtered by a common-name substring (?search=), " +
             "paginated via the standard ?page=/?size= params. Sortable via ?sort=<field>,<asc|desc>, e.g. " +
             "?sort=commonName.en,asc, ?sort=commonName.tr,desc, or ?sort=scientificName,asc. Public endpoint.")
@@ -113,16 +109,7 @@ public class SpeciesController {
         return ResponseEntity.status(HttpStatus.CREATED).body(speciesService.addImage(id, request));
     }
 
-    /**
-     * Admin-only photo curation tool. It does NOT save anything by itself - it searches
-     * iNaturalist's crowd-sourced observation database for candidate photos of this
-     * species matching the requested life stage (and, optionally, sex), so an admin can
-     * review them and then pick the best one to actually save into the guide via
-     * POST /{id}/images. This exists because species reference photos are curated once
-     * and reused forever, not re-fetched live on every guide page view (see the
-     * INaturalistService javadoc for why: crowd-sourced results vary in quality, so
-     * picking one deliberately beats grabbing whatever comes back first).
-     */
+    /** Admin-only: searches iNaturalist for candidate photos of the species by life stage and sex. Saves nothing; attach one via {@code POST /{id}/images}. */
     @Operation(
             summary = "Get species photo candidates",
             description = "Admin-only curation tool - does not save anything. Searches iNaturalist for candidate " +

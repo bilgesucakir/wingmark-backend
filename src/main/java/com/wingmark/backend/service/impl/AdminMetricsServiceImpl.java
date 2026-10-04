@@ -31,20 +31,14 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/** Computes admin usage metrics. */
 @Service
 @RequiredArgsConstructor
 public class AdminMetricsServiceImpl implements AdminMetricsService {
 
     private static final int TOP_REGIONS_LIMIT = 10;
 
-    /**
-     * BirdLog.locationName is free text the user typed (e.g. "home", "konum1") and is
-     * not a reliable region label - the same real place gets spelled differently by
-     * different users, and made-up labels don't correspond to a place at all. Latitude
-     * and longitude are always numeric, so regions are grid cells of this size (in
-     * degrees) instead: roughly 11km per cell at the equator, which clusters repeat
-     * visits to the same park/area without needing a geocoding service.
-     */
+    /** Region grid cell size in degrees (about 11 km); regions are grouped by coordinates because location names are free text. */
     private static final double REGION_GRID_DEGREES = 0.1;
 
     private final UserRepository userRepository;

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.util.Map;
 
+/** JSON error body returned by the API. */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorResponse(
         Instant timestamp,

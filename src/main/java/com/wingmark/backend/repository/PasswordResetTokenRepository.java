@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.Optional;
 import java.util.UUID;
 
+/** Password reset tokens. */
 public interface PasswordResetTokenRepository extends MongoRepository<PasswordResetToken, UUID> {
 
     Optional<PasswordResetToken> findByTokenHash(String tokenHash);

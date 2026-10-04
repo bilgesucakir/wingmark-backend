@@ -93,7 +93,7 @@ so it always deploys as a container). To deploy:
      must call the API; the iOS app and the same-origin admin panel don't need it.
    - `XENO_CANTO_API_KEY` — optional, only needed for the sound-recordings endpoint.
    - `JWT_SECRET` is generated automatically by Render on first deploy; everything else
-     (`UPLOAD_DIR`, `SMTP_PORT`, port, JWT expirations) is already wired to sensible
+     (`SMTP_PORT`, port, JWT expirations) is already wired to sensible
      defaults in `render.yaml`/`application.yml`.
 4. After the first deploy, confirm the assigned URL matches `APP_BASE_URL` in
    `render.yaml` (`https://wingmark-backend.onrender.com` by default) - Render appends
@@ -106,14 +106,8 @@ photos through the same database, and nothing is lost on deploy. Images are down
 at most 1600px on the longest side, so each is typically a few hundred KB; keep an eye on
 Atlas storage (the free tier is 512MB).
 
-`UPLOAD_DIR` is now legacy: photos uploaded before the switch lived on Render's disk at
-`/data/uploads`. On startup, any image in `UPLOAD_DIR` that isn't in the database yet is
-imported once under the same filename (so old `/uploads/...` URLs keep working); the logs
-say how many. After a deploy has logged the import, the Render disk can be removed.
-
 **Running locally:** don't copy the production `.env` as-is - it points the database at
-Atlas (so local testing writes to production) and sets `UPLOAD_DIR=/data/uploads`. Override
-them when starting, e.g.
+Atlas (so local testing writes to production). Override it when starting, e.g.
 `DB_CONNECTION_STRING=mongodb://localhost:27017/wingmark mvn spring-boot:run`.
 
 ## Database

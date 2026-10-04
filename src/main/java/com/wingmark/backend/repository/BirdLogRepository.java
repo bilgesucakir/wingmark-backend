@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/** Bird logs. */
 public interface BirdLogRepository extends MongoRepository<BirdLog, UUID>, BirdLogRepositoryCustom {
 
     Optional<BirdLog> findByIdAndUserId(UUID id, UUID userId);

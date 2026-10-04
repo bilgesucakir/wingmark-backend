@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.util.List;
 
-/** Browser origins allowed to call the API cross-origin. Empty by default: nobody needs it today. */
+/** Browser origins allowed to call the API cross-origin; empty allows none. */
 @ConfigurationProperties(prefix = "wingmark.cors")
 public record CorsProperties(@DefaultValue({}) List<String> allowedOrigins) {
 }

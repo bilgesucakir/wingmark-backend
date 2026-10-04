@@ -30,22 +30,15 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Documents saved before BaseEntity's auditing fix have no createdAt, and very old bird logs
- * may lack observedAt, so the API returned null for them. On startup this fills them in:
- *
- * - createdAt: the earliest timestamp the document already carries (updatedAt,
- *   lastLoginAt, observedAt, usedAt, revokedAt, earnedAt) - each of those happened at or
- *   after creation, so the earliest is the closest estimate - or now if it has none.
- * - bird_logs.observedAt: its createdAt.
- *
- * Idempotent and race-safe: every update is conditional on the field still being missing,
- * so repeated startups (or several instances) never overwrite a real value.
+ * On startup, fills missing {@code createdAt} (earliest timestamp the document already has, else now) and
+ * missing bird-log {@code observedAt} (its {@code createdAt}). Updates only missing fields, so it is safe to rerun.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class LegacyTimestampBackfill implements ApplicationRunner {
 
+    /** Entities whose collections are backfilled. */
     static final List<Class<?>> AUDITED_ENTITIES = List.of(
             User.class, UserSettings.class, BirdLog.class, Species.class, SpeciesImage.class,
             Badge.class, UserBadge.class, RefreshToken.class, PasswordResetToken.class,
@@ -57,6 +50,7 @@ public class LegacyTimestampBackfill implements ApplicationRunner {
 
     private final MongoTemplate mongoTemplate;
 
+    /** Backfills every audited collection, then bird-log {@code observedAt}. */
     @Override
     public void run(ApplicationArguments args) {
         for (Class<?> entity : AUDITED_ENTITIES) {
@@ -65,6 +59,7 @@ public class LegacyTimestampBackfill implements ApplicationRunner {
         backfillObservedAt(mongoTemplate.getCollectionName(BirdLog.class));
     }
 
+    /** Sets a missing {@code createdAt} to the earliest later timestamp in the document, else now. */
     private void backfillCreatedAt(String collection) {
         List<Document> missing = mongoTemplate.find(Query.query(isMissing("createdAt")), Document.class, collection);
         if (missing.isEmpty()) {
@@ -90,6 +85,7 @@ public class LegacyTimestampBackfill implements ApplicationRunner {
                 missing.size(), collection, estimated, missing.size() - estimated);
     }
 
+    /** Sets a missing {@code observedAt} to the bird log's {@code createdAt}. */
     private void backfillObservedAt(String collection) {
         long updated = mongoTemplate.updateMulti(
                 Query.query(new Criteria().andOperator(isMissing("observedAt"), isPresent("createdAt"))),
@@ -100,10 +96,12 @@ public class LegacyTimestampBackfill implements ApplicationRunner {
         }
     }
 
+    /** Matches documents where the field is absent or null. */
     private static Criteria isMissing(String field) {
         return new Criteria().orOperator(Criteria.where(field).exists(false), Criteria.where(field).is(null));
     }
 
+    /** Matches documents where the field is present and not null. */
     private static Criteria isPresent(String field) {
         return Criteria.where(field).exists(true).ne(null);
     }

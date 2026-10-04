@@ -9,16 +9,14 @@ import org.springframework.data.mongodb.repository.Query;
 import java.util.Optional;
 import java.util.UUID;
 
+/** Species guide entries. */
 public interface SpeciesRepository extends MongoRepository<Species, UUID> {
 
     Optional<Species> findByScientificNameIgnoreCase(String scientificName);
 
     boolean existsByScientificNameIgnoreCase(String scientificName);
 
-    /**
-     * Matches the search term against the common name in any translated locale. The argument
-     * is used as a regex - callers must pass it through Pattern.quote (see SpeciesServiceImpl).
-     */
+    /** Finds species whose common name in any locale matches the regex; callers must quote the input. */
     @Query("{ $or: [ {'commonName.en': {$regex: ?0, $options: 'i'}}, {'commonName.tr': {$regex: ?0, $options: 'i'}} ] }")
     Page<Species> findByCommonNameContainingIgnoreCase(String commonName, Pageable pageable);
 }

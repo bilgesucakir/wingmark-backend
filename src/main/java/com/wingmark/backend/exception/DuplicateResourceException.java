@@ -1,5 +1,6 @@
 package com.wingmark.backend.exception;
 
+/** Thrown when a unique value, such as an email, is already taken. */
 public class DuplicateResourceException extends RuntimeException {
 
     private final ErrorCode code;

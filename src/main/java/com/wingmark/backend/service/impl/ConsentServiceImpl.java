@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/** Records and checks acceptance of legal documents. */
 @Service
 @RequiredArgsConstructor
 public class ConsentServiceImpl implements ConsentService {
