@@ -20,6 +20,7 @@ import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.service.AccountDeletionService;
+import com.wingmark.backend.service.BadgeService;
 import com.wingmark.backend.service.AvatarCatalog;
 import com.wingmark.backend.service.FileStorageService;
 import com.wingmark.backend.service.UserService;
@@ -44,6 +45,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final AvatarCatalog avatarCatalog;
     private final FileStorageService fileStorageService;
+    private final BadgeService badgeService;
 
     @Override
     public UserProfileResponseDto getProfile(UUID userId, Locale locale) {
@@ -61,9 +63,14 @@ public class UserServiceImpl implements UserService {
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setProfilePicture(validateProfilePicture(request.profilePicture(), user.getProfilePicture()));
+        boolean favoriteChanged = !java.util.Objects.equals(user.getFavoriteSpeciesId(), request.favoriteSpeciesId());
         user.setFavoriteSpeciesId(request.favoriteSpeciesId());
 
-        return toResponse(userRepository.save(user), locale);
+        User saved = userRepository.save(user);
+        if (favoriteChanged) {
+            badgeService.evaluateForUser(userId);
+        }
+        return toResponse(saved, locale);
     }
 
     @Override
@@ -98,9 +105,14 @@ public class UserServiceImpl implements UserService {
         user.setLastName(request.lastName());
         user.setRole(request.role());
         user.setEmailVerified(request.emailVerified());
+        boolean favoriteChanged = !java.util.Objects.equals(user.getFavoriteSpeciesId(), request.favoriteSpeciesId());
         user.setFavoriteSpeciesId(request.favoriteSpeciesId());
         user.setProfilePicture(validateProfilePicture(request.profilePicture(), user.getProfilePicture()));
-        return toResponse(userRepository.save(user), locale);
+        User saved = userRepository.save(user);
+        if (favoriteChanged) {
+            badgeService.evaluateForUser(userId);
+        }
+        return toResponse(saved, locale);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.wingmark.backend.enums.BadgeTier;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import java.util.Map;
 
@@ -16,6 +17,7 @@ public record CreateBadgeRequestDto(
         @NotNull BadgeCriteriaType criteriaType,
         @NotNull @Positive Integer criteriaValue,
         Map<String, Object> criteriaMetadata,
-        BadgeTier tier
+        BadgeTier tier,
+        @PositiveOrZero Integer displayOrder
 ) {
 }
