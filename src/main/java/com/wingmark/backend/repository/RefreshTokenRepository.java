@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.Optional;
 import java.util.UUID;
 
+/** Refresh tokens. */
 public interface RefreshTokenRepository extends MongoRepository<RefreshToken, UUID>, RefreshTokenRepositoryCustom {
 
     Optional<RefreshToken> findByTokenHash(String tokenHash);

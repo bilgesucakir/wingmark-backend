@@ -25,11 +25,7 @@ public class UploadController {
 
     private final FileStorageService fileStorageService;
 
-    /**
-     * Stores an uploaded photo and returns its URL, for use as a bird log's photoUrl.
-     * Images are re-encoded server-side to strip EXIF metadata (including GPS tags),
-     * since the sighting's location is already captured explicitly on the log.
-     */
+    /** Stores an uploaded photo, re-encoded to strip EXIF data, and returns its URL for a bird log's {@code photoUrl}. */
     @Operation(summary = "Upload a photo", description = "Stores an uploaded photo (re-encoded to strip EXIF metadata) and returns its URL for use as a bird log's photoUrl.")
     @PostMapping("/photo")
     public ResponseEntity<Map<String, String>> uploadPhoto(@AuthenticationPrincipal UserPrincipal principal,

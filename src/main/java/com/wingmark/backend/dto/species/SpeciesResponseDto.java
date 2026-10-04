@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/** A species guide entry with its images. */
 public record SpeciesResponseDto(
         UUID id,
         Map<String, String> commonName,

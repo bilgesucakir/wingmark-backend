@@ -8,12 +8,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.UUID;
 
-/**
- * Limits for the endpoints that guess or prove credentials. Each check counts the attempt
- * whether or not it then succeeds, and applies both a per-account and a per-IP limit where
- * an account is known, so neither rotating IPs nor rotating target accounts gets around it.
- * Limits apply the same whether or not the email exists, so they reveal nothing about it.
- */
+/** Per-account and per-IP limits for credential endpoints. Every attempt counts and the limits do not reveal whether an email exists. */
 @Component
 @RequiredArgsConstructor
 public class AuthRateLimits {

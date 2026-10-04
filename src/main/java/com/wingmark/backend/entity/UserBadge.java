@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.UUID;
 
+/** One user's progress toward a badge. */
 @Getter
 @Setter
 @NoArgsConstructor

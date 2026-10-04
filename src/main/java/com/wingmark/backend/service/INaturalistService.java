@@ -6,12 +6,9 @@ import com.wingmark.backend.enums.LifeStageImage;
 
 import java.util.List;
 
+/** Client for iNaturalist photo search. */
 public interface INaturalistService {
 
-    /**
-     * Searches iNaturalist observations for a species matching the given life stage
-     * and (optionally) sex, returning candidate reference photos for admin curation
-     * into the guide - this is not meant to be called on every guide page view.
-     */
+    /** Searches iNaturalist for candidate reference photos of a species by life stage and optional sex, for admin curation. */
     List<PhotoCandidateDto> findPhotoCandidates(String scientificName, LifeStageImage lifeStage, ImageGender gender);
 }

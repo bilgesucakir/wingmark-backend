@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.UUID;
 
+/** Hashed email-verification token with an expiry. */
 @Getter
 @Setter
 @NoArgsConstructor

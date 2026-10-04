@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+/** Profiles, settings and admin account management. */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -121,13 +122,7 @@ public class UserServiceImpl implements UserService {
         accountDeletionService.deleteAccount(userId, DeletionInitiator.SELF);
     }
 
-    /**
-     * A profile picture is null (none), a preset avatar key, or the relative URL of a photo
-     * uploaded through /api/uploads/photo that still exists. Anything else - an external
-     * URL, a typo'd key, a deleted upload - is rejected so clients never get a dangling value.
-     * Re-sending the value already stored is always accepted, so a profile saved before this
-     * validation existed can still be edited without being forced to change its picture.
-     */
+    /** Validates a profile picture: null, a preset avatar key, an existing upload URL or the value already stored. Anything else is rejected. */
     private String validateProfilePicture(String profilePicture, String current) {
         if (profilePicture == null || profilePicture.isBlank()) {
             return null;

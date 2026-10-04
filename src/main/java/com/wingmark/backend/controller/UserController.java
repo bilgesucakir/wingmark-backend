@@ -38,12 +38,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-/**
- * The caller's own profile and settings. This app has no concept of viewing another
- * user's profile, so userId in the path must match the authenticated caller's own id
- * (obtainable client-side by decoding the JWT's "sub" claim) - a mismatch is treated
- * as not found rather than forbidden, consistent with BirdLogController's scoping.
- */
+/** The caller's own profile, settings, consents, data export and account deletion. The path userId must be the caller's own; any other id gives 404. */
 @Tag(name = "Users", description = "The caller's own profile and settings")
 @RestController
 @RequestMapping("/api/users/{userId}")
@@ -98,11 +93,7 @@ public class UserController {
         return ResponseEntity.ok(userService.updateSettings(userId, request));
     }
 
-    /**
-     * Changes the caller's password after re-checking the current one. Every other session
-     * (refresh tokens and already-issued access tokens) ends immediately; this device gets a
-     * fresh token pair in the response so it stays signed in.
-     */
+    /** Changes the caller's password after checking the current one. Other sessions end; this device gets a new token pair. */
     @Operation(summary = "Change password", description = "Changes the caller's password. Body: {currentPassword, newPassword}. " +
             "Returns a fresh token pair for this device; every other session, including already-issued access tokens, is signed out immediately. " +
             "403 WRONG_PASSWORD if currentPassword is wrong, 400 SAME_PASSWORD if newPassword equals the current one, 400 VALIDATION_FAILED for a weak password.")
@@ -149,12 +140,7 @@ public class UserController {
                 .body(dataExportService.export(userId, locale));
     }
 
-    /**
-     * Permanently deletes the caller's own account and everything tied to it (logs, badges,
-     * settings, sessions, uploaded photos). Requires the current password in the body, so a
-     * stolen access token alone can't wipe an account. Every existing token stops working
-     * immediately.
-     */
+    /** Deletes the caller's account and all their data. Requires the current password; all tokens stop working. */
     @Operation(summary = "Delete own account", description = "Permanently deletes the caller's own account and all of its data: bird logs, badge progress, " +
             "settings, refresh tokens and uploaded photos. Body: {\"password\": \"...\"} - the current password, re-checked (403 if wrong). " +
             "409 if the caller is the only admin. All of the caller's tokens stop working immediately. Cannot be undone.")
@@ -168,11 +154,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * This app has no concept of viewing another user's profile, so a path userId that
-     * isn't the caller's own is treated as not found rather than forbidden - consistent
-     * with how BirdLogController scopes ownership - to avoid confirming other ids exist.
-     */
+    /** Returns 404 unless the path userId is the caller's own. */
     private void requireSelf(UserPrincipal principal, UUID userId) {
         if (!principal.getId().equals(userId)) {
             throw ResourceNotFoundException.of("User", userId);

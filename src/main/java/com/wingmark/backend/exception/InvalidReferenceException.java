@@ -2,11 +2,7 @@ package com.wingmark.backend.exception;
 
 import org.springframework.http.HttpStatus;
 
-/**
- * Thrown when a request body points at another resource that doesn't exist (e.g. a bird
- * log's speciesId). Distinct from ResourceNotFoundException: the URL itself was found, the
- * payload just can't be processed, so this maps to 422 rather than 404.
- */
+/** Thrown when a request body references a resource that does not exist; maps to 422. */
 public class InvalidReferenceException extends ApiException {
 
     public InvalidReferenceException(String message) {

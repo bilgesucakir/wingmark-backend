@@ -11,10 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * Audit record that an account was deleted, and when. Holds no personal data: userId is an
- * opaque id whose user no longer exists.
- */
+/** Audit record of a deleted account, without personal data; {@code userId} is an opaque id. */
 @Getter
 @Setter
 @NoArgsConstructor

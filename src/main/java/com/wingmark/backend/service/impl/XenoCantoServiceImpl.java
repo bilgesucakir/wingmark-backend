@@ -15,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClientException;
 import java.time.Duration;
 import java.util.List;
 
+/** Looks up bird-sound recordings on Xeno-canto. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -72,11 +73,7 @@ public class XenoCantoServiceImpl implements XenoCantoService {
         );
     }
 
-    /**
-     * v3 requires field-tagged queries (e.g. {@code gen:"Passer" sp:"domesticus"}) rather
-     * than a bare search string. Species names in our data are two-word binomials, so the
-     * first token becomes the genus tag and the rest becomes the species tag.
-     */
+    /** Builds a v3 field-tagged query: the first word of the name becomes {@code gen:}, the rest {@code sp:}. */
     private String toTaggedQuery(String scientificName) {
         String[] parts = scientificName.trim().split("\\s+", 2);
         if (parts.length < 2) {

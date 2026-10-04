@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.List;
 import java.util.UUID;
 
+/** Species reference images. */
 public interface SpeciesImageRepository extends MongoRepository<SpeciesImage, UUID> {
 
     List<SpeciesImage> findBySpeciesId(UUID speciesId);

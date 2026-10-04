@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import java.time.Instant;
 import java.util.UUID;
 
+/** Bulk revocation of refresh tokens. */
 @RequiredArgsConstructor
 public class RefreshTokenRepositoryImpl implements RefreshTokenRepositoryCustom {
 

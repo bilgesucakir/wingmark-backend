@@ -5,6 +5,7 @@ import com.wingmark.backend.enums.Role;
 import java.time.Instant;
 import java.util.UUID;
 
+/** A user's profile as returned by the API. */
 public record UserProfileResponseDto(
         UUID id,
         String email,

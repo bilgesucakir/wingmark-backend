@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/** Preset profile-picture catalog. */
 @Tag(name = "Avatars", description = "Preset profile-picture catalog")
 @RestController
 @RequestMapping("/api/avatars")

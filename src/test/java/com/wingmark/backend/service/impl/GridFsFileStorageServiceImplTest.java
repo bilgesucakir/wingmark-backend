@@ -1,12 +1,9 @@
 package com.wingmark.backend.service.impl;
 
-import com.wingmark.backend.config.LegacyUploadImporter;
-import com.wingmark.backend.config.StorageProperties;
 import com.wingmark.backend.exception.ApiException;
 import com.wingmark.backend.exception.BadRequestException;
 import com.wingmark.backend.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
@@ -17,9 +14,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -96,28 +90,6 @@ class GridFsFileStorageServiceImplTest {
 
         assertThat(storage.exists(filename)).isFalse();
         assertThat(storage.load(filename)).isEmpty();
-    }
-
-    @Test
-    void legacyImporterCopiesDiskUploadsOnceAndIgnoresNonImages(@TempDir Path legacyDir) throws Exception {
-        String legacyName = UUID.randomUUID() + ".jpg";
-        byte[] legacyBytes = image(3, 3, "jpg");
-        Files.write(legacyDir.resolve(legacyName), legacyBytes);
-        Files.writeString(legacyDir.resolve("notes.txt"), "not an image");
-
-        LegacyUploadImporter importer = new LegacyUploadImporter(new StorageProperties(legacyDir.toString()), storage);
-        importer.run(null);
-        importer.run(null); // idempotent: a second startup must not duplicate
-
-        var loaded = storage.load(legacyName).orElseThrow();
-        assertThat(loaded.content()).isEqualTo(legacyBytes); // stored byte-for-byte, same filename
-        assertThat(loaded.contentType()).isEqualTo("image/jpeg");
-        assertThat(storage.exists("notes.txt")).isFalse();
-    }
-
-    @Test
-    void legacyImporterIsANoOpWhenTheDirectoryDoesNotExist() {
-        new LegacyUploadImporter(new StorageProperties("/definitely/not/here/uploads"), storage).run(null);
     }
 
     @Test

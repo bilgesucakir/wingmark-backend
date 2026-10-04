@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/** Signup request, including the accepted legal document versions. */
 public record RegisterRequestDto(
         @NotBlank @Email String email,
         @NotBlank @Size(min = 10, max = 72, message = "Password must be between 10 and 72 characters")

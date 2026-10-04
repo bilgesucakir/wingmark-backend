@@ -4,9 +4,20 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Request limits. Each limit is "max requests per window"; per-account limits key on the
- * email or user id so spreading attempts across IPs doesn't help, per-IP limits key on the
- * client address. Defaults suit a single small instance; all can be overridden.
+ * Rate limits, each as maximum requests per window. Account limits key on email or user id, IP limits on the
+ * client address. All have defaults and can be overridden.
+ *
+ * @param enabled                       master switch
+ * @param globalPerIpPerMinute          all requests per IP
+ * @param loginPerAccountPer15Min       logins per account
+ * @param loginPerIpPer15Min            logins per IP
+ * @param registerPerIpPerHour          signups per IP
+ * @param resetRequestPerAccountPerHour reset-code requests per account
+ * @param resetRequestPerIpPerHour      reset-code requests per IP
+ * @param resetConfirmPerAccountPer15Min reset confirmations per account
+ * @param resetConfirmPerIpPer15Min     reset confirmations per IP
+ * @param refreshPerIpPer15Min          token refreshes per IP
+ * @param passwordCheckPerUserPer15Min  password confirmations (change, delete) per user
  */
 @ConfigurationProperties(prefix = "wingmark.rate-limit")
 public record RateLimitProperties(

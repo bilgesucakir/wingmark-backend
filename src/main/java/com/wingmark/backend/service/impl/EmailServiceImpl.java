@@ -12,15 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 
-/**
- * Transactional email only (verification, password reset, account-deletion confirmation) -
- * no marketing content, so no unsubscribe link or marketing consent is involved.
- *
- * A failed send never fails the request. Verification links and reset codes are secrets, so
- * they're only ever logged at DEBUG level - off by default and in production (LOG_LEVEL is
- * INFO unless set); turn it on locally (LOG_LEVEL=DEBUG) to read them without a mail server.
- * Recipient addresses are masked in every log line.
- */
+/** Sends transactional emails only (no marketing). A failed send never fails the request; links and codes are logged at DEBUG only and addresses are masked. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -96,7 +88,7 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    /** Replies go to a no-reply sender, so point users at the support address when one is configured. */
+    /** Returns the "contact us" wording: the support address if configured, else a pointer to the app. */
     String contactSupport() {
         String email = businessProperties.contactEmail();
         return StringUtils.hasText(email)
@@ -104,7 +96,7 @@ public class EmailServiceImpl implements EmailService {
                 : "contact support through the Wingmark app";
     }
 
-    /** Legal sender details, once configured (see BusinessProperties); empty otherwise. */
+    /** Returns the legal footer HTML, or an empty string when no legal name is configured. */
     String footer() {
         if (!businessProperties.isConfigured()) {
             return "";
@@ -120,7 +112,7 @@ public class EmailServiceImpl implements EmailService {
         return footer.append("</p>").toString();
     }
 
-    /** "yildirim@gmail.com" -> "y***@gmail.com": enough to correlate, not enough to identify. */
+    /** Masks an address for logs, e.g. {@code y***@gmail.com}. */
     static String maskEmail(String email) {
         if (email == null) {
             return null;

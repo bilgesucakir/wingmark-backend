@@ -14,6 +14,7 @@ import org.springframework.data.domain.Persistable;
 import java.time.Instant;
 import java.util.UUID;
 
+/** Base for stored documents: UUID id and created/updated timestamps. */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,15 +31,7 @@ public abstract class BaseEntity implements Persistable<UUID> {
     @LastModifiedDate
     private Instant updatedAt;
 
-    /**
-     * id is always pre-populated client-side (never left null for Mongo to assign),
-     * so Spring Data's default null-id "is this new?" check always says false, which
-     * silently skips @CreatedDate on insert. This transient flag is the real signal
-     * instead: true until MongoEntityLoadListener.onAfterConvert flips it after a
-     * successful load from the database, so it reflects "not yet persisted" regardless
-     * of any field's value - unlike a createdAt-null check, it isn't fooled by legacy
-     * documents that predate this fix and have no createdAt of their own.
-     */
+    /** True until the entity is loaded from the database; drives {@code isNew()} so auditing sets {@code createdAt} on insert. */
     @Transient
     @Builder.Default
     private boolean newEntity = true;

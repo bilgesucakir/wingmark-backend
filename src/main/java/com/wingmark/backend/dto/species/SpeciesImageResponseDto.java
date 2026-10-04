@@ -5,6 +5,7 @@ import com.wingmark.backend.enums.LifeStageImage;
 
 import java.util.UUID;
 
+/** A species reference image with its license details. */
 public record SpeciesImageResponseDto(
         UUID id,
         LifeStageImage lifeStage,

@@ -4,6 +4,7 @@ import com.wingmark.backend.enums.ConsentType;
 
 import java.util.List;
 
+/** Token pair returned on login, refresh and password change, with any pending consents. */
 public record AuthResponseDto(
         String accessToken,
         String refreshToken,

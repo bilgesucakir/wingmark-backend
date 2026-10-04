@@ -11,11 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
-/**
- * One acceptance of one version of a legal document by one user. createdAt is when it was
- * accepted. Append-only: accepting a new version adds a record rather than editing the old
- * one, so the history of what was accepted when is preserved.
- */
+/** One user's acceptance of one version of a legal document. Append-only, so history is kept. */
 @Getter
 @Setter
 @NoArgsConstructor

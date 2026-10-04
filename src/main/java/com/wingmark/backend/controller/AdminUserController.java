@@ -44,13 +44,7 @@ public class AdminUserController {
         return ResponseEntity.ok(userService.getAllUsers(locale));
     }
 
-    /**
-     * Admin-only: replaces a user's name, role, email-verified flag, favorite species and
-     * profile picture (full replacement - omitted fields are cleared). Role and verification
-     * changes apply immediately (the JWT filter reads both from the database on every
-     * request), so an admin can't demote or un-verify themselves - that would lock the
-     * current panel session out on its next request.
-     */
+    /** Admin-only: replaces a user's name, role, verified flag, favorite species and picture. Omitted fields are cleared; admins cannot demote or un-verify themselves. */
     @Operation(summary = "Update a user", description = "Admin-only. Replaces a user's name, role, email-verified flag, favorite species and profilePicture - a full replacement, so omitted fields are cleared. " +
             "Role and verification changes take effect on the user's very next request. Un-verifying a user locks them out until they verify again. " +
             "409 CANNOT_MODIFY_SELF if an admin tries to remove their own admin role or un-verify themselves. 422 INVALID_REFERENCE if favoriteSpeciesId doesn't exist. " +
@@ -66,10 +60,7 @@ public class AdminUserController {
         return ResponseEntity.ok(userService.adminUpdateUser(id, request, locale));
     }
 
-    /**
-     * Admin-only: permanently deletes a user account and all of its data. An admin can't delete their own
-     * account through this endpoint, to avoid a panel session locking itself out.
-     */
+    /** Admin-only: deletes a user and all their data. Admins cannot delete their own account here. */
     @Operation(summary = "Delete a user", description = "Admin-only. Permanently deletes a user account and all of its data (bird logs, badge progress, settings, " +
             "refresh tokens, uploaded photos); the user's tokens stop working immediately. Callers cannot delete their own account this way (403).")
     @DeleteMapping("/{id}")

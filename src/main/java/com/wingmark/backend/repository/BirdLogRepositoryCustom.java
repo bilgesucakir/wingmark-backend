@@ -8,22 +8,22 @@ import org.springframework.data.domain.Sort;
 import java.util.List;
 import java.util.UUID;
 
+/** Bird log queries that need dynamic filters. */
 public interface BirdLogRepositoryCustom {
 
+    /** Counts the distinct species in a user's logs. */
     long countDistinctSpeciesByUserId(UUID userId);
 
     /**
-     * Every filter is optional (null = don't filter on it). userId null means every
-     * user's logs (the admin "get all" endpoint); non-null scopes to one user.
-     * hasSpecies true/false filters on speciesId being set/unset.
-     */
-    /**
-     * A user's logs inside a lat/lng box, most recently observed first, at most {@code limit}.
-     * minLng > maxLng means the box crosses the antimeridian (e.g. 170 to -170).
-     * Filters behave as in findFiltered (null = no filter).
+     * Returns a user's logs inside a lat/lng box, newest first, at most {@code limit}. Filters are
+     * optional (null = no filter). {@code minLng > maxLng} means the box crosses the antimeridian.
      */
     List<BirdLog> findWithinBounds(UUID userId, double minLat, double maxLat, double minLng, double maxLng,
                                    Boolean hasSpecies, Gender gender, LifeStage lifeStage, int limit);
 
+    /**
+     * Returns logs sorted by {@code observedAt}; a null {@code userId} means every user's logs (admin) and
+     * the other filters are optional (null = no filter, {@code hasSpecies} tests whether a species is set).
+     */
     List<BirdLog> findFiltered(UUID userId, Boolean hasSpecies, Gender gender, LifeStage lifeStage, Sort.Direction observedAtDirection);
 }

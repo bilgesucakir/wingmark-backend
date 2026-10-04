@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
+/** Creates and validates JWT access tokens. */
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
@@ -31,10 +32,7 @@ public class JwtTokenProvider {
     /** The fallback in application.yml, for local development only. */
     static final String DEV_SECRET = "change-this-development-only-secret-key-please-override-me-1234567890";
 
-    /**
-     * Refuses to start a deployed server on the public development secret: anyone could read
-     * it in the repo and forge an admin token. Local runs (APP_BASE_URL on localhost) may use it.
-     */
+    /** Refuses to start with the development secret unless {@code APP_BASE_URL} is local. */
     @PostConstruct
     void rejectDevelopmentSecretOutsideLocalhost() {
         boolean local = appProperties.baseUrl() == null
@@ -52,6 +50,7 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
     }
 
+/** Creates a signed access token carrying the email, role and token version. */
     public String generateAccessToken(UUID userId, String email, String role, int tokenVersion) {
         Instant now = Instant.now();
         return Jwts.builder()
@@ -66,6 +65,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+/** Verifies the signature and expiry and returns the claims; throws {@code JwtException} otherwise. */
     public Claims parseClaims(String token) {
         try {
             return Jwts.parser()
@@ -78,6 +78,7 @@ public class JwtTokenProvider {
         }
     }
 
+/** Returns the user id from the token subject. */
     public UUID getUserId(Claims claims) {
         return UUID.fromString(claims.getSubject());
     }
@@ -88,14 +89,17 @@ public class JwtTokenProvider {
         return version == null ? 0 : version;
     }
 
+/** Returns the role claim. */
     public String getRole(Claims claims) {
         return claims.get(CLAIM_ROLE, String.class);
     }
 
+/** Returns the refresh token lifetime in milliseconds. */
     public long getRefreshTokenExpirationMs() {
         return jwtProperties.refreshTokenExpirationMs();
     }
 
+/** Returns the access token lifetime in milliseconds. */
     public long getAccessTokenExpirationMs() {
         return jwtProperties.accessTokenExpirationMs();
     }

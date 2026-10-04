@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Registration, login, token refresh/logout, and password reset. All public - no token required. */
+/** Registration, login, token refresh/logout and password reset. All public. */
 @Tag(name = "Auth", description = "Registration, login, token refresh/logout, and password reset")
 @RestController
 @RequestMapping("/api/auth")
@@ -37,7 +37,7 @@ public class AuthController {
     private final AuthService authService;
     private final AuthRateLimits authRateLimits;
 
-    /** Creates a new, unverified account and emails a verification link. No tokens are issued until the email is verified. */
+    /** Creates an unverified account and emails a verification link; no tokens are issued yet. */
     @Operation(summary = "Register", description = "Creates a new, unverified account and emails a verification link. Returns the new account's id/email/username " +
             "but no tokens - the client must verify the email, then call POST /api/auth/login.")
     @PostMapping("/register")
@@ -79,7 +79,7 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Emails a 6-digit password-reset code, if an account with that email exists. Always responds the same way either way to avoid leaking which emails are registered. */
+    /** Emails a 6-digit reset code if the account exists; the response is the same either way. */
     @Operation(summary = "Request password reset", description = "Emails a 6-digit reset code (valid 15 minutes, single use) if an account exists. " +
             "Only the newest code is valid; a request within 60 seconds of the last code sends nothing. " +
             "Always responds 202 regardless, to avoid revealing which emails are registered.")
@@ -100,10 +100,7 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Consumes the token from the verification email link. Plain HTML rather than JSON,
-     * since this is opened directly in a browser from an email client, not called by the app.
-     */
+    /** Verifies an email from the link in the verification email; responds with HTML. */
     @Operation(summary = "Verify email", description = "Consumes an email-verification token (from the link sent at registration) and marks the account verified.")
     @GetMapping(value = "/verify-email", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> verifyEmail(@RequestParam String token) {
@@ -111,13 +108,7 @@ public class AuthController {
         return ResponseEntity.ok("<p>Your email is verified. You can close this page and log in.</p>");
     }
 
-    /**
-     * Issues and emails a fresh verification link for the given email, if an account exists
-     * and isn't already verified. Deliberately unauthenticated (like forgot-password) - an
-     * unverified account can't log in to prove ownership any other way, e.g. after losing its
-     * session (app reinstall, cleared storage) before the original link was used or before it
-     * expired. Always responds the same way to avoid revealing which emails are registered.
-     */
+    /** Emails a new verification link if the account exists and is unverified; the response is the same either way. */
     @Operation(summary = "Resend verification email", description = "Issues and emails a fresh verification link for the given email, if an account exists and isn't already verified. " +
             "Always responds 202 regardless, to avoid revealing which emails are registered.")
     @PostMapping("/resend-verification-email")

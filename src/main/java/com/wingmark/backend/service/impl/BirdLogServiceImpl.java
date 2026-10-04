@@ -5,7 +5,6 @@ import com.wingmark.backend.dto.birdlog.BirdLogResponseDto;
 import com.wingmark.backend.dto.birdlog.CreateBirdLogRequestDto;
 import com.wingmark.backend.dto.birdlog.UpdateBirdLogRequestDto;
 import com.wingmark.backend.entity.BirdLog;
-import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.enums.Gender;
 import com.wingmark.backend.enums.LifeStage;
 import com.wingmark.backend.exception.ErrorCode;
@@ -27,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+/** Bird log queries and changes scoped to the owner. */
 @Service
 @RequiredArgsConstructor
 public class BirdLogServiceImpl implements BirdLogService {
@@ -152,7 +152,7 @@ public class BirdLogServiceImpl implements BirdLogService {
         badgeService.evaluateForUser(userId);
     }
 
-    /** Rejects sightings dated in the future, allowing a little slack for a phone clock running slightly ahead. */
+    /** Rejects sightings dated in the future, with slack for a fast phone clock. */
     private Instant validateObservedAt(Instant observedAt) {
         if (observedAt.isAfter(Instant.now().plus(OBSERVED_AT_CLOCK_SKEW))) {
             throw new BadRequestException(ErrorCode.OBSERVED_AT_IN_FUTURE, "observedAt cannot be in the future");

@@ -5,11 +5,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.stream.IntStream;
 
-/**
- * The fixed set of preset avatars a user can pick as their profile picture. Only the keys
- * live here - the images themselves ship inside the iOS app, keyed by the same strings.
- * Add keys at the end; never rename or remove one, since users' profiles store them.
- */
+/** Preset avatar keys for profile pictures; the images ship in the iOS app. Add keys at the end and never rename or remove one. */
 @Component
 public class AvatarCatalog {
 

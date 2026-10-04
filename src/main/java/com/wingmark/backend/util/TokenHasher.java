@@ -5,13 +5,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
-/** Hashes opaque tokens (refresh tokens, password reset tokens) before persisting them,
- *  so a database leak doesn't hand out usable tokens directly. */
+/** Hashes opaque tokens before they are stored, so a database leak exposes no usable tokens. */
 public final class TokenHasher {
 
     private TokenHasher() {
     }
 
+/** Returns the URL-safe Base64 SHA-256 hash of the value. */
     public static String sha256(String raw) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

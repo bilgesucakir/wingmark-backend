@@ -8,5 +8,6 @@ import java.util.UUID;
 /** Assembles a complete copy of one user's data (right of access / portability). */
 public interface DataExportService {
 
+/** Returns all of the user's data, with names in the given locale. */
     UserDataExportDto export(UUID userId, Locale locale);
 }

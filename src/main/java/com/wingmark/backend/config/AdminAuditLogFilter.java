@@ -16,9 +16,7 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * Audit trail of every change an admin makes (method, path, outcome, admin id). Ids only - no
- * request bodies or other personal data. Runs after Spring Security, so the principal and its
- * database-sourced role are already known.
+ * Logs each admin write request (method, path, status, admin id) as {@code ADMIN_AUDIT}; no request bodies.
  */
 @Slf4j
 @Component
@@ -26,11 +24,13 @@ public class AdminAuditLogFilter extends OncePerRequestFilter {
 
     private static final Set<String> MUTATING = Set.of("POST", "PUT", "PATCH", "DELETE");
 
+    /** Only {@code /api/} writes are audited. */
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         return !MUTATING.contains(request.getMethod()) || !request.getRequestURI().startsWith("/api/");
     }
 
+    /** Runs the chain, then logs the request if the caller is an admin. */
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,

@@ -28,6 +28,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/** Stateless JWT security: public endpoints, CORS, security headers and the admin panel CSP. */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -39,9 +40,11 @@ public class SecurityConfig {
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final CorsProperties corsProperties;
 
+    /** Content-Security-Policy for {@code /admin/**}: own scripts and styles only, no inline code. */
     static final String ADMIN_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data:; "
             + "connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
 
+    /** Endpoints reachable without a token. */
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/register",
             "/api/auth/login",
@@ -59,6 +62,7 @@ public class SecurityConfig {
             "/actuator/health"
     };
 
+    /** Builds the filter chain: which requests need a token, and the response headers. */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -92,21 +96,19 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /** BCrypt encoder for passwords. */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /** Exposes Spring's authentication manager. */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    /**
-     * The iOS app isn't a browser and the admin panel is same-origin, so neither needs CORS.
-     * Browsers on other origins are refused unless listed in CORS_ALLOWED_ORIGINS (e.g. a
-     * future web client). Auth is bearer tokens, never cookies, so credentials stay off.
-     */
+    /** Refuses browser origins not listed in {@code CORS_ALLOWED_ORIGINS}; credentials are off. */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

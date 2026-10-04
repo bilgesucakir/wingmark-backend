@@ -1,7 +1,6 @@
 package com.wingmark.backend.exception;
 
-/** Thrown when an authenticated user attempts an action they don't have permission for
- *  (e.g. accessing another user's log, or a non-admin hitting an admin-only endpoint). */
+/** Thrown when an authenticated user is not allowed to do something; maps to 403. */
 public class UnauthorizedActionException extends RuntimeException {
 
     private final ErrorCode code;
