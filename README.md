@@ -927,9 +927,11 @@ also need extra parameters in `criteriaMetadata`:
 | `SPECIES_IN_RADIUS`      | Max distinct species clustered within a radius               | `{ "radiusMeters": <number> }` (default 5000) |
 | `SIGHTINGS_IN_RADIUS`    | Max raw sightings (any species) clustered within a radius     | `{ "radiusMeters": <number> }` (default 5000) |
 | `SPECIES_LOGS`           | Logs of one specific species                                 | `{ "speciesId": "<uuid>" }` |
+| `SAME_GENUS_SPECIES`     | Max distinct (non-pet) species logged within one genus, the first word of the scientific name, case-insensitive | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
 
 The admin panel's badge form exposes all of these, including the species picker for
-`SPECIES_LOGS` and the radius field for the two `*_IN_RADIUS` types.
+`SPECIES_LOGS`, the radius field for the two `*_IN_RADIUS` types and the optional genus
+field for `SAME_GENUS_SPECIES`.
 
 <details>
 <summary><strong>Examples</strong></summary>

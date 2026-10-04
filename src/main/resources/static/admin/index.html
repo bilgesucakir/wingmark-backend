@@ -460,6 +460,7 @@
                 <option value="SPECIES_IN_RADIUS">Species in radius</option>
                 <option value="SIGHTINGS_IN_RADIUS">Sightings in radius</option>
                 <option value="SPECIES_LOGS">Specific species logs</option>
+                <option value="SAME_GENUS_SPECIES">Same genus species</option>
               </select>
             </div>
             <div class="field">
@@ -476,6 +477,10 @@
             <select id="badge-speciesId">
               <option value="">Select a species…</option>
             </select>
+          </div>
+          <div class="field" id="genus-field-wrap">
+            <label for="badge-genus">Genus (optional, e.g. Passer) — only for "Same genus species"</label>
+            <input type="text" id="badge-genus" placeholder="e.g. Passer" />
           </div>
           <div class="actions">
             <button type="submit" class="primary" id="save-badge-btn">Save badge</button>

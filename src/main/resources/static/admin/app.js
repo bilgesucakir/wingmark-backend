@@ -809,6 +809,7 @@ const cancelBadgeFormBtn = document.getElementById("cancel-badge-form-btn");
 const deleteBadgeBtn = document.getElementById("delete-badge-btn");
 const radiusFieldWrap = document.getElementById("radius-field-wrap");
 const speciesFieldWrap = document.getElementById("species-field-wrap");
+const genusFieldWrap = document.getElementById("genus-field-wrap");
 const badgeSpeciesSelect = document.getElementById("badge-speciesId");
 const badgeCriteriaTypeSelect = document.getElementById("badge-criteriaType");
 
@@ -820,6 +821,7 @@ const RADIUS_CRITERIA_TYPES = ["SPECIES_IN_RADIUS", "SIGHTINGS_IN_RADIUS"];
 function toggleRadiusField() {
   radiusFieldWrap.classList.toggle("hidden", !RADIUS_CRITERIA_TYPES.includes(badgeCriteriaTypeSelect.value));
   speciesFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "SPECIES_LOGS");
+  genusFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "SAME_GENUS_SPECIES");
 }
 badgeCriteriaTypeSelect.addEventListener("change", toggleRadiusField);
 
@@ -905,6 +907,8 @@ async function openBadgeForm(badge) {
   document.getElementById("badge-criteriaValue").value = badge.criteriaValue;
   document.getElementById("badge-radiusMeters").value =
     (badge.criteriaMetadata && badge.criteriaMetadata.radiusMeters) || "";
+  document.getElementById("badge-genus").value =
+    (badge.criteriaMetadata && badge.criteriaMetadata.genus) || "";
   await ensureBadgeSpeciesOptionsLoaded();
   badgeSpeciesSelect.value = (badge.criteriaMetadata && badge.criteriaMetadata.speciesId) || "";
   toggleRadiusField();
@@ -922,6 +926,9 @@ function readBadgeFormPayload() {
   } else if (criteriaType === "SPECIES_LOGS") {
     const speciesId = badgeSpeciesSelect.value;
     if (speciesId) criteriaMetadata = { speciesId };
+  } else if (criteriaType === "SAME_GENUS_SPECIES") {
+    const genus = document.getElementById("badge-genus").value.trim();
+    if (genus) criteriaMetadata = { genus };
   }
   return {
     name: readTranslations("badge-name-en", "badge-name-tr"),
