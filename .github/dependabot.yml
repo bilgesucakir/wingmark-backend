@@ -1,8 +1,0 @@
-# Weekly PRs for outdated or vulnerable Maven dependencies (App Store pack 05 §7).
-version: 2
-updates:
-  - package-ecosystem: "maven"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
