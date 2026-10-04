@@ -79,6 +79,9 @@ wingmark:
     base-url: ${INATURALIST_BASE_URL:https://api.inaturalist.org/v1}
   mail:
     from: ${MAIL_FROM:no-reply@wingmark.app}
+  badges:
+    # Recompute every user's badge progress at startup (set BADGE_RECOMPUTE_ON_STARTUP=false to skip).
+    recompute-on-startup: ${BADGE_RECOMPUTE_ON_STARTUP:true}
   # Shown in email footers once set. Legal facts only the operator can supply - left
   # empty rather than guessed; nothing is shown until LEGAL_NAME is configured.
   business:

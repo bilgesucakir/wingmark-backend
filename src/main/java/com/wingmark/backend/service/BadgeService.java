@@ -29,4 +29,7 @@ public interface BadgeService {
 
     /** Recomputes progress for every badge against the user's current logs and awards any newly earned ones. */
     void evaluateForUser(UUID userId);
+
+    /** Recomputes every badge for every user, e.g. after a progress rule changed. Returns the number of users processed. */
+    int recomputeForAllUsers();
 }

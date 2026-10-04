@@ -658,4 +658,22 @@ class BadgeServiceImplTest {
         verify(userBadgeRepository).save(captor.capture());
         assertThat(captor.getValue().getProgress()).isEqualTo(2);
     }
+
+    @Test
+    void recomputingAllUsersEvaluatesEveryUserAndSkipsOnesThatFail() {
+        UUID failingUser = UUID.randomUUID();
+        Badge badge = Badge.builder().id(UUID.randomUUID()).criteriaType(BadgeCriteriaType.TOTAL_LOGS).criteriaValue(1).build();
+        when(userRepository.findAll()).thenReturn(List.of(User.builder().id(failingUser).build(), User.builder().id(userId).build()));
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(birdLogRepository.countByUserId(failingUser)).thenThrow(new IllegalStateException("boom"));
+        when(birdLogRepository.countByUserId(userId)).thenReturn(1L);
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        assertThat(badgeService.recomputeForAllUsers()).isEqualTo(1);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getUserId()).isEqualTo(userId);
+        assertThat(captor.getValue().getEarnedAt()).isNotNull();
+    }
 }
