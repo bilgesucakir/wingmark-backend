@@ -215,8 +215,10 @@ public class BadgeServiceImpl implements BadgeService {
         return favoriteSpeciesId == null ? 0 : (int) birdLogRepository.countByUserIdAndSpeciesId(userId, favoriteSpeciesId);
     }
 
+    /** Returns the user's favorite species id, or null if they have none or that species no longer exists. */
     private UUID favoriteSpeciesId(UUID userId) {
-        return userRepository.findById(userId).map(User::getFavoriteSpeciesId).orElse(null);
+        UUID favoriteSpeciesId = userRepository.findById(userId).map(User::getFavoriteSpeciesId).orElse(null);
+        return favoriteSpeciesId != null && speciesRepository.existsById(favoriteSpeciesId) ? favoriteSpeciesId : null;
     }
 
     private int computeSpeciesLogs(UUID userId, Badge badge) {
