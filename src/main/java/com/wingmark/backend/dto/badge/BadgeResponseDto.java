@@ -15,6 +15,7 @@ public record BadgeResponseDto(
         BadgeCriteriaType criteriaType,
         Integer criteriaValue,
         Map<String, Object> criteriaMetadata,
-        BadgeTier tier
+        BadgeTier tier,
+        Integer displayOrder
 ) {
 }

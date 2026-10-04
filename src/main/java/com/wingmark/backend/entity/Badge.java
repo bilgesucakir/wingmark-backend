@@ -36,4 +36,7 @@ public class Badge extends BaseEntity {
     private Map<String, Object> criteriaMetadata;
 
     private BadgeTier tier;
+
+    /** Position in the badge lists, lowest first; null sorts last. */
+    private Integer displayOrder;
 }

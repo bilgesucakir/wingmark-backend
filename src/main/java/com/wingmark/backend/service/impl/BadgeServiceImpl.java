@@ -7,6 +7,7 @@ import com.wingmark.backend.dto.badge.UserBadgeResponseDto;
 import com.wingmark.backend.entity.Badge;
 import com.wingmark.backend.entity.BirdLog;
 import com.wingmark.backend.entity.Species;
+import com.wingmark.backend.entity.User;
 import com.wingmark.backend.entity.UserBadge;
 import com.wingmark.backend.enums.BadgeCriteriaType;
 import com.wingmark.backend.enums.LifeStage;
@@ -15,6 +16,7 @@ import com.wingmark.backend.repository.BadgeRepository;
 import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserBadgeRepository;
+import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.service.BadgeService;
 import com.wingmark.backend.util.GeoUtils;
 import com.wingmark.backend.util.LocalizedTextResolver;
@@ -24,6 +26,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -42,15 +46,19 @@ public class BadgeServiceImpl implements BadgeService {
     private final UserBadgeRepository userBadgeRepository;
     private final BirdLogRepository birdLogRepository;
     private final SpeciesRepository speciesRepository;
+    private final UserRepository userRepository;
 
     @Override
     public List<BadgeResponseDto> getAll() {
-        return badgeRepository.findAll().stream().map(this::toResponse).toList();
+        return sortedBadges().stream().map(this::toResponse).toList();
     }
 
     @Override
     public List<UserBadgeResponseDto> getByUserId(UUID userId, Locale locale) {
-        List<Badge> badges = badgeRepository.findAll();
+        boolean hasFavoriteSpecies = favoriteSpeciesId(userId) != null;
+        List<Badge> badges = sortedBadges().stream()
+                .filter(badge -> hasFavoriteSpecies || badge.getCriteriaType() != BadgeCriteriaType.FAVORITE_SPECIES_LOGS)
+                .toList();
         Map<UUID, UserBadge> earned = userBadgeRepository.findByUserId(userId).stream()
                 .collect(java.util.stream.Collectors.toMap(UserBadge::getBadgeId, ub -> ub));
 
@@ -85,6 +93,7 @@ public class BadgeServiceImpl implements BadgeService {
                 .criteriaValue(request.criteriaValue())
                 .criteriaMetadata(request.criteriaMetadata())
                 .tier(request.tier())
+                .displayOrder(request.displayOrder())
                 .build();
         return toResponse(badgeRepository.save(badge));
     }
@@ -103,6 +112,7 @@ public class BadgeServiceImpl implements BadgeService {
         badge.setCriteriaValue(request.criteriaValue());
         badge.setCriteriaMetadata(request.criteriaMetadata());
         badge.setTier(request.tier());
+        badge.setDisplayOrder(request.displayOrder());
         return toResponse(badgeRepository.save(badge));
     }
 
@@ -123,6 +133,13 @@ public class BadgeServiceImpl implements BadgeService {
         }
     }
 
+    /** Returns all badges by {@code displayOrder}, lowest first. Badges without one come last, in stored order. */
+    private List<Badge> sortedBadges() {
+        List<Badge> badges = new ArrayList<>(badgeRepository.findAll());
+        badges.sort(Comparator.comparing(Badge::getDisplayOrder, Comparator.nullsLast(Comparator.naturalOrder())));
+        return badges;
+    }
+
     private void validateName(Map<String, String> name) {
         if (!StringUtils.hasText(name.get("en"))) {
             throw new IllegalArgumentException("name must include a non-blank 'en' translation");
@@ -140,6 +157,7 @@ public class BadgeServiceImpl implements BadgeService {
             case SIGHTINGS_IN_RADIUS -> computeMaxSightingsInRadius(userId, badge);
             case SPECIES_LOGS -> computeSpeciesLogs(userId, badge);
             case SAME_GENUS_SPECIES -> computeSameGenusSpecies(userId, badge);
+            case FAVORITE_SPECIES_LOGS -> computeFavoriteSpeciesLogs(userId);
         };
     }
 
@@ -189,6 +207,16 @@ public class BadgeServiceImpl implements BadgeService {
                 && criteriaMetadata.containsKey("genus") && !StringUtils.hasText(extractGenus(criteriaMetadata))) {
             throw new IllegalArgumentException("criteriaMetadata.genus must be a non-blank string when given");
         }
+    }
+
+    /** Returns the number of logs of the user's favorite species, 0 if they have none. */
+    private int computeFavoriteSpeciesLogs(UUID userId) {
+        UUID favoriteSpeciesId = favoriteSpeciesId(userId);
+        return favoriteSpeciesId == null ? 0 : (int) birdLogRepository.countByUserIdAndSpeciesId(userId, favoriteSpeciesId);
+    }
+
+    private UUID favoriteSpeciesId(UUID userId) {
+        return userRepository.findById(userId).map(User::getFavoriteSpeciesId).orElse(null);
     }
 
     private int computeSpeciesLogs(UUID userId, Badge badge) {
@@ -288,7 +316,8 @@ public class BadgeServiceImpl implements BadgeService {
                 badge.getCriteriaType(),
                 badge.getCriteriaValue(),
                 badge.getCriteriaMetadata(),
-                badge.getTier()
+                badge.getTier(),
+                badge.getDisplayOrder()
         );
     }
 }

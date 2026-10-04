@@ -927,6 +927,7 @@ also need extra parameters in `criteriaMetadata`:
 | `SPECIES_IN_RADIUS`      | Max distinct species clustered within a radius               | `{ "radiusMeters": <number> }` (default 5000) |
 | `SIGHTINGS_IN_RADIUS`    | Max raw sightings (any species) clustered within a radius     | `{ "radiusMeters": <number> }` (default 5000) |
 | `SPECIES_LOGS`           | Logs of one specific species                                 | `{ "speciesId": "<uuid>" }` |
+| `FAVORITE_SPECIES_LOGS`  | Logs of the user's favorite species; 0 without one. `/user/{userId}` omits these badges for users who have no favorite species | — |
 | `SAME_GENUS_SPECIES`     | Max distinct (non-pet) species logged within one genus, the first word of the scientific name, case-insensitive | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
 
 The admin panel's badge form exposes all of these, including the species picker for
@@ -948,7 +949,8 @@ field for `SAME_GENUS_SPECIES`.
     "criteriaType": "TOTAL_LOGS",
     "criteriaValue": 1,
     "criteriaMetadata": null,
-    "tier": "BRONZE"
+    "tier": "BRONZE",
+    "displayOrder": 1
   }
 ]
 ```
@@ -980,9 +982,12 @@ Request:
   "criteriaType": "TOTAL_LOGS",
   "criteriaValue": 1,
   "criteriaMetadata": null,
-  "tier": "BRONZE"
+  "tier": "BRONZE",
+  "displayOrder": 1
 }
 ```
+
+`displayOrder` is optional (0 or more). `/catalog` and `/user/{userId}` list badges by it, lowest first; badges without one come last.
 
 Response: same shape as one `/catalog` entry above.
 

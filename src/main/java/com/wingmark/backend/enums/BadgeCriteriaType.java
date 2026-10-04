@@ -18,6 +18,8 @@ public enum BadgeCriteriaType {
     SIGHTINGS_IN_RADIUS,
     /** Distinct species of one genus (first word of the scientific name); optional {@code criteriaMetadata.genus}. */
     SAME_GENUS_SPECIES,
+    /** Logs of the user's favorite species. Shown only to users who have one. */
+    FAVORITE_SPECIES_LOGS,
     /** Log one specific species (criteriaMetadata.speciesId) criteriaValue times. */
     SPECIES_LOGS
 }
