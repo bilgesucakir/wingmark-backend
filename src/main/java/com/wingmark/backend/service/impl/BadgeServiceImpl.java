@@ -95,7 +95,9 @@ public class BadgeServiceImpl implements BadgeService {
                 .tier(request.tier())
                 .displayOrder(request.displayOrder())
                 .build();
-        return toResponse(badgeRepository.save(badge));
+        Badge saved = badgeRepository.save(badge);
+        reevaluateForAllUsers(saved);
+        return toResponse(saved);
     }
 
     @Override
@@ -113,7 +115,9 @@ public class BadgeServiceImpl implements BadgeService {
         badge.setCriteriaMetadata(request.criteriaMetadata());
         badge.setTier(request.tier());
         badge.setDisplayOrder(request.displayOrder());
-        return toResponse(badgeRepository.save(badge));
+        Badge saved = badgeRepository.save(badge);
+        reevaluateForAllUsers(saved);
+        return toResponse(saved);
     }
 
     @Override
@@ -138,6 +142,16 @@ public class BadgeServiceImpl implements BadgeService {
         List<Badge> badges = new ArrayList<>(badgeRepository.findAll());
         badges.sort(Comparator.comparing(Badge::getDisplayOrder, Comparator.nullsLast(Comparator.naturalOrder())));
         return badges;
+    }
+
+    /**
+     * Recomputes one badge's progress for every user, so a new or edited badge (for example a lowered target)
+     * is awarded without waiting for each user's next log change. Earned badges stay earned if the target is raised.
+     */
+    private void reevaluateForAllUsers(Badge badge) {
+        for (User user : userRepository.findAll()) {
+            upsertUserBadge(user.getId(), badge, computeProgress(user.getId(), badge));
+        }
     }
 
     private void validateName(Map<String, String> name) {

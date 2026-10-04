@@ -563,4 +563,62 @@ class BadgeServiceImplTest {
         verify(userBadgeRepository).save(captor.capture());
         assertThat(captor.getValue().getProgress()).isZero();
     }
+
+    @Test
+    void loweringABadgeTargetAwardsUsersWhoAlreadyReachedTheNewTarget() {
+        UUID badgeId = UUID.randomUUID();
+        Badge existing = Badge.builder().id(badgeId).name(Map.of("en", "Logger"))
+                .criteriaType(BadgeCriteriaType.TOTAL_LOGS).criteriaValue(3).build();
+        UserBadge stuck = UserBadge.builder().userId(userId).badgeId(badgeId).progress(2).build();
+        when(badgeRepository.findById(badgeId)).thenReturn(Optional.of(existing));
+        when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findAll()).thenReturn(List.of(User.builder().id(userId).build()));
+        when(birdLogRepository.countByUserId(userId)).thenReturn(2L);
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)).thenReturn(Optional.of(stuck));
+
+        badgeService.update(badgeId, new UpdateBadgeRequestDto(Map.of("en", "Logger"), null, null,
+                BadgeCriteriaType.TOTAL_LOGS, 2, null, null, null));
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isEqualTo(2);
+        assertThat(captor.getValue().getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void raisingABadgeTargetKeepsAlreadyEarnedBadgesEarned() {
+        UUID badgeId = UUID.randomUUID();
+        Badge existing = Badge.builder().id(badgeId).name(Map.of("en", "Logger"))
+                .criteriaType(BadgeCriteriaType.TOTAL_LOGS).criteriaValue(2).build();
+        java.time.Instant earlier = java.time.Instant.now().minusSeconds(3600);
+        UserBadge earned = UserBadge.builder().userId(userId).badgeId(badgeId).progress(2).earnedAt(earlier).build();
+        when(badgeRepository.findById(badgeId)).thenReturn(Optional.of(existing));
+        when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findAll()).thenReturn(List.of(User.builder().id(userId).build()));
+        when(birdLogRepository.countByUserId(userId)).thenReturn(2L);
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)).thenReturn(Optional.of(earned));
+
+        badgeService.update(badgeId, new UpdateBadgeRequestDto(Map.of("en", "Logger"), null, null,
+                BadgeCriteriaType.TOTAL_LOGS, 5, null, null, null));
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getEarnedAt()).isEqualTo(earlier);
+    }
+
+    @Test
+    void creatingABadgeComputesProgressForExistingUsers() {
+        when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findAll()).thenReturn(List.of(User.builder().id(userId).build()));
+        when(birdLogRepository.countByUserId(userId)).thenReturn(4L);
+        when(userBadgeRepository.findByUserIdAndBadgeId(any(), any())).thenReturn(Optional.empty());
+
+        badgeService.create(new CreateBadgeRequestDto(Map.of("en", "Four"), null, null,
+                BadgeCriteriaType.TOTAL_LOGS, 3, null, null, null));
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        assertThat(captor.getValue().getProgress()).isEqualTo(4);
+        assertThat(captor.getValue().getEarnedAt()).isNotNull();
+    }
 }
