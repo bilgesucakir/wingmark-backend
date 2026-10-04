@@ -1,9 +1,11 @@
 package com.wingmark.backend.service.impl;
 
 import com.wingmark.backend.dto.badge.BadgeResponseDto;
+import com.wingmark.backend.dto.badge.CreateBadgeRequestDto;
 import com.wingmark.backend.dto.badge.UpdateBadgeRequestDto;
 import com.wingmark.backend.entity.Badge;
 import com.wingmark.backend.entity.BirdLog;
+import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.entity.UserBadge;
 import com.wingmark.backend.enums.BadgeCriteriaType;
 import com.wingmark.backend.enums.BadgeTier;
@@ -11,6 +13,7 @@ import com.wingmark.backend.enums.LifeStage;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.BadgeRepository;
 import com.wingmark.backend.repository.BirdLogRepository;
+import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserBadgeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +42,8 @@ class BadgeServiceImplTest {
     private UserBadgeRepository userBadgeRepository;
     @Mock
     private BirdLogRepository birdLogRepository;
+    @Mock
+    private SpeciesRepository speciesRepository;
 
     private BadgeServiceImpl badgeService;
 
@@ -46,7 +51,7 @@ class BadgeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        badgeService = new BadgeServiceImpl(badgeRepository, userBadgeRepository, birdLogRepository);
+        badgeService = new BadgeServiceImpl(badgeRepository, userBadgeRepository, birdLogRepository, speciesRepository);
     }
 
     @Test
@@ -255,5 +260,167 @@ class BadgeServiceImplTest {
                 Map.of("en", "Name"), null, null, BadgeCriteriaType.TOTAL_LOGS, 5, null, null);
 
         assertThatThrownBy(() -> badgeService.update(badgeId, request)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    private static Species species(String scientificName) {
+        return Species.builder().id(UUID.randomUUID()).scientificName(scientificName).build();
+    }
+
+    private static List<BirdLog> logsOf(Species... species) {
+        List<BirdLog> logs = new java.util.ArrayList<>();
+        for (Species one : species) {
+            BirdLog birdLog = BirdLog.builder().speciesId(one.getId()).build();
+            logs.add(birdLog);
+        }
+        return logs;
+    }
+
+    /** Evaluates a SAME_GENUS_SPECIES badge for a user who logged the given species and returns the saved progress row. */
+    private UserBadge evaluateSameGenus(int target, Map<String, Object> metadata, List<BirdLog> logs, Species... species) {
+        Badge badge = Badge.builder()
+                .id(UUID.randomUUID())
+                .criteriaType(BadgeCriteriaType.SAME_GENUS_SPECIES)
+                .criteriaValue(target)
+                .criteriaMetadata(metadata)
+                .build();
+        when(badgeRepository.findAll()).thenReturn(List.of(badge));
+        when(birdLogRepository.findByUserIdAndSpeciesIdIsNotNullAndPetFalse(userId)).thenReturn(logs);
+        if (!logs.isEmpty()) {
+            when(speciesRepository.findAllById(any())).thenReturn(List.of(species));
+        }
+        when(userBadgeRepository.findByUserIdAndBadgeId(userId, badge.getId())).thenReturn(Optional.empty());
+
+        badgeService.evaluateForUser(userId);
+
+        ArgumentCaptor<UserBadge> captor = ArgumentCaptor.forClass(UserBadge.class);
+        verify(userBadgeRepository).save(captor.capture());
+        return captor.getValue();
+    }
+
+    @Test
+    void sameGenusBadgeHasNoProgressWithoutLogs() {
+        UserBadge saved = evaluateSameGenus(2, null, List.of());
+
+        assertThat(saved.getProgress()).isZero();
+        assertThat(saved.getEarnedAt()).isNull();
+    }
+
+    @Test
+    void sameGenusBadgeIsNotEarnedWithOneSpecies() {
+        Species house = species("Passer domesticus");
+
+        UserBadge saved = evaluateSameGenus(2, null, logsOf(house), house);
+
+        assertThat(saved.getProgress()).isEqualTo(1);
+        assertThat(saved.getEarnedAt()).isNull();
+    }
+
+    @Test
+    void sameGenusBadgeIsEarnedWhenTwoSpeciesShareAGenus() {
+        Species house = species("Passer domesticus");
+        Species tree = species("Passer montanus");
+
+        UserBadge saved = evaluateSameGenus(2, null, logsOf(house, tree), house, tree);
+
+        assertThat(saved.getProgress()).isEqualTo(2);
+        assertThat(saved.getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void sameGenusBadgeCountsASpeciesOnceHoweverOftenItWasLogged() {
+        Species house = species("Passer domesticus");
+        List<BirdLog> logs = logsOf(house, house, house);
+
+        UserBadge saved = evaluateSameGenus(2, null, logs, house);
+
+        assertThat(saved.getProgress()).isEqualTo(1);
+        assertThat(saved.getEarnedAt()).isNull();
+    }
+
+    @Test
+    void sameGenusBadgeIsNotEarnedByTwoSpeciesOfDifferentGenera() {
+        Species house = species("Passer domesticus");
+        Species robin = species("Erithacus rubecula");
+
+        UserBadge saved = evaluateSameGenus(2, null, logsOf(house, robin), house, robin);
+
+        assertThat(saved.getProgress()).isEqualTo(1);
+        assertThat(saved.getEarnedAt()).isNull();
+    }
+
+    @Test
+    void sameGenusBadgeTakesTheBestGenusWhenNoneIsConfigured() {
+        Species house = species("Passer domesticus");
+        Species tree = species("Passer montanus");
+        Species desert = species("Passer simplex");
+        Species robin = species("Erithacus rubecula");
+
+        UserBadge saved = evaluateSameGenus(3, Map.of(), logsOf(house, tree, desert, robin), house, tree, desert, robin);
+
+        assertThat(saved.getProgress()).isEqualTo(3);
+        assertThat(saved.getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void sameGenusBadgeWithAGenusOnlyCountsThatGenus() {
+        Species house = species("Passer domesticus");
+        Species tree = species("Passer montanus");
+        Species blue = species("Cyanistes caeruleus");
+        Species great = species("Cyanistes teneriffae");
+        Species coal = species("Cyanistes cyanus");
+
+        UserBadge saved = evaluateSameGenus(3, Map.of("genus", " passer "), logsOf(house, tree, blue, great, coal),
+                house, tree, blue, great, coal);
+
+        assertThat(saved.getProgress()).isEqualTo(2);
+        assertThat(saved.getEarnedAt()).isNull();
+    }
+
+    @Test
+    void sameGenusBadgeIgnoresCaseTrinomialsAndBlankScientificNames() {
+        Species house = species("PASSER domesticus");
+        Species indian = species("passer  domesticus indicus");
+        Species tree = species("Passer montanus");
+        Species blank = species("  ");
+        Species none = species(null);
+
+        UserBadge saved = evaluateSameGenus(3, null, logsOf(house, indian, tree, blank, none),
+                house, indian, tree, blank, none);
+
+        assertThat(saved.getProgress()).isEqualTo(3);
+        assertThat(saved.getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void sameGenusBadgeOnlyLooksAtNonPetLogsWithASpecies() {
+        Species house = species("Passer domesticus");
+
+        evaluateSameGenus(2, null, logsOf(house), house);
+
+        verify(birdLogRepository).findByUserIdAndSpeciesIdIsNotNullAndPetFalse(userId);
+    }
+
+    @Test
+    void sameGenusBadgeRejectsABlankOrNonTextGenus() {
+        for (Object genus : new Object[]{"", "  ", 42}) {
+            CreateBadgeRequestDto request = new CreateBadgeRequestDto(Map.of("en", "Twins"), null, null,
+                    BadgeCriteriaType.SAME_GENUS_SPECIES, 2, Map.of("genus", genus), BadgeTier.BRONZE);
+
+            assertThatThrownBy(() -> badgeService.create(request))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("genus");
+        }
+    }
+
+    @Test
+    void sameGenusBadgeAcceptsAMissingOrNamedGenus() {
+        when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        for (Map<String, Object> metadata : java.util.Arrays.asList(null, Map.<String, Object>of(), Map.<String, Object>of("genus", "Passer"))) {
+            CreateBadgeRequestDto request = new CreateBadgeRequestDto(Map.of("en", "Twins"), null, null,
+                    BadgeCriteriaType.SAME_GENUS_SPECIES, 2, metadata, BadgeTier.BRONZE);
+
+            assertThat(badgeService.create(request).criteriaType()).isEqualTo(BadgeCriteriaType.SAME_GENUS_SPECIES);
+        }
     }
 }

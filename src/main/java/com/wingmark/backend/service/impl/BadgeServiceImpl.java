@@ -6,11 +6,14 @@ import com.wingmark.backend.dto.badge.UpdateBadgeRequestDto;
 import com.wingmark.backend.dto.badge.UserBadgeResponseDto;
 import com.wingmark.backend.entity.Badge;
 import com.wingmark.backend.entity.BirdLog;
+import com.wingmark.backend.entity.Species;
 import com.wingmark.backend.entity.UserBadge;
+import com.wingmark.backend.enums.BadgeCriteriaType;
 import com.wingmark.backend.enums.LifeStage;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.BadgeRepository;
 import com.wingmark.backend.repository.BirdLogRepository;
+import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.repository.UserBadgeRepository;
 import com.wingmark.backend.service.BadgeService;
 import com.wingmark.backend.util.GeoUtils;
@@ -21,9 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /** Badge catalog and per-user badge progress. */
@@ -35,6 +41,7 @@ public class BadgeServiceImpl implements BadgeService {
     private final BadgeRepository badgeRepository;
     private final UserBadgeRepository userBadgeRepository;
     private final BirdLogRepository birdLogRepository;
+    private final SpeciesRepository speciesRepository;
 
     @Override
     public List<BadgeResponseDto> getAll() {
@@ -68,6 +75,7 @@ public class BadgeServiceImpl implements BadgeService {
     @Override
     public BadgeResponseDto create(CreateBadgeRequestDto request) {
         validateName(request.name());
+        validateCriteria(request.criteriaType(), request.criteriaMetadata());
 
         Badge badge = Badge.builder()
                 .name(request.name())
@@ -84,6 +92,7 @@ public class BadgeServiceImpl implements BadgeService {
     @Override
     public BadgeResponseDto update(UUID badgeId, UpdateBadgeRequestDto request) {
         validateName(request.name());
+        validateCriteria(request.criteriaType(), request.criteriaMetadata());
 
         Badge badge = badgeRepository.findById(badgeId)
                 .orElseThrow(() -> ResourceNotFoundException.of("Badge", badgeId));
@@ -130,7 +139,56 @@ public class BadgeServiceImpl implements BadgeService {
             case SPECIES_IN_RADIUS -> computeMaxSpeciesInRadius(userId, badge);
             case SIGHTINGS_IN_RADIUS -> computeMaxSightingsInRadius(userId, badge);
             case SPECIES_LOGS -> computeSpeciesLogs(userId, badge);
+            case SAME_GENUS_SPECIES -> computeSameGenusSpecies(userId, badge);
         };
+    }
+
+    /**
+     * Returns the largest number of distinct species the user logged within one genus (the first word of the
+     * scientific name, case-insensitive), or within {@code criteriaMetadata.genus} when set. Pet logs and logs
+     * without a species are ignored.
+     */
+    private int computeSameGenusSpecies(UUID userId, Badge badge) {
+        Set<UUID> speciesIds = new HashSet<>();
+        birdLogRepository.findByUserIdAndSpeciesIdIsNotNullAndPetFalse(userId)
+                .forEach(birdLog -> speciesIds.add(birdLog.getSpeciesId()));
+        if (speciesIds.isEmpty()) {
+            return 0;
+        }
+
+        Map<String, Set<UUID>> speciesByGenus = new HashMap<>();
+        for (Species species : speciesRepository.findAllById(speciesIds)) {
+            String genus = genusOf(species.getScientificName());
+            if (genus != null) {
+                speciesByGenus.computeIfAbsent(genus, key -> new HashSet<>()).add(species.getId());
+            }
+        }
+
+        String requestedGenus = genusOf(extractGenus(badge.getCriteriaMetadata()));
+        if (requestedGenus != null) {
+            return speciesByGenus.getOrDefault(requestedGenus, Set.of()).size();
+        }
+        return speciesByGenus.values().stream().mapToInt(Set::size).max().orElse(0);
+    }
+
+    /** Returns the lower-cased first word of a scientific name, or null if it is blank. */
+    private static String genusOf(String scientificName) {
+        if (!StringUtils.hasText(scientificName)) {
+            return null;
+        }
+        return scientificName.trim().split("\\s+")[0].toLowerCase(Locale.ROOT);
+    }
+
+    private static String extractGenus(Map<String, Object> criteriaMetadata) {
+        return criteriaMetadata != null && criteriaMetadata.get("genus") instanceof String genus ? genus : null;
+    }
+
+    /** Rejects a {@code SAME_GENUS_SPECIES} badge whose {@code criteriaMetadata.genus}, when given, is not a non-blank string. */
+    private static void validateCriteria(BadgeCriteriaType type, Map<String, Object> criteriaMetadata) {
+        if (type == BadgeCriteriaType.SAME_GENUS_SPECIES && criteriaMetadata != null
+                && criteriaMetadata.containsKey("genus") && !StringUtils.hasText(extractGenus(criteriaMetadata))) {
+            throw new IllegalArgumentException("criteriaMetadata.genus must be a non-blank string when given");
+        }
     }
 
     private int computeSpeciesLogs(UUID userId, Badge badge) {

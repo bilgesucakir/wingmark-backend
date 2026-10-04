@@ -16,6 +16,8 @@ public enum BadgeCriteriaType {
     SPECIES_IN_RADIUS,
     /** Sightings within a radius of one place. */
     SIGHTINGS_IN_RADIUS,
+    /** Distinct species of one genus (first word of the scientific name); optional {@code criteriaMetadata.genus}. */
+    SAME_GENUS_SPECIES,
     /** Log one specific species (criteriaMetadata.speciesId) criteriaValue times. */
     SPECIES_LOGS
 }
