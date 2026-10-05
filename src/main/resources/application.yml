@@ -79,6 +79,8 @@ wingmark:
     base-url: ${INATURALIST_BASE_URL:https://api.inaturalist.org/v1}
   mail:
     from: ${MAIL_FROM:no-reply@wingmark.app}
+    # Most emails sent per UTC day; more are skipped with a warning. 0 = no cap.
+    daily-cap: ${MAIL_DAILY_CAP:200}
   badges:
     # Recompute every user's badge progress at startup (set BADGE_RECOMPUTE_ON_STARTUP=false to skip).
     recompute-on-startup: ${BADGE_RECOMPUTE_ON_STARTUP:true}

@@ -20,7 +20,10 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +50,16 @@ class EmailServiceImplTest {
     }
 
     private EmailServiceImpl service(BusinessProperties business) {
-        return new EmailServiceImpl(mailSender, new MailProperties("no-reply@wingmark.app"), business);
+        return service(business, 0);
+    }
+
+    private EmailServiceImpl service(BusinessProperties business, int dailyCap) {
+        MailProperties properties = new MailProperties("no-reply@wingmark.app", dailyCap);
+        return new EmailServiceImpl(mailSender, properties, business, new EmailSendCounter(properties));
+    }
+
+    private static boolean containsAll(String message, String... parts) {
+        return java.util.Arrays.stream(parts).allMatch(message::contains);
     }
 
     private static final BusinessProperties UNCONFIGURED = new BusinessProperties("", "", "");
@@ -112,5 +124,48 @@ class EmailServiceImplTest {
         assertThat(EmailServiceImpl.maskEmail("yildirim@gmail.com")).isEqualTo("y***@gmail.com");
         assertThat(EmailServiceImpl.maskEmail("nope")).isEqualTo("***");
         assertThat(EmailServiceImpl.maskEmail(null)).isNull();
+    }
+
+    @Test
+    void aSuccessfulSendIsLoggedAtInfoWithItsTypeAMaskedAddressAndTheDailyCount() throws Exception {
+        logger.setLevel(Level.INFO);
+        doNothing().when(mailSender).send(any(MimeMessage.class));
+
+        service(UNCONFIGURED).sendPasswordChangedEmail("yildirim@gmail.com");
+
+        assertThat(logs.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.INFO);
+            assertThat(event.getFormattedMessage()).contains("Email sent", "type=password-changed", "y***@gmail.com", "sent today: 1")
+                    .doesNotContain("yildirim@gmail.com");
+        });
+    }
+
+    @Test
+    void aFailedSendIsLoggedAsAnErrorWithItsTypeAndDoesNotUseUpTheDailyCap() throws Exception {
+        logger.setLevel(Level.INFO);
+        EmailServiceImpl service = service(UNCONFIGURED, 1);
+
+        service.sendVerificationEmail("a@b.co", "http://localhost/verify?token=x"); // the default stub fails this send
+        assertThat(logs.list).anyMatch(e -> e.getLevel() == Level.ERROR
+                && containsAll(e.getFormattedMessage(), "Email failed", "type=verification", "a***@b.co"));
+
+        doNothing().when(mailSender).send(any(MimeMessage.class));
+        service.sendVerificationEmail("a@b.co", "http://localhost/verify?token=y");
+
+        assertThat(logs.list).anyMatch(e -> e.getFormattedMessage().contains("Email sent"));
+    }
+
+    @Test
+    void sendsOverTheDailyCapAreSkippedWithAWarningAndNeverReachTheMailSender() throws Exception {
+        logger.setLevel(Level.INFO);
+        doNothing().when(mailSender).send(any(MimeMessage.class));
+        EmailServiceImpl service = service(UNCONFIGURED, 1);
+
+        service.sendAccountDeletedEmail("first@b.co");
+        service.sendAccountDeletedEmail("second@b.co");
+
+        verify(mailSender, times(1)).send(any(MimeMessage.class));
+        assertThat(logs.list).anyMatch(e -> e.getLevel() == Level.WARN
+                && containsAll(e.getFormattedMessage(), "daily cap of 1 reached", "type=account-deleted", "s***@b.co"));
     }
 }
