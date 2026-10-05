@@ -29,6 +29,8 @@ final class ApiFieldDocs {
             refreshToken|Long-lived rotating token used to get a new token pair; each one works once.|
             expiresInMs|Lifetime of the access token in milliseconds.|900000
             pendingConsents|Legal documents whose current version the user has not accepted yet; empty when none.|
+            confirmedAge13|Must be true: confirms the user is at least the minimum age (13). Missing or false gives 400 AGE_NOT_CONFIRMED.|true
+            minimumAge|Minimum age to sign up; the age confirmation is recorded as a consent of type AGE whose version is this number.|13
             role|Account role: USER or ADMIN.|USER
             emailVerified|Whether the email address has been verified.|true
             favoriteSpeciesId|Id of the user's favorite species, or null.|%1$s
@@ -150,9 +152,9 @@ final class ApiFieldDocs {
             CreateSpeciesImageRequestDto.gender|Sex shown: MALE, FEMALE or NOT_APPLICABLE.|NOT_APPLICABLE
             SpeciesImageResponseDto.lifeStage|Life stage shown: BABY or ADULT.|ADULT
             SpeciesImageResponseDto.gender|Sex shown: MALE, FEMALE or NOT_APPLICABLE.|NOT_APPLICABLE
-            ConsentResponseDto.type|Document type: TERMS or PRIVACY.|PRIVACY
-            AcceptConsentRequestDto.type|Document type: TERMS or PRIVACY.|PRIVACY
-            AcceptConsentRequestDto.version|Exact current version of the document, from GET /api/legal.|2026-10-03
+            ConsentResponseDto.type|Consent type: TERMS, PRIVACY or AGE.|PRIVACY
+            AcceptConsentRequestDto.type|Consent type: TERMS, PRIVACY or AGE.|PRIVACY
+            AcceptConsentRequestDto.version|Exact current version: the document version from GET /api/legal, or the minimum age (e.g. 13) for AGE.|2026-10-03
             ConsentResponseDto.version|Version of the document that was accepted.|2026-10-03
             PendingConsentsResponseDto.pendingConsents|Documents still to accept after this call; empty when none.|
             LocaleUsageCountDto.locale|Language code such as en or tr, or "unset" if the user never chose one.|en

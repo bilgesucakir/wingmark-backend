@@ -14,7 +14,7 @@ public interface ConsentService {
     LegalInfoDto legalInfo();
 
     /** Rejects a signup that didn't accept every currently published document's exact version. */
-    void requireAcceptedAtSignup(String acceptedTermsVersion, String acceptedPrivacyVersion);
+    void requireAcceptedAtSignup(String acceptedTermsVersion, String acceptedPrivacyVersion, boolean ageConfirmed);
 
     /** Records acceptance of every currently published document for a just-registered user. */
     void recordSignupConsents(UUID userId);

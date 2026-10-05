@@ -85,15 +85,15 @@ class AppStoreHardeningTest {
         String id = Long.toString(System.nanoTime() % 1_000_000);
         String ip = newIp();
         mockMvc.perform(post("/api/auth/register").header("CF-Connecting-IP", ip).contentType(MediaType.APPLICATION_JSON)
-                        .content(json(Map.of("email", "kite" + id + "@example.com", "password", "short1x", "username", "kite" + id))))
+                        .content(json(Map.of("email", "kite" + id + "@example.com", "password", "short1x", "username", "kite" + id, "confirmedAge13", true))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
         mockMvc.perform(post("/api/auth/register").header("CF-Connecting-IP", ip).contentType(MediaType.APPLICATION_JSON)
-                        .content(json(Map.of("email", "kite" + id + "@example.com", "password", "kite" + id + "pass9", "username", "kite" + id))))
+                        .content(json(Map.of("email", "kite" + id + "@example.com", "password", "kite" + id + "pass9", "username", "kite" + id, "confirmedAge13", true))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("WEAK_PASSWORD"));
         mockMvc.perform(post("/api/auth/register").header("CF-Connecting-IP", ip).contentType(MediaType.APPLICATION_JSON)
-                        .content(json(Map.of("email", "kite" + id + "@example.com", "password", "Password123", "username", "kite" + id))))
+                        .content(json(Map.of("email", "kite" + id + "@example.com", "password", "Password123", "username", "kite" + id, "confirmedAge13", true))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("WEAK_PASSWORD"));
     }

@@ -51,6 +51,7 @@ class LegalConsentFlowTest {
         body.put("email", label + id + "@example.com");
         body.put("password", "birdsong2026");
         body.put("username", label + id);
+        body.put("confirmedAge13", true);
         return body;
     }
 
@@ -60,7 +61,8 @@ class LegalConsentFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.termsVersion").value("2026-10-01"))
                 .andExpect(jsonPath("$.termsUrl").value("https://wingmark.app/terms"))
-                .andExpect(jsonPath("$.privacyVersion").value("2026-09-15"));
+                .andExpect(jsonPath("$.privacyVersion").value("2026-09-15"))
+                .andExpect(jsonPath("$.minimumAge").value(13));
     }
 
     @Test
@@ -94,7 +96,7 @@ class LegalConsentFlowTest {
         UUID userId = user.getId();
         assertThat(consentRepository.findByUserIdOrderByCreatedAtAsc(userId))
                 .extracting(c -> c.getType() + "@" + c.getVersion())
-                .containsExactly("TERMS@2026-10-01", "PRIVACY@2026-09-15");
+                .containsExactly("TERMS@2026-10-01", "PRIVACY@2026-09-15", "AGE@13");
 
         String loginBody = objectMapper.writeValueAsString(Map.of("email", email, "password", "birdsong2026"));
         JsonNode login = objectMapper.readTree(mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(loginBody))
@@ -124,7 +126,55 @@ class LegalConsentFlowTest {
 
         mockMvc.perform(get("/api/users/" + userId + "/consents").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$.length()").value(3))
                 .andExpect(jsonPath("$[0].acceptedAt").exists());
+    }
+
+    private void acceptLegalVersions(Map<String, Object> body) {
+        body.put("acceptedTermsVersion", "2026-10-01");
+        body.put("acceptedPrivacyVersion", "2026-09-15");
+    }
+
+    @Test
+    void signupWithoutConfirmingTheMinimumAgeIsRejectedAndCreatesNothing() throws Exception {
+        for (Object confirmation : new Object[]{null, false}) {
+            Map<String, Object> body = registerBody("young");
+            acceptLegalVersions(body);
+            body.put("confirmedAge13", confirmation);
+
+            mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("AGE_NOT_CONFIRMED"));
+
+            assertThat(userRepository.findByEmailIgnoreCase((String) body.get("email"))).isEmpty();
+        }
+    }
+
+    @Test
+    void anExistingUserWithoutAnAgeConfirmationIsAskedOnLoginAndTheConfirmationClearsIt() throws Exception {
+        Map<String, Object> body = registerBody("old");
+        acceptLegalVersions(body);
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isCreated());
+        String email = (String) body.get("email");
+        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        // An account from before the age check has no AGE consent.
+        consentRepository.deleteAll(consentRepository.findByUserIdOrderByCreatedAtAsc(user.getId()).stream()
+                .filter(c -> c.getType() == ConsentType.AGE).toList());
+
+        String loginBody = objectMapper.writeValueAsString(Map.of("email", email, "password", "birdsong2026"));
+        JsonNode login = objectMapper.readTree(mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(loginBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pendingConsents[0]").value("AGE"))
+                .andExpect(jsonPath("$.pendingConsents.length()").value(1))
+                .andReturn().getResponse().getContentAsString());
+
+        mockMvc.perform(post("/api/users/" + user.getId() + "/consents").header("Authorization", "Bearer " + login.get("accessToken").asText())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("type", "AGE", "version", "13"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pendingConsents").isEmpty());
     }
 }

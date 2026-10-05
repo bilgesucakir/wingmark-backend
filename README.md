@@ -302,9 +302,14 @@ Request:
   "firstName": "Amelia",
   "lastName": "Rivera",
   "acceptedTermsVersion": "2026-10-01",
-  "acceptedPrivacyVersion": "2026-10-01"
+  "acceptedPrivacyVersion": "2026-10-01",
+  "confirmedAge13": true
 }
 ```
+
+`confirmedAge13` is **required and must be `true`**: the user confirms they are at least the minimum age
+(13, `minimumAge` in [`GET /api/legal`](#legal-apilegal)). Missing or `false` gives `400 AGE_NOT_CONFIRMED` and
+nothing is created. The confirmation is stored as a consent record of type `AGE` whose version is the minimum age.
 
 `acceptedTermsVersion` / `acceptedPrivacyVersion` are the exact versions from
 [`GET /api/legal`](#legal-apilegal) that the user ticked "I accept" for. They're **required
@@ -1034,8 +1039,11 @@ non-multipart request is `400 MALFORMED_REQUEST`.
 | GET    | ``   |      | Current Terms of Service / Privacy Policy versions and URLs |
 
 ```json
-{ "termsVersion": "2026-10-01", "termsUrl": "https://...", "privacyVersion": "2026-10-01", "privacyUrl": "https://..." }
+{ "termsVersion": "2026-10-01", "termsUrl": "https://...", "privacyVersion": "2026-10-01", "privacyUrl": "https://...", "minimumAge": 13 }
 ```
+
+`minimumAge` is the age users confirm at signup. Existing users without that confirmation get `AGE` in their
+`pendingConsents` on their next login and clear it with `POST /api/users/{id}/consents {"type":"AGE","version":"13"}`.
 
 A `null` version means that document isn't published yet, so no acceptance is needed.
 Versions are set by the operator with `TERMS_VERSION` / `TERMS_URL` / `PRIVACY_VERSION` /

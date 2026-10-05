@@ -44,6 +44,7 @@ class UploadControllerTest {
             put("email", email);
             put("password", "birdsong2026");
             put("username", "upload" + id);
+            put("confirmedAge13", true);
         }});
         String response = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

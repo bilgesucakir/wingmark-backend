@@ -53,6 +53,7 @@ class AuthControllerTest {
             put("email", email);
             put("password", "birdsong2026");
             put("username", username);
+            put("confirmedAge13", true);
             put("firstName", "Flow");
             put("lastName", "User");
         }});
@@ -114,6 +115,7 @@ class AuthControllerTest {
             put("email", email);
             put("password", "birdsong2026");
             put("username", "unv" + System.nanoTime() % 1_000_000_000L);
+            put("confirmedAge13", true);
         }});
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -157,6 +159,7 @@ class AuthControllerTest {
             put("email", email);
             put("password", "birdsong2026");
             put("username", username);
+            put("confirmedAge13", true);
         }});
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -193,6 +196,7 @@ class AuthControllerTest {
             put("email", "weak-" + System.nanoTime() + "@example.com");
             put("password", "short");
             put("username", "weakuser" + System.nanoTime());
+            put("confirmedAge13", true);
         }});
 
         mockMvc.perform(post("/api/auth/register")
@@ -234,7 +238,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(java.util.Map.of(
-                                "email", email, "password", "birdsong2026", "username", label + System.nanoTime() % 1_000_000))))
+                                "email", email, "password", "birdsong2026", "username", label + System.nanoTime() % 1_000_000, "confirmedAge13", true))))
                 .andExpect(status().isCreated());
         User user = userRepository.findByEmailIgnoreCase(email).orElseThrow();
         user.setEmailVerified(true);
@@ -261,7 +265,7 @@ class AuthControllerTest {
     @Test
     void errorResponsesCarryMachineReadableCodes() throws Exception {
         String email = "codes-" + System.nanoTime() + "@example.com";
-        String register = objectMapper.writeValueAsString(java.util.Map.of("email", email, "password", "birdsong2026", "username", "codes" + System.nanoTime() % 1_000_000));
+        String register = objectMapper.writeValueAsString(java.util.Map.of("email", email, "password", "birdsong2026", "username", "codes" + System.nanoTime() % 1_000_000, "confirmedAge13", true));
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(register))
                 .andExpect(status().isCreated());
 

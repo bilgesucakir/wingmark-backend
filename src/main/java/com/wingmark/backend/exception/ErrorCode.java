@@ -4,6 +4,7 @@ package com.wingmark.backend.exception;
 public enum ErrorCode {
     // 400
     VALIDATION_FAILED,
+    AGE_NOT_CONFIRMED,
     MALFORMED_REQUEST,
     INVALID_PARAMETER,
     BAD_REQUEST,

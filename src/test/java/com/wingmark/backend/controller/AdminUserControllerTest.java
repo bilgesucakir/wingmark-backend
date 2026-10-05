@@ -49,6 +49,7 @@ class AdminUserControllerTest {
             put("email", email);
             put("password", password);
             put("username", username);
+            put("confirmedAge13", true);
         }});
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -102,6 +102,8 @@ wingmark:
     terms-url: ${TERMS_URL:}
     privacy-version: ${PRIVACY_VERSION:}
     privacy-url: ${PRIVACY_URL:}
+    # Minimum age to sign up; the signup checkbox and the AGE consent follow it.
+    minimum-age: ${MINIMUM_AGE:13}
   app:
     # This backend's own public URL, used to build the link in verification emails
     # (the GET /api/auth/verify-email?token=... endpoint lives here, not on a frontend).

@@ -73,7 +73,8 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByUsernameIgnoreCase(request.username())) {
             throw new DuplicateResourceException(ErrorCode.USERNAME_TAKEN, "This username is already taken");
         }
-        consentService.requireAcceptedAtSignup(request.acceptedTermsVersion(), request.acceptedPrivacyVersion());
+        consentService.requireAcceptedAtSignup(request.acceptedTermsVersion(), request.acceptedPrivacyVersion(),
+                Boolean.TRUE.equals(request.confirmedAge13()));
         passwordPolicy.validate(request.password(), request.email(), request.username());
 
         User user = User.builder()

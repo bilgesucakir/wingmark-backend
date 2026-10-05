@@ -52,7 +52,7 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
     private static final Map<Integer, String> STATUS_TEXT = Map.ofEntries(
             Map.entry(200, "OK"), Map.entry(201, "Created"), Map.entry(202, "Accepted"), Map.entry(204, "No content"),
             Map.entry(400, "Invalid request: validation failed, malformed body or bad parameter (codes VALIDATION_FAILED, "
-                    + "MALFORMED_REQUEST, INVALID_PARAMETER, BAD_REQUEST and operation-specific ones)"),
+                    + "MALFORMED_REQUEST, INVALID_PARAMETER, BAD_REQUEST, AGE_NOT_CONFIRMED and operation-specific ones)"),
             Map.entry(401, "Missing, invalid or expired token (UNAUTHENTICATED, INVALID_CREDENTIALS, INVALID_OR_EXPIRED_TOKEN)"),
             Map.entry(403, "Not allowed (FORBIDDEN, EMAIL_NOT_VERIFIED, WRONG_PASSWORD, CANNOT_MODIFY_SELF)"),
             Map.entry(404, "Not found, or not the caller's own resource (NOT_FOUND)"),

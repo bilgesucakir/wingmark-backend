@@ -76,6 +76,7 @@ class UserControllerTest {
             put("email", email);
             put("password", "birdsong2026");
             put("username", username);
+            put("confirmedAge13", true);
         }});
         String response = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -187,7 +188,7 @@ class UserControllerTest {
         String email = "gone-" + id + "@example.com";
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", "birdsong2026", "username", "gone" + id))))
+                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", "birdsong2026", "username", "gone" + id, "confirmedAge13", true))))
                 .andExpect(status().isCreated());
         TestAuth.verifyAndLogin(mockMvc, objectMapper, userRepository, email, "birdsong2026");
         JsonNode tokens = objectMapper.readTree(mockMvc.perform(post("/api/auth/login")

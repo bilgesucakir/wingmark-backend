@@ -46,6 +46,7 @@ class AdminMetricsControllerTest {
             put("email", email);
             put("password", password);
             put("username", username);
+            put("confirmedAge13", true);
         }});
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -76,6 +77,7 @@ class AdminMetricsControllerTest {
             put("email", label + "-" + id + "@example.com");
             put("password", "birdsong2026");
             put("username", label + id);
+            put("confirmedAge13", true);
         }});
 
         String response = mockMvc.perform(post("/api/auth/register")

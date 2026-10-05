@@ -32,41 +32,45 @@ class ConsentServiceImplTest {
     private final UUID userId = UUID.randomUUID();
 
     private ConsentServiceImpl service(String terms, String privacy) {
-        return new ConsentServiceImpl(new LegalProperties(terms, "https://x/terms", privacy, "https://x/privacy"), consentRepository);
+        return new ConsentServiceImpl(new LegalProperties(terms, "https://x/terms", privacy, "https://x/privacy", 13), consentRepository);
     }
 
     @Test
-    void nothingIsEnforcedOrPendingWhileNoDocumentIsPublished() {
+    void onlyTheAgeConfirmationIsEnforcedAndPendingWhileNoDocumentIsPublished() {
         ConsentServiceImpl service = service("", null);
 
-        assertThatCode(() -> service.requireAcceptedAtSignup(null, null)).doesNotThrowAnyException();
-        assertThat(service.pendingConsents(userId)).isEmpty();
+        assertThatCode(() -> service.requireAcceptedAtSignup(null, null, true)).doesNotThrowAnyException();
+        assertThat(service.pendingConsents(userId)).containsExactly(ConsentType.AGE);
         service.recordSignupConsents(userId);
-        verify(consentRepository, never()).save(any());
+        ArgumentCaptor<Consent> saved = ArgumentCaptor.forClass(Consent.class);
+        verify(consentRepository).save(saved.capture());
+        assertThat(saved.getValue().getType()).isEqualTo(ConsentType.AGE);
+        assertThat(saved.getValue().getVersion()).isEqualTo("13");
         assertThat(service.legalInfo().termsVersion()).isNull();
+        assertThat(service.legalInfo().minimumAge()).isEqualTo(13);
     }
 
     @Test
     void publishedDocumentsMustBeAcceptedByExactVersionAtSignup() {
         ConsentServiceImpl service = service("2026-10-01", "2026-09-15");
 
-        assertThatThrownBy(() -> service.requireAcceptedAtSignup(null, "2026-09-15"))
+        assertThatThrownBy(() -> service.requireAcceptedAtSignup(null, "2026-09-15", true))
                 .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.TERMS_NOT_ACCEPTED));
-        assertThatThrownBy(() -> service.requireAcceptedAtSignup("2025-01-01", "2026-09-15"))
+        assertThatThrownBy(() -> service.requireAcceptedAtSignup("2025-01-01", "2026-09-15", true))
                 .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.TERMS_NOT_ACCEPTED));
-        assertThatThrownBy(() -> service.requireAcceptedAtSignup("2026-10-01", null))
+        assertThatThrownBy(() -> service.requireAcceptedAtSignup("2026-10-01", null, true))
                 .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.PRIVACY_NOT_ACCEPTED));
-        assertThatCode(() -> service.requireAcceptedAtSignup("2026-10-01", "2026-09-15")).doesNotThrowAnyException();
+        assertThatCode(() -> service.requireAcceptedAtSignup("2026-10-01", "2026-09-15", true)).doesNotThrowAnyException();
     }
 
     @Test
-    void signupRecordsOneConsentPerPublishedDocument() {
+    void signupRecordsOneConsentPerPublishedDocumentAndTheAgeConfirmation() {
         service("2026-10-01", "2026-09-15").recordSignupConsents(userId);
 
         ArgumentCaptor<Consent> saved = ArgumentCaptor.forClass(Consent.class);
-        verify(consentRepository, times(2)).save(saved.capture());
-        assertThat(saved.getAllValues()).extracting(Consent::getType).containsExactly(ConsentType.TERMS, ConsentType.PRIVACY);
-        assertThat(saved.getAllValues()).extracting(Consent::getVersion).containsExactly("2026-10-01", "2026-09-15");
+        verify(consentRepository, times(3)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(Consent::getType).containsExactly(ConsentType.TERMS, ConsentType.PRIVACY, ConsentType.AGE);
+        assertThat(saved.getAllValues()).extracting(Consent::getVersion).containsExactly("2026-10-01", "2026-09-15", "13");
         assertThat(saved.getAllValues()).allMatch(c -> userId.equals(c.getUserId()));
     }
 
@@ -74,6 +78,7 @@ class ConsentServiceImplTest {
     void anOldAcceptanceLeavesTheNewVersionPending() {
         when(consentRepository.existsByUserIdAndTypeAndVersion(userId, ConsentType.TERMS, "2026-10-01")).thenReturn(false);
         when(consentRepository.existsByUserIdAndTypeAndVersion(userId, ConsentType.PRIVACY, "2026-09-15")).thenReturn(true);
+        when(consentRepository.existsByUserIdAndTypeAndVersion(userId, ConsentType.AGE, "13")).thenReturn(true);
 
         assertThat(service("2026-10-01", "2026-09-15").pendingConsents(userId)).containsExactly(ConsentType.TERMS);
     }
@@ -92,9 +97,20 @@ class ConsentServiceImplTest {
     @Test
     void acceptingTwiceRecordsOnlyOnce() {
         when(consentRepository.existsByUserIdAndTypeAndVersion(userId, ConsentType.TERMS, "2026-10-01")).thenReturn(false, true);
+        when(consentRepository.existsByUserIdAndTypeAndVersion(userId, ConsentType.AGE, "13")).thenReturn(true);
         ConsentServiceImpl service = service("2026-10-01", null);
 
         assertThat(service.accept(userId, ConsentType.TERMS, "2026-10-01")).isEmpty();
         verify(consentRepository, times(1)).save(any());
+    }
+
+    @Test
+    void signupWithoutConfirmingTheMinimumAgeIsRejected() {
+        ConsentServiceImpl service = service(null, null);
+
+        assertThatThrownBy(() -> service.requireAcceptedAtSignup(null, null, false))
+                .isInstanceOfSatisfying(BadRequestException.class, e -> assertThat(e.getCode()).isEqualTo(ErrorCode.AGE_NOT_CONFIRMED))
+                .hasMessageContaining("13");
+        assertThatCode(() -> service.requireAcceptedAtSignup(null, null, true)).doesNotThrowAnyException();
     }
 }
