@@ -25,7 +25,11 @@ public class OpenApiConfig {
                         .description("Backend API for Wingmark, a personal bird-logging app. Log a bird sighting " +
                                 "(photo, species, life stage, gender, location, notes), browse it on a map, look it " +
                                 "up in a species guide with photos and live call/song recordings, and earn badges " +
-                                "as you go. Personal-only for now: every user sees just their own logs.")
+                                "as you go. Personal-only for now: every user sees just their own logs. " +
+                                "Send the access token as 'Authorization: Bearer <token>'; endpoints marked as public need no token. " +
+                                "Errors use one JSON body (ErrorResponse) whose stable 'code' clients should branch on. " +
+                                "Every endpoint is rate limited per IP, and credential and email endpoints also per account: " +
+                                "exceeding a limit returns 429 with a Retry-After header.")
                         .version("v1")
                         .contact(new Contact().name("Wingmark support").email("support.wingmark@gmail.com")))
                 .components(new Components().addSecuritySchemes(BEARER_SCHEME,
