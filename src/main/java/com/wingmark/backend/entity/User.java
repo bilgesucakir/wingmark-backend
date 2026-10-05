@@ -45,7 +45,11 @@ public class User extends BaseEntity {
     @Builder.Default
     private boolean emailVerified = false;
 
+    /** Last login or token refresh (refresh updates it at most once a day); used to find inactive accounts. */
     private Instant lastLoginAt;
+
+    /** When the inactivity warning email was sent for the current period of inactivity, or null. */
+    private Instant inactivityWarningSentAt;
 
     /** Token version stamped into access tokens as the {@code tv} claim. Tokens with a lower value are rejected; it is bumped on password change, reset and logout-all. Null counts as 0. */
     private Integer tokenVersion;

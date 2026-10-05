@@ -14,4 +14,7 @@ public interface EmailService {
 
     /** Confirms to the (former) account holder that their account and data were deleted. */
     void sendAccountDeletedEmail(String toEmail);
+
+    /** Warns an inactive account's owner that it will be deleted on the given date unless they sign in. */
+    void sendInactivityWarningEmail(String toEmail, java.time.LocalDate deletionDate);
 }

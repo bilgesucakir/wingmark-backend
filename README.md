@@ -110,6 +110,15 @@ Atlas storage (the free tier is 512MB).
 Atlas (so local testing writes to production). Override it when starting, e.g.
 `DB_CONNECTION_STRING=mongodb://localhost:27017/wingmark mvn spring-boot:run`.
 
+### Inactive account cleanup
+
+Accounts with no activity for two years are deleted after a warning email. **Off by default.**
+
+- Activity is a login, a token refresh, or creating or changing a bird log. Admins are never deleted.
+- A warning email is sent 7 days before the two-year mark; the account is deleted at two years only if it was warned at least 7 days earlier and there has been no activity since. Deletion uses the normal account deletion (audit record initiator `INACTIVITY`).
+- Settings: `INACTIVITY_CLEANUP_ENABLED` (default `false`), `INACTIVITY_DRY_RUN` (default `true`: only logs who would be warned or deleted; set `false` for real), `INACTIVITY_AFTER_DAYS` (730), `INACTIVITY_WARN_DAYS_BEFORE` (7), `INACTIVITY_MAX_WARNINGS_PER_RUN` (50, respects the daily mail cap), `INACTIVITY_MAX_DELETIONS_PER_RUN` (20), `INACTIVITY_CRON` (daily 03:30 UTC).
+- Turn it on only when the privacy policy that announces it is published: first `ENABLED=true` with the dry run, check the logs, then `INACTIVITY_DRY_RUN=false`.
+
 ## Database
 
 Uses **MongoDB**. By default it connects to a local instance at

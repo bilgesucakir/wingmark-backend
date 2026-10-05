@@ -168,4 +168,18 @@ class EmailServiceImplTest {
         assertThat(logs.list).anyMatch(e -> e.getLevel() == Level.WARN
                 && containsAll(e.getFormattedMessage(), "daily cap of 1 reached", "type=account-deleted", "s***@b.co"));
     }
+
+    @Test
+    void theInactivityWarningNamesTheDeletionDateAndTheSupportAddress() throws Exception {
+        doNothing().when(mailSender).send(any(MimeMessage.class));
+        MimeMessage message = new MimeMessage(Session.getInstance(new Properties()));
+        when(mailSender.createMimeMessage()).thenReturn(message);
+
+        service(new BusinessProperties("", "", "support.wingmark@gmail.com"))
+                .sendInactivityWarningEmail("quiet@example.com", java.time.LocalDate.of(2026, 10, 12));
+
+        assertThat(message.getSubject()).isEqualTo("Your Wingmark account will be deleted soon");
+        String body = String.valueOf(message.getContent());
+        assertThat(body).contains("2026-10-12", "support.wingmark@gmail.com");
+    }
 }

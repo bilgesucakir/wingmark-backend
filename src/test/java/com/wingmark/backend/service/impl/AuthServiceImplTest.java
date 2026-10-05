@@ -522,4 +522,40 @@ class AuthServiceImplTest {
         verify(emailVerificationTokenRepository).save(any(EmailVerificationToken.class));
         verify(emailService).sendVerificationEmail(org.mockito.ArgumentMatchers.eq("user@example.com"), any());
     }
+
+    private User refreshWith(Instant lastLoginAt) {
+        UUID userId = UUID.randomUUID();
+        RefreshToken active = RefreshToken.builder().userId(userId).tokenHash(TokenHasher.sha256("raw-token"))
+                .expiresAt(Instant.now().plusSeconds(3600)).build();
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).emailVerified(true)
+                .lastLoginAt(lastLoginAt).build();
+        when(refreshTokenRepository.findByTokenHash(TokenHasher.sha256("raw-token"))).thenReturn(Optional.of(active));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(jwtTokenProvider.generateAccessToken(any(), any(), any(), anyInt())).thenReturn("access");
+        when(jwtTokenProvider.getRefreshTokenExpirationMs()).thenReturn(2_592_000_000L);
+        when(jwtTokenProvider.getAccessTokenExpirationMs()).thenReturn(900_000L);
+        return user;
+    }
+
+    @Test
+    void refreshCountsAsActivityAndUpdatesTheLastLoginOnceADay() {
+        Instant old = Instant.now().minusSeconds(3 * 86400);
+        User user = refreshWith(old);
+
+        authService.refresh("raw-token");
+
+        assertThat(user.getLastLoginAt()).isAfter(old);
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void refreshDoesNotWriteTheUserAgainWithinADay() {
+        Instant recent = Instant.now().minusSeconds(3600);
+        User user = refreshWith(recent);
+
+        authService.refresh("raw-token");
+
+        assertThat(user.getLastLoginAt()).isEqualTo(recent);
+        verify(userRepository, never()).save(any(User.class));
+    }
 }

@@ -67,6 +67,17 @@ public class EmailServiceImpl implements EmailService {
         send(toEmail, "account-deleted", "Your Wingmark account has been deleted", html, null, null);
     }
 
+    @Override
+    public void sendInactivityWarningEmail(String toEmail, java.time.LocalDate deletionDate) {
+        String html = """
+                <p>You haven't used your Wingmark account for almost two years.</p>
+                <p>If there is no activity, we will delete your account and all its data (bird logs, photos, badges and settings) on <strong>%s</strong>.</p>
+                <p>To keep it, just sign in to the Wingmark app before then. If you no longer want it, there is nothing to do.</p>
+                <p>If you have questions, please %s.</p>
+                """.formatted(deletionDate, contactSupport());
+        send(toEmail, "inactivity-warning", "Your Wingmark account will be deleted soon", html, null, null);
+    }
+
     /** Sends one email unless the daily cap is used up, and logs the outcome (sent, failed or skipped) with a masked recipient. */
     private void send(String toEmail, String type, String subject, String bodyHtml, String secretLabel, String secret) {
         if (!sendCounter.tryReserve()) {
