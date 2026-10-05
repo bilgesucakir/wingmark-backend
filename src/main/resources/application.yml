@@ -81,6 +81,16 @@ wingmark:
     from: ${MAIL_FROM:no-reply@wingmark.app}
     # Most emails sent per UTC day; more are skipped with a warning. 0 = no cap.
     daily-cap: ${MAIL_DAILY_CAP:200}
+  # Deletes accounts with no activity for two years after a warning email. Off by default; when on it only
+  # logs until INACTIVITY_DRY_RUN=false.
+  inactivity:
+    enabled: ${INACTIVITY_CLEANUP_ENABLED:false}
+    dry-run: ${INACTIVITY_DRY_RUN:true}
+    inactive-after-days: ${INACTIVITY_AFTER_DAYS:730}
+    warn-days-before-delete: ${INACTIVITY_WARN_DAYS_BEFORE:7}
+    max-warnings-per-run: ${INACTIVITY_MAX_WARNINGS_PER_RUN:50}
+    max-deletions-per-run: ${INACTIVITY_MAX_DELETIONS_PER_RUN:20}
+    cron: ${INACTIVITY_CRON:0 30 3 * * *}
   badges:
     # Recompute every user's badge progress at startup (set BADGE_RECOMPUTE_ON_STARTUP=false to skip).
     recompute-on-startup: ${BADGE_RECOMPUTE_ON_STARTUP:true}

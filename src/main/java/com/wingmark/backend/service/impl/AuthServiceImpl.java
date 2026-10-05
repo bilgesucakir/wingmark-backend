@@ -140,6 +140,12 @@ public class AuthServiceImpl implements AuthService {
         stored.setRevokedAt(Instant.now());
         refreshTokenRepository.save(stored);
 
+        // Counts as activity for the inactive-account cleanup; written at most once a day to spare the database.
+        if (user.getLastLoginAt() == null || user.getLastLoginAt().isBefore(Instant.now().minus(Duration.ofDays(1)))) {
+            user.setLastLoginAt(Instant.now());
+            userRepository.save(user);
+        }
+
         return issueTokens(user);
     }
 
