@@ -66,6 +66,7 @@ class BirdLogControllerTest {
             put("email", email);
             put("password", password);
             put("username", "user" + suffix.replace("-", ""));
+            put("confirmedAge13", true);
         }});
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,6 +97,7 @@ class BirdLogControllerTest {
             put("email", suffix + "@example.com");
             put("password", "birdsong2026");
             put("username", "user" + suffix.replace("-", ""));
+            put("confirmedAge13", true);
         }});
 
         String response = mockMvc.perform(post("/api/auth/register")

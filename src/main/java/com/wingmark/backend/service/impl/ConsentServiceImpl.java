@@ -31,11 +31,16 @@ public class ConsentServiceImpl implements ConsentService {
                 blankToNull(legalProperties.termsVersion()),
                 blankToNull(legalProperties.termsUrl()),
                 blankToNull(legalProperties.privacyVersion()),
-                blankToNull(legalProperties.privacyUrl()));
+                blankToNull(legalProperties.privacyUrl()),
+                legalProperties.minimumAge());
     }
 
     @Override
-    public void requireAcceptedAtSignup(String acceptedTermsVersion, String acceptedPrivacyVersion) {
+    public void requireAcceptedAtSignup(String acceptedTermsVersion, String acceptedPrivacyVersion, boolean ageConfirmed) {
+        if (!ageConfirmed) {
+            throw new BadRequestException(ErrorCode.AGE_NOT_CONFIRMED,
+                    "You must confirm that you are at least " + legalProperties.minimumAge() + " years old");
+        }
         // Never inferred from a missing field: a published document must be accepted explicitly, by exact version.
         if (legalProperties.termsPublished() && !legalProperties.termsVersion().equals(acceptedTermsVersion)) {
             throw new BadRequestException(ErrorCode.TERMS_NOT_ACCEPTED,
@@ -98,6 +103,7 @@ public class ConsentServiceImpl implements ConsentService {
         return switch (type) {
             case TERMS -> blankToNull(legalProperties.termsVersion());
             case PRIVACY -> blankToNull(legalProperties.privacyVersion());
+            case AGE -> String.valueOf(legalProperties.minimumAge());
         };
     }
 

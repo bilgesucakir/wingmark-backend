@@ -54,6 +54,7 @@ class SpeciesControllerTest {
             put("email", email);
             put("password", "birdsong2026");
             put("username", label + id);
+            put("confirmedAge13", true);
         }});
 
         String response = mockMvc.perform(post("/api/auth/register")
@@ -76,6 +77,7 @@ class SpeciesControllerTest {
             put("email", email);
             put("password", password);
             put("username", username);
+            put("confirmedAge13", true);
         }});
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

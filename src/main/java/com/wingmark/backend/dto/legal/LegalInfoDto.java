@@ -5,6 +5,7 @@ public record LegalInfoDto(
         String termsVersion,
         String termsUrl,
         String privacyVersion,
-        String privacyUrl
+        String privacyUrl,
+        int minimumAge
 ) {
 }

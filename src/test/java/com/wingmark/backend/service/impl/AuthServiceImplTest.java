@@ -91,7 +91,7 @@ class AuthServiceImplTest {
     void registerRejectsDuplicateEmail() {
         when(userRepository.existsByEmailIgnoreCase("taken@example.com")).thenReturn(true);
 
-        RegisterRequestDto request = new RegisterRequestDto("taken@example.com", "birdsong2026", "newuser", "A", "B", null, null);
+        RegisterRequestDto request = new RegisterRequestDto("taken@example.com", "birdsong2026", "newuser", "A", "B", null, null, true);
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(DuplicateResourceException.class);
@@ -102,7 +102,7 @@ class AuthServiceImplTest {
         when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
         when(userRepository.existsByUsernameIgnoreCase("takenname")).thenReturn(true);
 
-        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "birdsong2026", "takenname", "A", "B", null, null);
+        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "birdsong2026", "takenname", "A", "B", null, null, true);
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOf(DuplicateResourceException.class);
@@ -118,7 +118,7 @@ class AuthServiceImplTest {
             return u;
         });
 
-        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "birdsong2026", "freshuser", "A", "B", null, null);
+        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "birdsong2026", "freshuser", "A", "B", null, null, true);
         RegisterResponseDto response = authService.register(request);
 
         assertThat(response.userId()).isNotNull();
@@ -130,7 +130,7 @@ class AuthServiceImplTest {
         verify(refreshTokenRepository, org.mockito.Mockito.never()).save(any(RefreshToken.class));
         verify(emailVerificationTokenRepository).save(any(EmailVerificationToken.class));
         verify(emailService).sendVerificationEmail(org.mockito.ArgumentMatchers.eq("fresh@example.com"), any());
-        verify(consentService).requireAcceptedAtSignup(null, null);
+        verify(consentService).requireAcceptedAtSignup(null, null, true);
         verify(consentService).recordSignupConsents(response.userId());
     }
 
@@ -139,9 +139,9 @@ class AuthServiceImplTest {
         when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
         when(userRepository.existsByUsernameIgnoreCase(any())).thenReturn(false);
         org.mockito.Mockito.doThrow(new BadRequestException(ErrorCode.TERMS_NOT_ACCEPTED, "accept the terms"))
-                .when(consentService).requireAcceptedAtSignup(null, null);
+                .when(consentService).requireAcceptedAtSignup(null, null, true);
 
-        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "birdsong2026", "freshuser", "A", "B", null, null);
+        RegisterRequestDto request = new RegisterRequestDto("fresh@example.com", "birdsong2026", "freshuser", "A", "B", null, null, true);
 
         assertThatThrownBy(() -> authService.register(request))
                 .isInstanceOfSatisfying(BadRequestException.class, ex -> assertThat(ex.getCode()).isEqualTo(ErrorCode.TERMS_NOT_ACCEPTED));

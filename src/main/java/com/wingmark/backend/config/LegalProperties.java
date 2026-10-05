@@ -1,6 +1,7 @@
 package com.wingmark.backend.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.util.StringUtils;
 
 /**
@@ -11,9 +12,11 @@ import org.springframework.util.StringUtils;
  * @param termsUrl       public terms URL
  * @param privacyVersion current privacy policy version
  * @param privacyUrl     public privacy policy URL
+ * @param minimumAge     minimum age to sign up; users confirm it at signup and the age is the consent version
  */
 @ConfigurationProperties(prefix = "wingmark.legal")
-public record LegalProperties(String termsVersion, String termsUrl, String privacyVersion, String privacyUrl) {
+public record LegalProperties(String termsVersion, String termsUrl, String privacyVersion, String privacyUrl,
+                              @DefaultValue("13") int minimumAge) {
 
     /** Whether a terms version is set. */
     public boolean termsPublished() {

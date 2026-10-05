@@ -17,6 +17,7 @@ public record RegisterRequestDto(
         // Exact versions the user ticked "I accept" for (see GET /api/legal). Required once
         // that document is published; ignored while it isn't.
         String acceptedTermsVersion,
-        String acceptedPrivacyVersion
+        String acceptedPrivacyVersion,
+        Boolean confirmedAge13
 ) {
 }
