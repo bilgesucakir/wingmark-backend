@@ -9,6 +9,10 @@ public interface UnverifiedAccountService {
     record Result(int deleted, boolean dryRun) {
     }
 
-    /** Deletes unverified, never-logged-in accounts older than the configured age, without sending any email. Admins are skipped. */
+    /**
+     * Deletes unverified, never-logged-in accounts whose verification email was accepted by the mail server more than
+     * the configured number of days ago, without sending any email. Accounts that never had a verification email
+     * accepted are kept, so a signup that never got its mail is not lost. Admins are skipped.
+     */
     Result purge(Instant now);
 }

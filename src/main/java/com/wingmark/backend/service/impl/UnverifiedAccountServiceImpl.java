@@ -28,7 +28,7 @@ public class UnverifiedAccountServiceImpl implements UnverifiedAccountService {
     public Result purge(Instant now) {
         Instant cutoff = now.minus(Duration.ofDays(properties.olderThanDays()));
         int deleted = 0;
-        for (User user : userRepository.findByEmailVerifiedFalseAndCreatedAtBefore(cutoff)) {
+        for (User user : userRepository.findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(cutoff)) {
             if (user.getRole() == Role.ADMIN || user.getLastLoginAt() != null) {
                 continue;
             }

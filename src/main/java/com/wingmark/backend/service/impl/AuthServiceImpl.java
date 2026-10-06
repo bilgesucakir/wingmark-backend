@@ -312,7 +312,13 @@ public class AuthServiceImpl implements AuthService {
         emailVerificationTokenRepository.save(verificationToken);
 
         String verifyUrl = appProperties.baseUrl() + "/api/auth/verify-email?token=" + rawToken;
-        emailService.sendVerificationEmail(user.getEmail(), verifyUrl);
+        if (emailService.sendVerificationEmail(user.getEmail(), verifyUrl)) {
+            // Reloaded, not saved from the instance we hold: a user just inserted would be inserted again.
+            userRepository.findById(user.getId()).ifPresent(stored -> {
+                stored.setVerificationEmailSentAt(Instant.now());
+                userRepository.save(stored);
+            });
+        }
     }
 
     private AuthResponseDto issueTokens(User user) {

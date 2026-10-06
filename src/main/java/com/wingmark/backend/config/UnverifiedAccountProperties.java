@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  *
  * @param enabled       whether the daily job runs at all
  * @param dryRun        true: only log which accounts would be deleted
- * @param olderThanDays age in days after which an unverified account is deleted (default 7)
+ * @param olderThanDays days after the verification email was sent after which an unverified account is deleted (default 7)
  * @param maxPerRun     most accounts deleted per run, a safety net against a wrong setting
  * @param cron          when the job runs (Spring cron, UTC); default 04:15 every day
  */

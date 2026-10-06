@@ -21,7 +21,7 @@ public interface UserRepository extends MongoRepository<User, UUID> {
 
     long countByRole(Role role);
 
-    List<User> findByEmailVerifiedFalseAndCreatedAtBefore(java.time.Instant createdBefore);
+    List<User> findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(java.time.Instant sentBefore);
 
     boolean existsByProfilePictureEndingWith(String suffix);
 }

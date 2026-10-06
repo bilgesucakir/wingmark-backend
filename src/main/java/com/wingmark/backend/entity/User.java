@@ -48,6 +48,9 @@ public class User extends BaseEntity {
     /** Last login or token refresh (refresh updates it at most once a day); used to find inactive accounts. */
     private Instant lastLoginAt;
 
+    /** When a verification email was last accepted by the mail server, or null if none ever was; the abandoned-signup cleanup counts from it. */
+    private Instant verificationEmailSentAt;
+
     /** When the inactivity warning email was sent for the current period of inactivity, or null. */
     private Instant inactivityWarningSentAt;
 

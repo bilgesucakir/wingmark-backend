@@ -585,4 +585,29 @@ class AuthServiceImplTest {
         assertThat(user.getLastLoginAt()).isEqualTo(recent);
         verify(userRepository, never()).save(any(User.class));
     }
+
+    @Test
+    void resendRecordsWhenTheMailServerAcceptedTheVerificationEmail() {
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(emailService.sendVerificationEmail(any(), any())).thenReturn(true);
+
+        authService.resendVerificationEmail(new ResendVerificationEmailRequestDto("user@example.com"));
+
+        assertThat(user.getVerificationEmailSentAt()).isNotNull();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void resendDoesNotRecordASendWhenTheEmailFailedOrWasSkipped() {
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(emailService.sendVerificationEmail(any(), any())).thenReturn(false);
+
+        authService.resendVerificationEmail(new ResendVerificationEmailRequestDto("user@example.com"));
+
+        assertThat(user.getVerificationEmailSentAt()).isNull();
+        verify(userRepository, never()).save(any(User.class));
+    }
 }

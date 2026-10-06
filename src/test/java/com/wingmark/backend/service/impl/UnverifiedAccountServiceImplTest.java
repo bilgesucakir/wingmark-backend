@@ -44,20 +44,20 @@ class UnverifiedAccountServiceImplTest {
     }
 
     @Test
-    void onlyAccountsOlderThanTheConfiguredAgeAreAskedFor() {
-        when(userRepository.findByEmailVerifiedFalseAndCreatedAtBefore(any())).thenReturn(List.of());
+    void onlyAccountsWhoseVerificationEmailWasSentBeforeTheCutoffAreAskedFor() {
+        when(userRepository.findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(any())).thenReturn(List.of());
 
         service(false, 100).purge(NOW);
 
         ArgumentCaptor<Instant> cutoff = ArgumentCaptor.forClass(Instant.class);
-        verify(userRepository).findByEmailVerifiedFalseAndCreatedAtBefore(cutoff.capture());
+        verify(userRepository).findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(cutoff.capture());
         assertThat(cutoff.getValue()).isEqualTo(NOW.minus(Duration.ofDays(7)));
     }
 
     @Test
     void abandonedSignupsAreDeletedThroughTheNormalDeletionWithTheUnverifiedInitiator() {
         User user = unverified(Role.USER, null);
-        when(userRepository.findByEmailVerifiedFalseAndCreatedAtBefore(any())).thenReturn(List.of(user));
+        when(userRepository.findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(any())).thenReturn(List.of(user));
 
         Result result = service(false, 100).purge(NOW);
 
@@ -67,7 +67,7 @@ class UnverifiedAccountServiceImplTest {
 
     @Test
     void adminsAndAccountsThatEverLoggedInAreKept() {
-        when(userRepository.findByEmailVerifiedFalseAndCreatedAtBefore(any())).thenReturn(List.of(
+        when(userRepository.findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(any())).thenReturn(List.of(
                 unverified(Role.ADMIN, null), unverified(Role.USER, NOW.minusSeconds(3600))));
 
         Result result = service(false, 100).purge(NOW);
@@ -78,7 +78,7 @@ class UnverifiedAccountServiceImplTest {
 
     @Test
     void dryRunOnlyCountsAndDeletesNothing() {
-        when(userRepository.findByEmailVerifiedFalseAndCreatedAtBefore(any())).thenReturn(List.of(unverified(Role.USER, null)));
+        when(userRepository.findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(any())).thenReturn(List.of(unverified(Role.USER, null)));
 
         Result result = service(true, 100).purge(NOW);
 
@@ -89,7 +89,7 @@ class UnverifiedAccountServiceImplTest {
 
     @Test
     void theNumberOfDeletionsPerRunIsCapped() {
-        when(userRepository.findByEmailVerifiedFalseAndCreatedAtBefore(any())).thenReturn(List.of(
+        when(userRepository.findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(any())).thenReturn(List.of(
                 unverified(Role.USER, null), unverified(Role.USER, null), unverified(Role.USER, null)));
 
         Result result = service(false, 2).purge(NOW);
@@ -102,7 +102,7 @@ class UnverifiedAccountServiceImplTest {
     void aFailedDeletionDoesNotStopTheRunOrCountAsDeleted() {
         User broken = unverified(Role.USER, null);
         User fine = unverified(Role.USER, null);
-        when(userRepository.findByEmailVerifiedFalseAndCreatedAtBefore(any())).thenReturn(List.of(broken, fine));
+        when(userRepository.findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(any())).thenReturn(List.of(broken, fine));
         org.mockito.Mockito.doThrow(new IllegalStateException("boom")).when(accountDeletionService)
                 .deleteAccount(broken.getId(), DeletionInitiator.UNVERIFIED);
 

@@ -24,7 +24,7 @@ public class EmailServiceImpl implements EmailService {
     private final EmailSendCounter sendCounter;
 
     @Override
-    public void sendVerificationEmail(String toEmail, String verifyUrl) {
+    public boolean sendVerificationEmail(String toEmail, String verifyUrl) {
         String html = """
                 <p>Welcome to Wingmark!</p>
                 <p>Confirm this is your email address to finish setting up your account:</p>
@@ -33,7 +33,7 @@ public class EmailServiceImpl implements EmailService {
                 <p>This link expires in 24 hours. If you didn't create a Wingmark account, you can ignore this email.</p>
                 """.formatted(verifyUrl, verifyUrl);
         // A user whose email failed can request a fresh link via POST /api/auth/resend-verification-email.
-        send(toEmail, "verification", "Verify your Wingmark email", html, "verification link", verifyUrl);
+        return send(toEmail, "verification", "Verify your Wingmark email", html, "verification link", verifyUrl);
     }
 
     @Override
@@ -78,11 +78,14 @@ public class EmailServiceImpl implements EmailService {
         send(toEmail, "inactivity-warning", "Your Wingmark account will be deleted soon", html, null, null);
     }
 
-    /** Sends one email unless the daily cap is used up, and logs the outcome (sent, failed or skipped) with a masked recipient. */
-    private void send(String toEmail, String type, String subject, String bodyHtml, String secretLabel, String secret) {
+    /**
+     * Sends one email unless the daily cap is used up, and logs the outcome (sent, failed or skipped) with a masked
+     * recipient. Returns true only if the mail server accepted the message.
+     */
+    private boolean send(String toEmail, String type, String subject, String bodyHtml, String secretLabel, String secret) {
         if (!sendCounter.tryReserve()) {
             log.warn("Email skipped, daily cap of {} reached: type={} to={}", mailProperties.dailyCap(), type, maskEmail(toEmail));
-            return;
+            return false;
         }
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -97,6 +100,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(bodyHtml + footer(), true);
             mailSender.send(message);
             log.info("Email sent: type={} to={} (sent today: {})", type, maskEmail(toEmail), sendCounter.sentToday());
+            return true;
         } catch (Exception e) {
             sendCounter.release();
             log.error("Email failed: type={} to={}", type, maskEmail(toEmail), e);
@@ -104,6 +108,7 @@ public class EmailServiceImpl implements EmailService {
                 // DEBUG only (off in production): lets local development proceed without a mail server.
                 log.debug("Undelivered {} for {}: {}", secretLabel, maskEmail(toEmail), secret);
             }
+            return false;
         }
     }
 
