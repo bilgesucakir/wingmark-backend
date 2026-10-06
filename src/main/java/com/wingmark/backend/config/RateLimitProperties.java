@@ -18,6 +18,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param resetConfirmPerIpPer15Min     reset confirmations per IP
  * @param refreshPerIpPer15Min          token refreshes per IP
  * @param passwordCheckPerUserPer15Min  password confirmations (change, delete) per user
+ * @param registerPerIpPerDay           signups per IP per day, on top of the hourly limit
  */
 @ConfigurationProperties(prefix = "wingmark.rate-limit")
 public record RateLimitProperties(
@@ -25,12 +26,13 @@ public record RateLimitProperties(
         @DefaultValue("600") int globalPerIpPerMinute,
         @DefaultValue("10") int loginPerAccountPer15Min,
         @DefaultValue("50") int loginPerIpPer15Min,
-        @DefaultValue("10") int registerPerIpPerHour,
+        @DefaultValue("5") int registerPerIpPerHour,
         @DefaultValue("3") int resetRequestPerAccountPerHour,
         @DefaultValue("20") int resetRequestPerIpPerHour,
         @DefaultValue("10") int resetConfirmPerAccountPer15Min,
         @DefaultValue("30") int resetConfirmPerIpPer15Min,
         @DefaultValue("120") int refreshPerIpPer15Min,
-        @DefaultValue("10") int passwordCheckPerUserPer15Min
+        @DefaultValue("10") int passwordCheckPerUserPer15Min,
+        @DefaultValue("20") int registerPerIpPerDay
 ) {
 }

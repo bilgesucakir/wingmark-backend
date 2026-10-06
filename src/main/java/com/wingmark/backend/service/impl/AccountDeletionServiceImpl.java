@@ -89,7 +89,10 @@ public class AccountDeletionServiceImpl implements AccountDeletionService {
                 .requestedAt(requestedAt)
                 .completedAt(Instant.now())
                 .build());
-        emailService.sendAccountDeletedEmail(email);
+        if (initiatedBy != DeletionInitiator.UNVERIFIED) {
+            // Never mail an address that was never verified: it may belong to someone who did not sign up.
+            emailService.sendAccountDeletedEmail(email);
+        }
 
         log.info("Deleted user {} ({}) and all associated data ({} uploaded file(s) considered)",
                 userId, initiatedBy, uploadedFiles.size());

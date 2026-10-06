@@ -119,6 +119,16 @@ Accounts with no activity for two years are deleted after a warning email. **Off
 - Settings: `INACTIVITY_CLEANUP_ENABLED` (default `false`), `INACTIVITY_DRY_RUN` (default `true`: only logs who would be warned or deleted; set `false` for real), `INACTIVITY_AFTER_DAYS` (730), `INACTIVITY_WARN_DAYS_BEFORE` (7), `INACTIVITY_MAX_WARNINGS_PER_RUN` (50, respects the daily mail cap), `INACTIVITY_MAX_DELETIONS_PER_RUN` (20), `INACTIVITY_CRON` (daily 03:30 UTC).
 - Turn it on only when the privacy policy that announces it is published: first `ENABLED=true` with the dry run, check the logs, then `INACTIVITY_DRY_RUN=false`.
 
+### Abandoned signups
+
+Signups whose email address is never verified can be deleted after a number of days. **Off by default.**
+
+- Only accounts that are unverified and never logged in, older than `UNVERIFIED_OLDER_THAN_DAYS` (default 7), and not admins. Deletion uses the normal account deletion (audit initiator `UNVERIFIED`) and **sends no email**, because the address was never confirmed.
+- Settings: `UNVERIFIED_CLEANUP_ENABLED` (default `false`), `UNVERIFIED_DRY_RUN` (default `true`: only logs), `UNVERIFIED_OLDER_THAN_DAYS` (7), `UNVERIFIED_MAX_PER_RUN` (100), `UNVERIFIED_CRON` (daily 04:15 UTC).
+- Turn it on only while verification emails are being delivered, or real people who never received their link would be deleted. Run with the dry run first.
+
+Signup and resend limits: at most 5 signups per hour and 20 per day per client address; a repeated resend-verification request within 60 seconds for the same account is ignored (same 202 response).
+
 ## Database
 
 Uses **MongoDB**. By default it connects to a local instance at

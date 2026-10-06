@@ -73,4 +73,17 @@ class AccountDeletionServiceImplTest {
         order.verify(userRepository).deleteById(userId);
         order.verify(emailService).sendAccountDeletedEmail("gone@example.com");
     }
+
+    @Test
+    void anUnverifiedSignupIsDeletedWithoutEmailingTheNeverConfirmedAddress() {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(User.builder().id(userId).email("maybe-not-theirs@example.com").build()));
+        when(birdLogRepository.findByUserId(userId)).thenReturn(List.of());
+
+        service.deleteAccount(userId, DeletionInitiator.UNVERIFIED);
+
+        verify(userRepository).deleteById(userId);
+        verify(accountDeletionRepository).save(org.mockito.ArgumentMatchers.any(AccountDeletion.class));
+        verify(emailService, org.mockito.Mockito.never()).sendAccountDeletedEmail(org.mockito.ArgumentMatchers.any());
+    }
 }

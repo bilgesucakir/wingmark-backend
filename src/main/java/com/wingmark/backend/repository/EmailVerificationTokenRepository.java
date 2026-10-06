@@ -11,5 +11,7 @@ public interface EmailVerificationTokenRepository extends MongoRepository<EmailV
 
     Optional<EmailVerificationToken> findByTokenHash(String tokenHash);
 
+    Optional<EmailVerificationToken> findFirstByUserIdOrderByCreatedAtDesc(UUID userId);
+
     void deleteByUserId(UUID userId);
 }

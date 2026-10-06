@@ -15,6 +15,7 @@ public class AuthRateLimits {
 
     private static final Duration FIFTEEN_MINUTES = Duration.ofMinutes(15);
     private static final Duration ONE_HOUR = Duration.ofHours(1);
+    private static final Duration ONE_DAY = Duration.ofDays(1);
 
     private final RateLimiter rateLimiter;
     private final RateLimitProperties limits;
@@ -26,6 +27,7 @@ public class AuthRateLimits {
 
     public void register(HttpServletRequest request) {
         rateLimiter.check("register:ip:" + ClientIp.of(request), limits.registerPerIpPerHour(), ONE_HOUR);
+        rateLimiter.check("register-day:ip:" + ClientIp.of(request), limits.registerPerIpPerDay(), ONE_DAY);
     }
 
     /** Forgot-password and resend-verification: both send an email, so both are capped per address. */

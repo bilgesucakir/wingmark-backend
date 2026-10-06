@@ -51,6 +51,7 @@ public class AuthServiceImpl implements AuthService {
 
     private static final Duration RESET_CODE_TTL = Duration.ofMinutes(15);
     private static final Duration RESET_CODE_RESEND_COOLDOWN = Duration.ofSeconds(60);
+    private static final Duration VERIFICATION_RESEND_COOLDOWN = Duration.ofSeconds(60);
     private static final int RESET_CODE_MAX_ATTEMPTS = 5;
 
     private final UserRepository userRepository;
@@ -287,9 +288,18 @@ public class AuthServiceImpl implements AuthService {
     public void resendVerificationEmail(ResendVerificationEmailRequestDto request) {
         userRepository.findByEmailIgnoreCase(request.email())
                 .filter(user -> !user.isEmailVerified())
+                .filter(user -> !verificationSentRecently(user))
                 .ifPresent(this::issueVerificationEmail);
         // Always return silently regardless of whether the email exists or is already
         // verified, to avoid leaking which addresses have accounts (same as forgotPassword).
+    }
+
+    /** True if a verification link was created for the user within the cooldown; the repeat request is silently ignored. */
+    private boolean verificationSentRecently(User user) {
+        return emailVerificationTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())
+                .map(EmailVerificationToken::getCreatedAt)
+                .filter(createdAt -> createdAt != null && createdAt.isAfter(Instant.now().minus(VERIFICATION_RESEND_COOLDOWN)))
+                .isPresent();
     }
 
     private void issueVerificationEmail(User user) {
