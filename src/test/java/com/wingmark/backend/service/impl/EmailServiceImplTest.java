@@ -182,4 +182,16 @@ class EmailServiceImplTest {
         String body = String.valueOf(message.getContent());
         assertThat(body).contains("2026-10-12", "support.wingmark@gmail.com");
     }
+
+    @Test
+    void theVerificationEmailReportsWhetherTheMailServerAcceptedIt() throws Exception {
+        EmailServiceImpl service = service(UNCONFIGURED, 1);
+
+        assertThat(service.sendVerificationEmail("a@b.co", "http://localhost/verify?token=x")).isFalse(); // default stub fails
+
+        doNothing().when(mailSender).send(any(MimeMessage.class));
+        assertThat(service.sendVerificationEmail("a@b.co", "http://localhost/verify?token=y")).isTrue();
+        // The cap of 1 is now used up, so the next one is skipped and reported as not sent.
+        assertThat(service.sendVerificationEmail("a@b.co", "http://localhost/verify?token=z")).isFalse();
+    }
 }

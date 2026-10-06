@@ -4,6 +4,7 @@ import com.wingmark.backend.entity.User;
 import com.wingmark.backend.enums.Role;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +20,8 @@ public interface UserRepository extends MongoRepository<User, UUID> {
     boolean existsByUsernameIgnoreCase(String username);
 
     long countByRole(Role role);
+
+    List<User> findByEmailVerifiedFalseAndVerificationEmailSentAtBefore(java.time.Instant sentBefore);
 
     boolean existsByProfilePictureEndingWith(String suffix);
 }

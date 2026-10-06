@@ -513,6 +513,33 @@ class AuthServiceImplTest {
     }
 
     @Test
+    void resendVerificationEmailIgnoresARepeatRequestWithinTheCooldown() {
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        EmailVerificationToken recent = EmailVerificationToken.builder().userId(user.getId()).build();
+        recent.setCreatedAt(Instant.now().minusSeconds(10));
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(emailVerificationTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())).thenReturn(Optional.of(recent));
+
+        authService.resendVerificationEmail(new ResendVerificationEmailRequestDto("user@example.com"));
+
+        verify(emailVerificationTokenRepository, org.mockito.Mockito.never()).save(any());
+        verify(emailService, org.mockito.Mockito.never()).sendVerificationEmail(any(), any());
+    }
+
+    @Test
+    void resendVerificationEmailSendsAgainOnceTheCooldownHasPassed() {
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        EmailVerificationToken old = EmailVerificationToken.builder().userId(user.getId()).build();
+        old.setCreatedAt(Instant.now().minusSeconds(120));
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(emailVerificationTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())).thenReturn(Optional.of(old));
+
+        authService.resendVerificationEmail(new ResendVerificationEmailRequestDto("user@example.com"));
+
+        verify(emailService).sendVerificationEmail(org.mockito.ArgumentMatchers.eq("user@example.com"), any());
+    }
+
+    @Test
     void resendVerificationEmailIssuesFreshTokenWhenUnverified() {
         User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
         when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
@@ -556,6 +583,31 @@ class AuthServiceImplTest {
         authService.refresh("raw-token");
 
         assertThat(user.getLastLoginAt()).isEqualTo(recent);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void resendRecordsWhenTheMailServerAcceptedTheVerificationEmail() {
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(emailService.sendVerificationEmail(any(), any())).thenReturn(true);
+
+        authService.resendVerificationEmail(new ResendVerificationEmailRequestDto("user@example.com"));
+
+        assertThat(user.getVerificationEmailSentAt()).isNotNull();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void resendDoesNotRecordASendWhenTheEmailFailedOrWasSkipped() {
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(emailService.sendVerificationEmail(any(), any())).thenReturn(false);
+
+        authService.resendVerificationEmail(new ResendVerificationEmailRequestDto("user@example.com"));
+
+        assertThat(user.getVerificationEmailSentAt()).isNull();
         verify(userRepository, never()).save(any(User.class));
     }
 }

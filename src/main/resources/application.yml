@@ -91,6 +91,13 @@ wingmark:
     max-warnings-per-run: ${INACTIVITY_MAX_WARNINGS_PER_RUN:50}
     max-deletions-per-run: ${INACTIVITY_MAX_DELETIONS_PER_RUN:20}
     cron: ${INACTIVITY_CRON:0 30 3 * * *}
+  # Deletes signups whose email was never verified, after N days, without emailing the address. Off by default.
+  unverified-cleanup:
+    enabled: ${UNVERIFIED_CLEANUP_ENABLED:false}
+    dry-run: ${UNVERIFIED_DRY_RUN:true}
+    older-than-days: ${UNVERIFIED_OLDER_THAN_DAYS:7}
+    max-per-run: ${UNVERIFIED_MAX_PER_RUN:100}
+    cron: ${UNVERIFIED_CRON:0 15 4 * * *}
   badges:
     # Recompute every user's badge progress at startup (set BADGE_RECOMPUTE_ON_STARTUP=false to skip).
     recompute-on-startup: ${BADGE_RECOMPUTE_ON_STARTUP:true}
