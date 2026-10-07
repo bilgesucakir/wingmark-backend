@@ -216,4 +216,27 @@ class SpeciesControllerTest {
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void searchMatchesTurkishNamesWithoutAccentsAndScientificNames() throws Exception {
+        String marker = Long.toString(System.nanoTime());
+        speciesRepository.save(Species.builder()
+                .commonName(Map.of("en", "Searchtest Sparrow " + marker, "tr", "Çalı Serçesi " + marker))
+                .scientificName("Zzgenus latinus " + marker)
+                .build());
+
+        // Turkish name typed without accents.
+        mockMvc.perform(get("/api/species").param("search", "cali sercesi " + marker))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].scientificName").value("Zzgenus latinus " + marker));
+        // Typed with accents against a value stored with them, in capitals.
+        mockMvc.perform(get("/api/species").param("search", "ÇALI SERÇESİ " + marker))
+                .andExpect(jsonPath("$.content.length()").value(1));
+        // Scientific name, in another case.
+        mockMvc.perform(get("/api/species").param("search", "ZZGENUS LATINUS " + marker))
+                .andExpect(jsonPath("$.content[0].commonName.en").value("Searchtest Sparrow " + marker));
+        // Regex characters are literal.
+        mockMvc.perform(get("/api/species").param("search", ".*" + marker))
+                .andExpect(jsonPath("$.content.length()").value(0));
+    }
 }

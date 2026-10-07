@@ -12,6 +12,7 @@ import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.SpeciesImageRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.service.SpeciesService;
+import com.wingmark.backend.util.SearchPattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +22,6 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 /** Species guide entries and images. */
 @Service
@@ -33,10 +33,10 @@ public class SpeciesServiceImpl implements SpeciesService {
 
     @Override
     public Page<SpeciesResponseDto> getAll(String search, Pageable pageable) {
-        // The repository query feeds this into $regex, so escape it: a public search box must
-        // match the text literally, never run a caller-supplied (possibly catastrophic) pattern.
+        // The repository query feeds this into $regex, so it is escaped by SearchPattern: a public search box
+        // must match the text literally (apart from accent folding), never run a caller-supplied pattern.
         Page<Species> species = StringUtils.hasText(search)
-                ? speciesRepository.findByCommonNameContainingIgnoreCase(Pattern.quote(search.trim()), pageable)
+                ? speciesRepository.findByNameMatching(SearchPattern.accentInsensitive(search.trim()), pageable)
                 : speciesRepository.findAll(pageable);
         return species.map(this::toResponse);
     }
