@@ -769,7 +769,7 @@ same shape as GET.
 
 | Method | Path                      | Auth | Description                                                                 |
 |--------|---------------------------|:----:|-------------------------------------------------------------------------------|
-| GET    | ``                        |      | Paginated species list (`?page=`/`?size=`), optional `?search=` by common name; returns `{content: [...], page: {size, number, totalElements, totalPages}}` |
+| GET    | ``                        |      | Paginated species list (`?page=`/`?size=`), optional `?search=` by common name (English or Turkish) or scientific name, ignoring case and accents (`serce` finds `Serçe`); returns `{content: [...], page: {size, number, totalElements, totalPages}}` |
 | GET    | `/{id}`                   |      | Get one species by id, with its reference images                               |
 | GET    | `/{id}/sound`             |      | Live-fetch call/song recordings from Xeno-canto, capped at 5 per species        |
 | POST   | ``                        | 🛡️  | Create a species                                                               |
@@ -1124,7 +1124,7 @@ only ever appended; an existing key is never renamed or removed.
   - CORS closed to other origins;
   - non-upload bodies capped at 1MB;
   - every admin change logged as `ADMIN_AUDIT admin=<id> <METHOD> <path> -> <status>`;
-  - the species search escapes its input before it reaches `$regex`;
+  - the species search escapes its input before it reaches `$regex` (it matches the text literally, ignoring only case and accents);
   - a deployed server (non-localhost `APP_BASE_URL`) refuses to start on the public
     development `JWT_SECRET`.
 - **Badges recompute on every log change**: create/update/delete a bird log and every
