@@ -98,7 +98,7 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
             Map.entry("minLng", "Western edge of the visible map area, in degrees. May be greater than maxLng when the area crosses the antimeridian."),
             Map.entry("maxLng", "Eastern edge of the visible map area, in degrees."),
             Map.entry("limit", "Maximum number of logs to return; X-Result-Truncated says if more matched."),
-            Map.entry("search", "Case-insensitive text matched literally against the common name in any language."),
+            Map.entry("search", "Text matched literally, ignoring case and accents, against the common name (English or Turkish) or the scientific name."),
             Map.entry("pageable", "Paging and sorting: page (from 0), size, and sort=<field>,<asc|desc> on commonName.en, commonName.tr or scientificName."));
 
     @Override

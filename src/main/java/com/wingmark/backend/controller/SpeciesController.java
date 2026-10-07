@@ -49,8 +49,8 @@ public class SpeciesController {
     private final XenoCantoService xenoCantoService;
     private final INaturalistService iNaturalistService;
 
-    /** Returns a page of species, optionally filtered by common-name substring and sortable. Public. */
-    @Operation(summary = "Get all species", description = "Returns a page of species in the guide, optionally filtered by a common-name substring (?search=), " +
+    /** Returns a page of species, optionally filtered by a name substring and sortable. Public. */
+    @Operation(summary = "Get all species", description = "Returns a page of species in the guide, optionally filtered by a substring (?search=) of the common name (English or Turkish) or the scientific name, case- and accent-insensitive (serce finds Serçe), " +
             "paginated via the standard ?page=/?size= params. Sortable via ?sort=<field>,<asc|desc>, e.g. " +
             "?sort=commonName.en,asc, ?sort=commonName.tr,desc, or ?sort=scientificName,asc. Public endpoint.")
     @GetMapping

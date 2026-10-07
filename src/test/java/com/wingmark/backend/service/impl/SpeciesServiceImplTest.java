@@ -63,15 +63,15 @@ class SpeciesServiceImplTest {
     }
 
     @Test
-    void getAllWithSearchFiltersByCommonName() {
+    void getAllWithSearchFiltersByCommonOrScientificName() {
         Pageable pageable = PageRequest.of(0, 20);
-        String quoted = java.util.regex.Pattern.quote("sparrow");
-        when(speciesRepository.findByCommonNameContainingIgnoreCase(quoted, pageable)).thenReturn(Page.empty());
+        String pattern = com.wingmark.backend.util.SearchPattern.accentInsensitive("sparrow");
+        when(speciesRepository.findByNameMatching(pattern, pageable)).thenReturn(Page.empty());
 
         speciesService.getAll(" sparrow ", pageable);
 
-        // Escaped (and trimmed) before it reaches the $regex query.
-        verify(speciesRepository).findByCommonNameContainingIgnoreCase(quoted, pageable);
+        // Trimmed, escaped and accent-folded before it reaches the $regex query.
+        verify(speciesRepository).findByNameMatching(pattern, pageable);
     }
 
     @Test
