@@ -390,11 +390,34 @@ async function attachImage(imageUrl) {
   const lifeStage = document.getElementById("upload-lifeStage").value;
   const gender = document.getElementById("upload-gender").value;
   const caption = document.getElementById("upload-caption").value.trim();
+  const body = { lifeStage, gender, imageUrl, caption: caption || null };
+  if (uploadSourceSelect.value === "commons") {
+    // The backend reads the license, author and page address from Commons itself.
+    body.commonsFileUrl = document.getElementById("upload-commons-url").value.trim();
+  }
   await Api.request("/api/species/" + currentSpeciesId + "/images", {
     method: "POST",
-    body: JSON.stringify({ lifeStage, gender, imageUrl, caption: caption || null }),
+    body: JSON.stringify(body),
   });
   await refreshImages();
+}
+
+const uploadSourceSelect = document.getElementById("upload-source");
+
+function toggleCommonsFields() {
+  const commons = uploadSourceSelect.value === "commons";
+  document.getElementById("upload-commons-wrap").classList.toggle("hidden", !commons);
+  document.getElementById("upload-commons-note").classList.toggle("hidden", !commons);
+}
+uploadSourceSelect.addEventListener("change", toggleCommonsFields);
+
+/** A Commons photo needs its file page link before anything is uploaded; returns false (with a message) if it is missing. */
+function commonsLinkIsFilledIn() {
+  if (uploadSourceSelect.value === "commons" && !document.getElementById("upload-commons-url").value.trim()) {
+    showMsg(imagesMsg, "Paste the Commons file page link first.", "error");
+    return false;
+  }
+  return true;
 }
 
 uploadBtn.addEventListener("click", async () => {
@@ -405,6 +428,7 @@ uploadBtn.addEventListener("click", async () => {
     showMsg(imagesMsg, "Choose a file first.", "error");
     return;
   }
+  if (!commonsLinkIsFilledIn()) return;
   showMsg(imagesMsg, "", "");
   uploadBtn.disabled = true;
   uploadBtn.textContent = "Uploading…";
@@ -418,6 +442,7 @@ uploadBtn.addEventListener("click", async () => {
     await attachImage(uploadResult.url);
     fileInput.value = "";
     document.getElementById("upload-caption").value = "";
+    document.getElementById("upload-commons-url").value = "";
     showMsg(imagesMsg, "Photo uploaded and attached.", "success");
   } catch (err) {
     showMsg(imagesMsg, err.message, "error");
@@ -435,6 +460,7 @@ attachUrlBtn.addEventListener("click", async () => {
     showMsg(imagesMsg, "Enter an image URL first.", "error");
     return;
   }
+  if (!commonsLinkIsFilledIn()) return;
   showMsg(imagesMsg, "", "");
   attachUrlBtn.disabled = true;
   try {

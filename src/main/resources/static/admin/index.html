@@ -233,6 +233,20 @@
             </select>
           </div>
         </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="upload-source">Where is the photo from?</label>
+            <select id="upload-source">
+              <option value="own">My own photo (no credit needed)</option>
+              <option value="commons">Wikimedia Commons</option>
+            </select>
+          </div>
+          <div class="field hidden" id="upload-commons-wrap">
+            <label for="upload-commons-url">Commons file page link</label>
+            <input type="url" id="upload-commons-url" placeholder="https://commons.wikimedia.org/wiki/File:…" />
+          </div>
+        </div>
+        <p class="muted hidden" id="upload-commons-note">The license, author and source are read from Commons automatically. Only public domain, CC0, CC BY and CC BY-SA are accepted.</p>
         <div class="field">
           <label for="upload-caption">Caption</label>
           <input type="text" id="upload-caption" placeholder="Optional caption" />

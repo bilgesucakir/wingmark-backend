@@ -166,6 +166,10 @@ By default photos are stored in the MongoDB database (GridFS). The backend can s
 - **Rollout:** (1) merge with `UPLOAD_STORAGE=gridfs`: nothing changes. (2) Set the R2 settings and `UPLOAD_STORAGE=r2`: new photos go to R2. (3) Copy the old photos: set `R2_MIGRATION_ENABLED=true` (dry run by default: it only reports how many files and bytes it would copy), read the log, then set `R2_MIGRATION_DRY_RUN=false`. `R2_MIGRATION_MAX_PER_RUN` (default 50) limits the photos handled per hourly run, which bounds the number of R2 requests; each copy is checked by size and a photo already copied costs no request. (4) The migration **never deletes** anything from the database; removing those copies would be a separate step after you have confirmed the photos are in R2.
 - Cloudflare R2 is a new service provider for uploaded photos (EU jurisdiction): the privacy policy and the data inventory must mention it before photos are stored there.
 
+### Crediting Wikimedia Commons photos
+
+In the admin panel, when you attach a species image, choose **Wikimedia Commons** as the source and paste the file's page link (`https://commons.wikimedia.org/wiki/File:…`). The backend reads the license, author and page address from Commons (a public API, no key; requests carry a descriptive User-Agent, set by `wingmark.commons.user-agent`) and stores them with the image, so the app shows the credit under it. Only public domain, CC0, CC BY and CC BY-SA files are accepted; non-commercial, no-derivatives and fair-use files are refused with a message naming the license. Through the API the same is `commonsFileUrl` on `POST /api/species/{id}/images`; the values for `licenseCode`, `attribution` and `sourceUrl` sent along with it are ignored.
+
 ## Database
 
 Uses **MongoDB**. By default it connects to a local instance at

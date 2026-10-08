@@ -12,6 +12,7 @@ public class WebClientConfig {
 
     private final XenoCantoProperties xenoCantoProperties;
     private final INaturalistProperties iNaturalistProperties;
+    private final CommonsProperties commonsProperties;
 
     /** Client for the Xeno-canto API. */
     @Bean
@@ -26,6 +27,15 @@ public class WebClientConfig {
     public WebClient iNaturalistWebClient() {
         return WebClient.builder()
                 .baseUrl(iNaturalistProperties.baseUrl())
+                .build();
+    }
+
+    /** Client for the Wikimedia Commons API, always sending the descriptive User-Agent Commons requires. */
+    @Bean
+    public WebClient commonsWebClient() {
+        return WebClient.builder()
+                .baseUrl(commonsProperties.baseUrl())
+                .defaultHeader("User-Agent", commonsProperties.userAgent())
                 .build();
     }
 }
