@@ -12,6 +12,7 @@ import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.SpeciesImageRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.service.FileStorageService;
+import com.wingmark.backend.service.CommonsService;
 import com.wingmark.backend.service.SpeciesService;
 import com.wingmark.backend.util.SearchPattern;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class SpeciesServiceImpl implements SpeciesService {
 
     private final SpeciesRepository speciesRepository;
     private final SpeciesImageRepository speciesImageRepository;
+    private final CommonsService commonsService;
     private final FileStorageService fileStorageService;
     private final UploadedFileCleaner uploadedFileCleaner;
 
@@ -117,15 +119,19 @@ public class SpeciesServiceImpl implements SpeciesService {
             throw ResourceNotFoundException.of("Species", speciesId);
         }
 
+        // A Commons file: the licence, credit line and source page come from Commons itself, never from the request.
+        CommonsService.CommonsFile commons = StringUtils.hasText(request.commonsFileUrl())
+                ? commonsService.describe(request.commonsFileUrl()) : null;
+
         SpeciesImage image = SpeciesImage.builder()
                 .speciesId(speciesId)
                 .lifeStage(request.lifeStage())
                 .gender(request.gender())
                 .imageUrl(request.imageUrl())
                 .caption(request.caption())
-                .licenseCode(request.licenseCode())
-                .attribution(request.attribution())
-                .sourceUrl(request.sourceUrl())
+                .licenseCode(commons != null ? commons.licenseCode() : request.licenseCode())
+                .attribution(commons != null ? commons.attribution() : request.attribution())
+                .sourceUrl(commons != null ? commons.sourceUrl() : request.sourceUrl())
                 .build();
 
         image = speciesImageRepository.save(image);

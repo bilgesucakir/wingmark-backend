@@ -101,7 +101,8 @@ public class SpeciesController {
 
     /** Admin-only: attaches a curated reference image (life stage + gender) to a species. */
     @Operation(summary = "Add a species image", description = "Admin-only. Attaches a curated reference image (life stage + gender) to a species. " +
-            "Typically the URL comes from reviewing results of GET /{id}/photo-candidates first.")
+            "Typically the URL comes from reviewing results of GET /{id}/photo-candidates first. For a Wikimedia Commons photo send commonsFileUrl (the file page address): " +
+            "the license, credit line and source page are then read from Commons and stored, and files that are not public domain, CC0, CC BY or CC BY-SA are refused with 400.")
     @PostMapping("/{id}/images")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SpeciesImageResponseDto> createImage(@PathVariable UUID id,

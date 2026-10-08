@@ -14,6 +14,8 @@ public record CreateSpeciesImageRequestDto(
         // Set when attaching a third-party photo (e.g. an iNaturalist candidate); null for your own uploads.
         String licenseCode,
         String attribution,
-        String sourceUrl
+        String sourceUrl,
+        // Page address of a Wikimedia Commons file; when set, licenseCode, attribution and sourceUrl are read from Commons and these three are ignored.
+        String commonsFileUrl
 ) {
 }

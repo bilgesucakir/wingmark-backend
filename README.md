@@ -157,6 +157,21 @@ The script goes through the admin API (`POST /api/species`) and skips species wh
 - **Guide thumbnails:** species image responses carry `thumbnailUrl` (a 400px JPEG) for images that are our own uploads, and null for external links.
 - Later, when storage grows: WebP, and moving files to object storage with long cache headers (see the card for deferred photo storage work).
 
+### Photo storage in Cloudflare R2 (optional)
+
+By default photos are stored in the MongoDB database (GridFS). The backend can store **new** photos in a private Cloudflare R2 bucket instead; older photos stay readable from the database. Nothing changes unless you set `UPLOAD_STORAGE=r2`.
+
+- **Settings** (on Render; the two keys are secrets: set them only in the Render environment, never in a file or in git, and they are never logged):
+  `UPLOAD_STORAGE` (`gridfs` default, or `r2`), `R2_ENDPOINT` (`https://<account id>.eu.r2.cloudflarestorage.com` for an EU bucket), `R2_BUCKET`, `R2_REGION` (`auto`), `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
+  With `UPLOAD_STORAGE=r2` and a missing R2 setting the app refuses to start and names the missing setting.
+- **How it works:** the bucket stays private and the backend serves photos at the same `/uploads/<name>` URLs (so no database row or app change), reading R2 first and the database as a fallback, with long immutable cache headers. A photo and its 400px thumbnail are stored as `photos/<name>` and `photos/<name>_thumb.jpg`. Deleting a photo removes it from both places. An index of uploads (owner, size) in the database drives the per-user limit and the cleanup, so R2 is never listed. Every R2 call has a timeout and at most two retries.
+- **Rollout:** (1) merge with `UPLOAD_STORAGE=gridfs`: nothing changes. (2) Set the R2 settings and `UPLOAD_STORAGE=r2`: new photos go to R2. (3) Copy the old photos: set `R2_MIGRATION_ENABLED=true` (dry run by default: it only reports how many files and bytes it would copy), read the log, then set `R2_MIGRATION_DRY_RUN=false`. `R2_MIGRATION_MAX_PER_RUN` (default 50) limits the photos handled per hourly run, which bounds the number of R2 requests; each copy is checked by size and a photo already copied costs no request. (4) The migration **never deletes** anything from the database; removing those copies would be a separate step after you have confirmed the photos are in R2.
+- Cloudflare R2 is a new service provider for uploaded photos (EU jurisdiction): the privacy policy and the data inventory must mention it before photos are stored there.
+
+### Crediting Wikimedia Commons photos
+
+In the admin panel, when you attach a species image, choose **Wikimedia Commons** as the source and paste the file's page link (`https://commons.wikimedia.org/wiki/File:…`). The backend reads the license, author and page address from Commons (a public API, no key; requests carry a descriptive User-Agent, set by `wingmark.commons.user-agent`) and stores them with the image, so the app shows the credit under it. Only public domain, CC0, CC BY and CC BY-SA files are accepted; non-commercial, no-derivatives and fair-use files are refused with a message naming the license. Through the API the same is `commonsFileUrl` on `POST /api/species/{id}/images`; the values for `licenseCode`, `attribution` and `sourceUrl` sent along with it are ignored.
+
 ## Database
 
 Uses **MongoDB**. By default it connects to a local instance at

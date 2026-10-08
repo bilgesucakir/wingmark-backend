@@ -24,6 +24,28 @@ services:
       # (https://xeno-canto.org/account). Leave blank to skip it.
       - key: XENO_CANTO_API_KEY
         sync: false
+      # Where new photos are stored: gridfs (the database, the default) or r2 (Cloudflare R2; older photos
+      # stay readable from the database). Switch to r2 only after the R2_* variables below are filled in. Set in the
+      # dashboard (not here) so a Blueprint sync never resets it; unset means gridfs.
+      - key: UPLOAD_STORAGE
+        sync: false
+      # Cloudflare R2 bucket for photos (used only with UPLOAD_STORAGE=r2). Set the real values in the Render
+      # dashboard; the two keys are secrets and must never be written in this file or committed.
+      - key: R2_ENDPOINT
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_REGION
+        value: auto
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      # Copies photos from the database to R2 (needs UPLOAD_STORAGE=r2). Off; dry run first; never deletes anything.
+      - key: R2_MIGRATION_ENABLED
+        sync: false
+      - key: R2_MIGRATION_DRY_RUN
+        sync: false
       # Required to actually deliver the registration-verification email - without
       # these, users can register but never receive the link, and login() rejects
       # unverified accounts (see EmailServiceImpl / README "Deploying"). Any SMTP
