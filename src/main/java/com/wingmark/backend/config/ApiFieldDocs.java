@@ -169,6 +169,31 @@ final class ApiFieldDocs {
             PageMetadata.number|Zero-based number of this page.|0
             PageMetadata.totalElements|Total number of matching items.|135
             PageMetadata.totalPages|Total number of pages.|7
+            generatedAt|When the statistics were computed (UTC).|2026-10-03T08:15:30Z
+            minGroupSize|Fewest different users a species, region or bucket needs before it is listed.|5
+            activeUsersLast7Days|Users who logged in or refreshed their session in the last 7 days.|12
+            activeUsersLast30Days|Users who logged in or refreshed their session in the last 30 days.|30
+            newUsersLast30Days|Accounts created in the last 30 days.|8
+            totalLogs|Total number of bird logs.|420
+            logsLast7Days|Bird logs created in the last 7 days.|35
+            logsLast30Days|Bird logs created in the last 30 days.|140
+            logsPerDay|Logs created per day for the last 30 days, oldest first, zero days included.|
+            logsPerWeek|Logs created per week for the last 12 weeks, oldest first.|
+            sightingsPerUser|How many users have 0, 1, 2-5, 6-20 or 21+ logs. A count is null when fewer than minGroupSize users fall in the range.|
+            topSpecies|Most-logged species, only those logged by at least minGroupSize different users (up to 10).|
+            regions|Coarse one-degree grid cells with logs from at least minGroupSize different users.|
+            DayCount.date|The day (UTC).|2026-10-03
+            DayCount.logs|Logs created that day.|5
+            WeekCount.weekStart|Monday that starts the week (UTC).|2026-09-28
+            WeekCount.logs|Logs created that week.|35
+            SightingsBucket.range|Range of logs per user: 0, 1, 2-5, 6-20 or 21+.|2-5
+            SightingsBucket.users|Number of users in the range, or null when too few to show.|9
+            SpeciesCount.speciesName|Species common name in English.|House Sparrow
+            SpeciesCount.logs|Number of logs of the species.|58
+            SpeciesCount.users|Number of different users who logged it.|9
+            RegionCount.cell|Grid cell as "{latitude}, {longitude}" rounded down to whole degrees (about 110 km).|40, 29
+            RegionCount.logs|Number of logs in the cell.|58
+            RegionCount.users|Number of different users with logs in the cell.|9
             PhotoCandidateDto.photoUrl|URL of the candidate photo.|https://static.inaturalist.org/photos/1/medium.jpg
             """;
 
