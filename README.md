@@ -129,6 +129,17 @@ Signups whose email address is never verified can be deleted after a number of d
 
 Signup and resend limits: at most 5 signups per hour and 20 per day per client address; a repeated resend-verification request within 60 seconds for the same account is ignored (same 202 response).
 
+### Importing the popular species list
+
+`scripts/species-popular.json` holds 57 species without photos (common birds of Turkey and Europe, well-known birds worldwide and popular pet birds), each with English and Turkish text in the same fields as the species guide. It is a draft to review before importing: names, facts and IUCN statuses were written from general knowledge and should be checked by someone who knows the birds.
+
+```
+WINGMARK_ADMIN_TOKEN=<admin access token> python3 scripts/import_species.py --dry-run   # shows what would be created
+WINGMARK_ADMIN_TOKEN=<admin access token> python3 scripts/import_species.py             # creates them
+```
+
+The script goes through the admin API (`POST /api/species`) and skips species whose scientific name already exists, so it is safe to run twice. Get a token by logging in as an admin (`POST /api/auth/login`); it lasts 15 minutes. If Python reports a certificate error on macOS, run `pip3 install certifi` or Python's `Install Certificates.command`. Photos are added later in the admin panel. `PopularSpeciesSeedTest` checks the file (both languages everywhere, unique names, valid statuses).
+
 ## Database
 
 Uses **MongoDB**. By default it connects to a local instance at

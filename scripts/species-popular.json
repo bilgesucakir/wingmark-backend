@@ -1,0 +1,2111 @@
+[
+  {
+    "commonName": {
+      "en": "Common Blackbird",
+      "tr": "Karatavuk"
+    },
+    "scientificName": "Turdus merula",
+    "family": "Turdidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A medium-sized thrush. Males are glossy black with an orange-yellow bill; females are dark brown. It sings melodiously at dusk and dawn.",
+      "tr": "Orta boy bir ardıç kuşu. Erkekler parlak siyah renkte ve turuncu-sarı gagalıdır; dişiler koyu kahverengidir. Alacakaranlıkta ve şafakta melodik şekilde öter."
+    },
+    "lifespan": {
+      "en": "2-3 years",
+      "tr": "2-3 yıl"
+    },
+    "diet": {
+      "en": "Earthworms, insects, berries and fruit",
+      "tr": "Solucanlar, böcekler, meyveler ve yemişler"
+    },
+    "habitat": {
+      "en": "Woodland, gardens, parks and hedgerows",
+      "tr": "Ormanlar, bahçeler, parklar ve çalılıklar"
+    },
+    "sizeDescription": {
+      "en": "23-29cm, wingspan 34-38cm",
+      "tr": "23-29 cm, kanat açıklığı 34-38 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, North Africa and Asia; introduced to Australia and New Zealand",
+      "tr": "Avrupa, Kuzey Afrika ve Asya; Avustralya ve Yeni Zelanda'ya götürülmüştür"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Great Tit",
+      "tr": "Büyük Baştankara"
+    },
+    "scientificName": "Parus major",
+    "family": "Paridae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A lively, black-headed tit with white cheeks and a black stripe down its yellow belly. Common at garden feeders.",
+      "tr": "Siyah başlı, beyaz yanaklı ve sarı karnında siyah bir şerit bulunan hareketli bir baştankara. Bahçe yemliklerinde sık görülür."
+    },
+    "lifespan": {
+      "en": "2-3 years",
+      "tr": "2-3 yıl"
+    },
+    "diet": {
+      "en": "Insects, seeds and nuts",
+      "tr": "Böcekler, tohumlar ve kuruyemişler"
+    },
+    "habitat": {
+      "en": "Woodland, parks and gardens",
+      "tr": "Ormanlar, parklar ve bahçeler"
+    },
+    "sizeDescription": {
+      "en": "12-14cm, wingspan 22-25cm",
+      "tr": "12-14 cm, kanat açıklığı 22-25 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and North Africa",
+      "tr": "Avrupa, Asya ve Kuzey Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Eurasian Blue Tit",
+      "tr": "Mavi Baştankara"
+    },
+    "scientificName": "Cyanistes caeruleus",
+    "family": "Paridae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A small, acrobatic tit with a blue cap, wings and tail, a white face and yellow underparts.",
+      "tr": "Mavi başlı, kanatlı ve kuyruklu, yüzü beyaz ve alt tarafı sarı, küçük ve akrobatik bir baştankara."
+    },
+    "lifespan": {
+      "en": "2-3 years",
+      "tr": "2-3 yıl"
+    },
+    "diet": {
+      "en": "Insects, spiders, seeds and buds",
+      "tr": "Böcekler, örümcekler, tohumlar ve tomurcuklar"
+    },
+    "habitat": {
+      "en": "Deciduous woodland, parks and gardens",
+      "tr": "Yaprak döken ormanlar, parklar ve bahçeler"
+    },
+    "sizeDescription": {
+      "en": "11-12cm, wingspan 18-20cm",
+      "tr": "11-12 cm, kanat açıklığı 18-20 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, western Asia and North Africa",
+      "tr": "Avrupa, Batı Asya ve Kuzey Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Eurasian Magpie",
+      "tr": "Saksağan"
+    },
+    "scientificName": "Pica pica",
+    "family": "Corvidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A striking black-and-white crow with an iridescent blue-green sheen on its wings and a long tail. Very intelligent.",
+      "tr": "Kanatlarında yanardöner mavi-yeşil parıltı olan ve uzun kuyruklu, dikkat çekici siyah-beyaz bir karga türü. Çok zekidir."
+    },
+    "lifespan": {
+      "en": "5-10 years",
+      "tr": "5-10 yıl"
+    },
+    "diet": {
+      "en": "Insects, small animals, eggs, seeds and carrion",
+      "tr": "Böcekler, küçük hayvanlar, yumurtalar, tohumlar ve leşler"
+    },
+    "habitat": {
+      "en": "Farmland, woodland edges, parks and towns",
+      "tr": "Tarım arazileri, orman kenarları, parklar ve kasabalar"
+    },
+    "sizeDescription": {
+      "en": "40-51cm, wingspan 52-62cm",
+      "tr": "40-51 cm, kanat açıklığı 52-62 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and north-west Africa",
+      "tr": "Avrupa, Asya ve Kuzeybatı Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Hooded Crow",
+      "tr": "Leş Kargası"
+    },
+    "scientificName": "Corvus cornix",
+    "family": "Corvidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A grey-bodied crow with a black head, throat, wings and tail. Bold and adaptable, it is common around towns.",
+      "tr": "Gövdesi gri; başı, boğazı, kanatları ve kuyruğu siyah olan bir karga. Cesur ve uyumludur, kasabalarda yaygındır."
+    },
+    "lifespan": {
+      "en": "5-10 years",
+      "tr": "5-10 yıl"
+    },
+    "diet": {
+      "en": "Omnivore: carrion, insects, grain, eggs and scraps",
+      "tr": "Hepçil: leşler, böcekler, taneler, yumurtalar ve yiyecek artıkları"
+    },
+    "habitat": {
+      "en": "Farmland, coasts, towns and open woodland",
+      "tr": "Tarım arazileri, kıyılar, kasabalar ve açık ormanlar"
+    },
+    "sizeDescription": {
+      "en": "44-51cm, wingspan 84-100cm",
+      "tr": "44-51 cm, kanat açıklığı 84-100 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Eastern and northern Europe, Middle East",
+      "tr": "Doğu ve Kuzey Avrupa, Orta Doğu"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Eurasian Jay",
+      "tr": "Alakarga"
+    },
+    "scientificName": "Garrulus glandarius",
+    "family": "Corvidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A colourful, shy crow with a pinkish-brown body, a black moustache and bright blue wing patches. Buries acorns for winter.",
+      "tr": "Pembemsi kahverengi gövdeli, siyah bıyıklı ve kanatlarında parlak mavi lekeler bulunan, renkli ve çekingen bir karga. Kış için meşe palamudu gömer."
+    },
+    "lifespan": {
+      "en": "5-8 years",
+      "tr": "5-8 yıl"
+    },
+    "diet": {
+      "en": "Acorns, nuts, insects, eggs and berries",
+      "tr": "Meşe palamutları, kuruyemişler, böcekler, yumurtalar ve meyveler"
+    },
+    "habitat": {
+      "en": "Oak and mixed woodland",
+      "tr": "Meşe ve karışık ormanlar"
+    },
+    "sizeDescription": {
+      "en": "32-35cm, wingspan 52-58cm",
+      "tr": "32-35 cm, kanat açıklığı 52-58 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and north-west Africa",
+      "tr": "Avrupa, Asya ve Kuzeybatı Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Rock Dove",
+      "tr": "Kaya Güvercini"
+    },
+    "scientificName": "Columba livia",
+    "family": "Columbidae",
+    "order": "Columbiformes",
+    "description": {
+      "en": "The wild ancestor of the city pigeon. Blue-grey with two dark wing bars and an iridescent neck.",
+      "tr": "Şehir güvercininin yabani atasıdır. Mavi-gridir, iki koyu kanat şeridi ve yanardöner bir boynu vardır."
+    },
+    "lifespan": {
+      "en": "3-5 years",
+      "tr": "3-5 yıl"
+    },
+    "diet": {
+      "en": "Seeds, grain and scraps",
+      "tr": "Tohumlar, taneler ve yiyecek artıkları"
+    },
+    "habitat": {
+      "en": "Cliffs, farmland and cities",
+      "tr": "Kayalıklar, tarım arazileri ve şehirler"
+    },
+    "sizeDescription": {
+      "en": "29-37cm, wingspan 62-72cm",
+      "tr": "29-37 cm, kanat açıklığı 62-72 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, North Africa and Asia; feral worldwide",
+      "tr": "Avrupa, Kuzey Afrika ve Asya; dünya genelinde evcilden yabanileşmiş sürüler"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Eurasian Collared Dove",
+      "tr": "Kumru"
+    },
+    "scientificName": "Streptopelia decaocto",
+    "family": "Columbidae",
+    "order": "Columbiformes",
+    "description": {
+      "en": "A pale grey-buff dove with a thin black half-collar on the neck. It spread across Europe in the 20th century.",
+      "tr": "Boynunda ince siyah yarım halka bulunan soluk gri-bej bir güvercin. 20. yüzyılda Avrupa'ya yayılmıştır."
+    },
+    "lifespan": {
+      "en": "3-6 years",
+      "tr": "3-6 yıl"
+    },
+    "diet": {
+      "en": "Grain, seeds and berries",
+      "tr": "Taneler, tohumlar ve meyveler"
+    },
+    "habitat": {
+      "en": "Towns, villages and farmland",
+      "tr": "Kasabalar, köyler ve tarım arazileri"
+    },
+    "sizeDescription": {
+      "en": "31-33cm, wingspan 47-55cm",
+      "tr": "31-33 cm, kanat açıklığı 47-55 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Asia and Europe",
+      "tr": "Asya ve Avrupa"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Wood Pigeon",
+      "tr": "Gökçe Güvercin"
+    },
+    "scientificName": "Columba palumbus",
+    "family": "Columbidae",
+    "order": "Columbiformes",
+    "description": {
+      "en": "Europe's largest pigeon, grey with a white neck patch and white wing bars.",
+      "tr": "Avrupa'nın en büyük güvercini; gri renkli, boynunda ve kanatlarında beyaz lekeler vardır."
+    },
+    "lifespan": {
+      "en": "3-6 years",
+      "tr": "3-6 yıl"
+    },
+    "diet": {
+      "en": "Seeds, grain, buds and berries",
+      "tr": "Tohumlar, taneler, tomurcuklar ve meyveler"
+    },
+    "habitat": {
+      "en": "Woodland, farmland, parks and gardens",
+      "tr": "Ormanlar, tarım arazileri, parklar ve bahçeler"
+    },
+    "sizeDescription": {
+      "en": "38-43cm, wingspan 68-77cm",
+      "tr": "38-43 cm, kanat açıklığı 68-77 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, western Asia and north-west Africa",
+      "tr": "Avrupa, Batı Asya ve Kuzeybatı Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Eurasian Hoopoe",
+      "tr": "İbibik"
+    },
+    "scientificName": "Upupa epops",
+    "family": "Upupidae",
+    "order": "Bucerotiformes",
+    "description": {
+      "en": "A cinnamon-coloured bird with a striking fan-shaped crest, a long curved bill and black-and-white striped wings.",
+      "tr": "Tarçın renkli, yelpaze biçiminde çarpıcı bir ibiği, uzun kıvrık bir gagası ve siyah-beyaz çizgili kanatları olan bir kuş."
+    },
+    "lifespan": {
+      "en": "8-10 years",
+      "tr": "8-10 yıl"
+    },
+    "diet": {
+      "en": "Insects and larvae probed from the ground",
+      "tr": "Yerden çıkarılan böcekler ve larvalar"
+    },
+    "habitat": {
+      "en": "Open country, orchards and farmland",
+      "tr": "Açık araziler, meyve bahçeleri ve tarım arazileri"
+    },
+    "sizeDescription": {
+      "en": "25-32cm, wingspan 44-48cm",
+      "tr": "25-32 cm, kanat açıklığı 44-48 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and Africa",
+      "tr": "Avrupa, Asya ve Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "White Stork",
+      "tr": "Leylek"
+    },
+    "scientificName": "Ciconia ciconia",
+    "family": "Ciconiidae",
+    "order": "Ciconiiformes",
+    "description": {
+      "en": "A tall white bird with black flight feathers and a long red bill. It nests on roofs and poles and migrates to Africa.",
+      "tr": "Siyah uçuş tüyleri ve uzun kırmızı gagası olan uzun boylu beyaz bir kuş. Çatılara ve direklere yuva yapar, Afrika'ya göç eder."
+    },
+    "lifespan": {
+      "en": "15-20 years",
+      "tr": "15-20 yıl"
+    },
+    "diet": {
+      "en": "Frogs, insects, small mammals and fish",
+      "tr": "Kurbağalar, böcekler, küçük memeliler ve balıklar"
+    },
+    "habitat": {
+      "en": "Wetlands, meadows and farmland",
+      "tr": "Sulak alanlar, çayırlar ve tarım arazileri"
+    },
+    "sizeDescription": {
+      "en": "100-115cm, wingspan 155-215cm",
+      "tr": "100-115 cm, kanat açıklığı 155-215 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, western Asia; winters in Africa and India",
+      "tr": "Avrupa, Batı Asya; kışı Afrika ve Hindistan'da geçirir"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Grey Heron",
+      "tr": "Gri Balıkçıl"
+    },
+    "scientificName": "Ardea cinerea",
+    "family": "Ardeidae",
+    "order": "Pelecaniformes",
+    "description": {
+      "en": "A tall, grey wading bird with a long neck and a dagger-like yellow bill, often standing motionless at the water's edge.",
+      "tr": "Uzun boyunlu, hançer gibi sarı gagalı, uzun boylu gri bir su kuşu; çoğu zaman su kenarında hareketsiz bekler."
+    },
+    "lifespan": {
+      "en": "5-10 years",
+      "tr": "5-10 yıl"
+    },
+    "diet": {
+      "en": "Fish, frogs, small mammals and insects",
+      "tr": "Balıklar, kurbağalar, küçük memeliler ve böcekler"
+    },
+    "habitat": {
+      "en": "Lakes, rivers, marshes and coasts",
+      "tr": "Göller, nehirler, bataklıklar ve kıyılar"
+    },
+    "sizeDescription": {
+      "en": "84-102cm, wingspan 155-195cm",
+      "tr": "84-102 cm, kanat açıklığı 155-195 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and Africa",
+      "tr": "Avrupa, Asya ve Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Great Cormorant",
+      "tr": "Büyük Karabatak"
+    },
+    "scientificName": "Phalacrocorax carbo",
+    "family": "Phalacrocoracidae",
+    "order": "Suliformes",
+    "description": {
+      "en": "A large black diving bird with a hooked bill. It often stands with wings spread out to dry.",
+      "tr": "Kancalı gagalı, büyük, siyah bir dalgıç kuş. Çoğu zaman kanatlarını açarak kurumak için bekler."
+    },
+    "lifespan": {
+      "en": "10-15 years",
+      "tr": "10-15 yıl"
+    },
+    "diet": {
+      "en": "Fish",
+      "tr": "Balıklar"
+    },
+    "habitat": {
+      "en": "Coasts, lakes and rivers",
+      "tr": "Kıyılar, göller ve nehirler"
+    },
+    "sizeDescription": {
+      "en": "80-100cm, wingspan 121-149cm",
+      "tr": "80-100 cm, kanat açıklığı 121-149 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Almost worldwide, except South America",
+      "tr": "Güney Amerika dışında hemen hemen tüm dünya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Yellow-legged Gull",
+      "tr": "Sarıbacaklı Martı"
+    },
+    "scientificName": "Larus michahellis",
+    "family": "Laridae",
+    "order": "Charadriiformes",
+    "description": {
+      "en": "A large gull with a white head, grey back, yellow legs and a red spot on the yellow bill. Common on coasts and in harbours.",
+      "tr": "Beyaz başlı, gri sırtlı, sarı bacaklı ve sarı gagasında kırmızı leke bulunan büyük bir martı. Kıyılarda ve limanlarda yaygındır."
+    },
+    "lifespan": {
+      "en": "15-20 years",
+      "tr": "15-20 yıl"
+    },
+    "diet": {
+      "en": "Fish, scraps, eggs and small animals",
+      "tr": "Balıklar, yiyecek artıkları, yumurtalar ve küçük hayvanlar"
+    },
+    "habitat": {
+      "en": "Coasts, harbours and inland lakes",
+      "tr": "Kıyılar, limanlar ve iç göller"
+    },
+    "sizeDescription": {
+      "en": "52-68cm, wingspan 120-155cm",
+      "tr": "52-68 cm, kanat açıklığı 120-155 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Mediterranean, Black Sea and Atlantic coasts of Europe",
+      "tr": "Avrupa'nın Akdeniz, Karadeniz ve Atlantik kıyıları"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Eurasian Coot",
+      "tr": "Çamurcun"
+    },
+    "scientificName": "Fulica atra",
+    "family": "Rallidae",
+    "order": "Gruiformes",
+    "description": {
+      "en": "A dark waterbird with a white bill and forehead shield and lobed feet. Often seen in noisy groups.",
+      "tr": "Beyaz gagalı ve alın kalkanlı, parmakları yüzgeç loblu, koyu renkli bir su kuşu. Çoğunlukla gürültülü gruplar halinde görülür."
+    },
+    "lifespan": {
+      "en": "10-15 years",
+      "tr": "10-15 yıl"
+    },
+    "diet": {
+      "en": "Water plants, algae, insects and seeds",
+      "tr": "Su bitkileri, algler, böcekler ve tohumlar"
+    },
+    "habitat": {
+      "en": "Lakes, ponds and slow rivers",
+      "tr": "Göller, göletler ve yavaş akan nehirler"
+    },
+    "sizeDescription": {
+      "en": "36-42cm, wingspan 70-80cm",
+      "tr": "36-42 cm, kanat açıklığı 70-80 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia, North Africa and Australasia",
+      "tr": "Avrupa, Asya, Kuzey Afrika ve Avustralasya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Kingfisher",
+      "tr": "Yalıçapkını"
+    },
+    "scientificName": "Alcedo atthis",
+    "family": "Alcedinidae",
+    "order": "Coraciiformes",
+    "description": {
+      "en": "A small, brilliant blue-and-orange bird that dives from a perch to catch fish.",
+      "tr": "Bir dal üzerinden dalarak balık yakalayan, parlak mavi-turuncu renkli küçük bir kuş."
+    },
+    "lifespan": {
+      "en": "3-5 years",
+      "tr": "3-5 yıl"
+    },
+    "diet": {
+      "en": "Small fish and aquatic insects",
+      "tr": "Küçük balıklar ve su böcekleri"
+    },
+    "habitat": {
+      "en": "Clear streams, rivers and lakes",
+      "tr": "Berrak dereler, nehirler ve göller"
+    },
+    "sizeDescription": {
+      "en": "16-17cm, wingspan 24-26cm",
+      "tr": "16-17 cm, kanat açıklığı 24-26 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and North Africa",
+      "tr": "Avrupa, Asya ve Kuzey Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "European Bee-eater",
+      "tr": "Arı Kuşu"
+    },
+    "scientificName": "Merops apiaster",
+    "family": "Meropidae",
+    "order": "Coraciiformes",
+    "description": {
+      "en": "A very colourful bird with a yellow throat, chestnut crown and turquoise underparts, catching bees and wasps in flight.",
+      "tr": "Sarı boğazlı, kestane renkli tepeli ve turkuaz alt gövdeli çok renkli bir kuş; arıları ve yaban arılarını uçarken yakalar."
+    },
+    "lifespan": {
+      "en": "5-8 years",
+      "tr": "5-8 yıl"
+    },
+    "diet": {
+      "en": "Bees, wasps and other flying insects",
+      "tr": "Arılar, yaban arıları ve diğer uçan böcekler"
+    },
+    "habitat": {
+      "en": "Open country with sandy banks and scattered trees",
+      "tr": "Kumlu yamaçlı ve dağınık ağaçlı açık araziler"
+    },
+    "sizeDescription": {
+      "en": "25-29cm, wingspan 36-40cm",
+      "tr": "25-29 cm, kanat açıklığı 36-40 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Southern Europe, western Asia; winters in Africa",
+      "tr": "Güney Avrupa, Batı Asya; kışı Afrika'da geçirir"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Barn Swallow",
+      "tr": "Kırlangıç"
+    },
+    "scientificName": "Hirundo rustica",
+    "family": "Hirundinidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A graceful swallow with a blue back, red throat and deeply forked tail. It nests in barns and under eaves and migrates to Africa.",
+      "tr": "Mavi sırtlı, kırmızı boğazlı ve derin çatallı kuyruklu zarif bir kırlangıç. Ahırlarda ve saçak altlarında yuva yapar, Afrika'ya göç eder."
+    },
+    "lifespan": {
+      "en": "2-4 years",
+      "tr": "2-4 yıl"
+    },
+    "diet": {
+      "en": "Flying insects caught on the wing",
+      "tr": "Havada yakalanan uçan böcekler"
+    },
+    "habitat": {
+      "en": "Open country, farmland and villages",
+      "tr": "Açık araziler, tarım arazileri ve köyler"
+    },
+    "sizeDescription": {
+      "en": "17-19cm, wingspan 32-34cm",
+      "tr": "17-19 cm, kanat açıklığı 32-34 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Breeds across the Northern Hemisphere; winters in the tropics",
+      "tr": "Kuzey Yarımküre'de ürer; kışı tropik bölgelerde geçirir"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Swift",
+      "tr": "Ebabil"
+    },
+    "scientificName": "Apus apus",
+    "family": "Apodidae",
+    "order": "Apodiformes",
+    "description": {
+      "en": "A dark, sickle-winged bird that spends almost its whole life in the air, even sleeping and mating on the wing.",
+      "tr": "Hayatının neredeyse tamamını havada geçiren, orak kanatlı koyu renkli bir kuş; havada uyur ve çiftleşir."
+    },
+    "lifespan": {
+      "en": "6-9 years",
+      "tr": "6-9 yıl"
+    },
+    "diet": {
+      "en": "Flying insects and airborne spiders",
+      "tr": "Uçan böcekler ve havadaki örümcekler"
+    },
+    "habitat": {
+      "en": "Skies over towns, cliffs and open country",
+      "tr": "Kasabaların, kayalıkların ve açık arazilerin üzerindeki gökyüzü"
+    },
+    "sizeDescription": {
+      "en": "16-17cm, wingspan 38-40cm",
+      "tr": "16-17 cm, kanat açıklığı 38-40 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Breeds in Europe and Asia; winters in southern Africa",
+      "tr": "Avrupa ve Asya'da ürer; kışı Güney Afrika'da geçirir"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Starling",
+      "tr": "Sığırcık"
+    },
+    "scientificName": "Sturnus vulgaris",
+    "family": "Sturnidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A glossy, speckled bird that can mimic sounds and forms huge, swirling flocks called murmurations.",
+      "tr": "Sesleri taklit edebilen, parlak ve benekli bir kuş; murmuration adı verilen dev, dönen sürüler oluşturur."
+    },
+    "lifespan": {
+      "en": "2-3 years",
+      "tr": "2-3 yıl"
+    },
+    "diet": {
+      "en": "Insects, fruit and seeds",
+      "tr": "Böcekler, meyveler ve tohumlar"
+    },
+    "habitat": {
+      "en": "Farmland, towns and woodland edges",
+      "tr": "Tarım arazileri, kasabalar ve orman kenarları"
+    },
+    "sizeDescription": {
+      "en": "19-22cm, wingspan 31-44cm",
+      "tr": "19-22 cm, kanat açıklığı 31-44 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe and Asia; introduced to the Americas, Australia and southern Africa",
+      "tr": "Avrupa ve Asya; Amerika, Avustralya ve Güney Afrika'ya götürülmüştür"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Nightingale",
+      "tr": "Bülbül"
+    },
+    "scientificName": "Luscinia megarhynchos",
+    "family": "Muscicapidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A plain brown bird famous for its rich, powerful song, often sung at night from dense scrub.",
+      "tr": "Sade kahverengi renkli, çoğunlukla geceleri sık çalılıklardan söylediği zengin ve güçlü şarkısıyla ünlü bir kuş."
+    },
+    "lifespan": {
+      "en": "2-3 years",
+      "tr": "2-3 yıl"
+    },
+    "diet": {
+      "en": "Insects, worms and berries",
+      "tr": "Böcekler, solucanlar ve meyveler"
+    },
+    "habitat": {
+      "en": "Dense scrub and thickets near water",
+      "tr": "Su kenarındaki sık çalılıklar ve çalı toplulukları"
+    },
+    "sizeDescription": {
+      "en": "15-17cm, wingspan 20-22cm",
+      "tr": "15-17 cm, kanat açıklığı 20-22 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe and western Asia; winters in Africa",
+      "tr": "Avrupa ve Batı Asya; kışı Afrika'da geçirir"
+    }
+  },
+  {
+    "commonName": {
+      "en": "European Goldfinch",
+      "tr": "Saka"
+    },
+    "scientificName": "Carduelis carduelis",
+    "family": "Fringillidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A small, brightly coloured finch with a red face, black-and-white head and golden-yellow wing bars. Loves thistle seeds.",
+      "tr": "Kırmızı yüzlü, siyah-beyaz başlı ve altın sarısı kanat şeritli, parlak renkli küçük bir ispinoz. Devedikeni tohumlarını sever."
+    },
+    "lifespan": {
+      "en": "5-8 years",
+      "tr": "5-8 yıl"
+    },
+    "diet": {
+      "en": "Seeds, especially thistle and teasel",
+      "tr": "Tohumlar, özellikle devedikeni ve kardı tohumları"
+    },
+    "habitat": {
+      "en": "Gardens, orchards and open woodland",
+      "tr": "Bahçeler, meyve bahçeleri ve açık ormanlar"
+    },
+    "sizeDescription": {
+      "en": "12-13cm, wingspan 21-25cm",
+      "tr": "12-13 cm, kanat açıklığı 21-25 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, North Africa and western Asia",
+      "tr": "Avrupa, Kuzey Afrika ve Batı Asya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Chaffinch",
+      "tr": "İspinoz"
+    },
+    "scientificName": "Fringilla coelebs",
+    "family": "Fringillidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A common finch. Males have a pinkish breast and blue-grey cap; both sexes show white wing bars.",
+      "tr": "Yaygın bir ispinoz türü. Erkeklerin göğsü pembemsi, tepesi mavi-gridir; her iki cinsiyette de beyaz kanat şeritleri görülür."
+    },
+    "lifespan": {
+      "en": "2-3 years",
+      "tr": "2-3 yıl"
+    },
+    "diet": {
+      "en": "Seeds and insects",
+      "tr": "Tohumlar ve böcekler"
+    },
+    "habitat": {
+      "en": "Woodland, parks and gardens",
+      "tr": "Ormanlar, parklar ve bahçeler"
+    },
+    "sizeDescription": {
+      "en": "14-16cm, wingspan 24-28cm",
+      "tr": "14-16 cm, kanat açıklığı 24-28 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, North Africa and western Asia",
+      "tr": "Avrupa, Kuzey Afrika ve Batı Asya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Eurasian Wren",
+      "tr": "Çıtkuşu"
+    },
+    "scientificName": "Troglodytes troglodytes",
+    "family": "Troglodytidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A tiny, round brown bird with a short, cocked tail and a surprisingly loud song.",
+      "tr": "Kısa ve dik kuyruklu, minik, yuvarlak ve kahverengi bir kuş; şaşırtıcı derecede yüksek sesle öter."
+    },
+    "lifespan": {
+      "en": "2-3 years",
+      "tr": "2-3 yıl"
+    },
+    "diet": {
+      "en": "Insects and spiders",
+      "tr": "Böcekler ve örümcekler"
+    },
+    "habitat": {
+      "en": "Dense undergrowth, woodland and gardens",
+      "tr": "Sık alt bitki örtüsü, ormanlar ve bahçeler"
+    },
+    "sizeDescription": {
+      "en": "9-10cm, wingspan 13-17cm",
+      "tr": "9-10 cm, kanat açıklığı 13-17 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and North Africa",
+      "tr": "Avrupa, Asya ve Kuzey Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Kestrel",
+      "tr": "Kerkenez"
+    },
+    "scientificName": "Falco tinnunculus",
+    "family": "Falconidae",
+    "order": "Falconiformes",
+    "description": {
+      "en": "A small falcon that hovers in the air while hunting for voles and insects. Males have a grey head and tail.",
+      "tr": "Fare ve böcek avlarken havada asılı kalan küçük bir şahin. Erkeklerin başı ve kuyruğu gridir."
+    },
+    "lifespan": {
+      "en": "4-5 years",
+      "tr": "4-5 yıl"
+    },
+    "diet": {
+      "en": "Small rodents, insects and small birds",
+      "tr": "Küçük kemirgenler, böcekler ve küçük kuşlar"
+    },
+    "habitat": {
+      "en": "Open country, farmland and towns",
+      "tr": "Açık araziler, tarım arazileri ve kasabalar"
+    },
+    "sizeDescription": {
+      "en": "32-39cm, wingspan 65-82cm",
+      "tr": "32-39 cm, kanat açıklığı 65-82 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and Africa",
+      "tr": "Avrupa, Asya ve Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Buzzard",
+      "tr": "Şahin"
+    },
+    "scientificName": "Buteo buteo",
+    "family": "Accipitridae",
+    "order": "Accipitriformes",
+    "description": {
+      "en": "A medium-large raptor that soars on broad wings, with variable brown plumage and a pale breast band.",
+      "tr": "Geniş kanatlarıyla süzülen, değişken kahverengi tüylü ve soluk göğüs bantlı, orta-büyük boy bir yırtıcı kuş."
+    },
+    "lifespan": {
+      "en": "10-15 years",
+      "tr": "10-15 yıl"
+    },
+    "diet": {
+      "en": "Small mammals, birds, reptiles and carrion",
+      "tr": "Küçük memeliler, kuşlar, sürüngenler ve leşler"
+    },
+    "habitat": {
+      "en": "Woodland edges, farmland and open country",
+      "tr": "Orman kenarları, tarım arazileri ve açık araziler"
+    },
+    "sizeDescription": {
+      "en": "40-58cm, wingspan 109-136cm",
+      "tr": "40-58 cm, kanat açıklığı 109-136 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and parts of Africa",
+      "tr": "Avrupa, Asya ve Afrika'nın bazı bölgeleri"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Peregrine Falcon",
+      "tr": "Delice Doğan"
+    },
+    "scientificName": "Falco peregrinus",
+    "family": "Falconidae",
+    "order": "Falconiformes",
+    "description": {
+      "en": "The fastest animal on Earth, diving at over 300 km/h to catch birds in flight.",
+      "tr": "Dünyanın en hızlı hayvanı; uçan kuşları yakalamak için saatte 300 km'nin üzerinde hızla dalış yapar."
+    },
+    "lifespan": {
+      "en": "10-15 years",
+      "tr": "10-15 yıl"
+    },
+    "diet": {
+      "en": "Birds caught in flight",
+      "tr": "Havada yakalanan kuşlar"
+    },
+    "habitat": {
+      "en": "Cliffs, coasts and tall city buildings",
+      "tr": "Kayalıklar, kıyılar ve yüksek şehir binaları"
+    },
+    "sizeDescription": {
+      "en": "34-58cm, wingspan 74-120cm",
+      "tr": "34-58 cm, kanat açıklığı 74-120 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Almost worldwide",
+      "tr": "Hemen hemen tüm dünya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Tawny Owl",
+      "tr": "Alaca Baykuş"
+    },
+    "scientificName": "Strix aluco",
+    "family": "Strigidae",
+    "order": "Strigiformes",
+    "description": {
+      "en": "A round-headed owl with mottled brown plumage and dark eyes. Its hoots ring out at night in woodland.",
+      "tr": "Yuvarlak başlı, benekli kahverengi tüylü ve koyu gözlü bir baykuş. Gece ormanlarda ötüşü yankılanır."
+    },
+    "lifespan": {
+      "en": "4-5 years",
+      "tr": "4-5 yıl"
+    },
+    "diet": {
+      "en": "Small mammals, birds and insects",
+      "tr": "Küçük memeliler, kuşlar ve böcekler"
+    },
+    "habitat": {
+      "en": "Woodland, parks and large gardens",
+      "tr": "Ormanlar, parklar ve geniş bahçeler"
+    },
+    "sizeDescription": {
+      "en": "37-46cm, wingspan 81-96cm",
+      "tr": "37-46 cm, kanat açıklığı 81-96 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe and Asia",
+      "tr": "Avrupa ve Asya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Little Owl",
+      "tr": "Kukumav"
+    },
+    "scientificName": "Athene noctua",
+    "family": "Strigidae",
+    "order": "Strigiformes",
+    "description": {
+      "en": "A small, flat-headed owl with bright yellow eyes and a fierce look. Often active by day.",
+      "tr": "Parlak sarı gözlü ve sert bakışlı, küçük, yassı başlı bir baykuş. Gündüzleri de aktiftir."
+    },
+    "lifespan": {
+      "en": "3-5 years",
+      "tr": "3-5 yıl"
+    },
+    "diet": {
+      "en": "Insects, earthworms and small vertebrates",
+      "tr": "Böcekler, solucanlar ve küçük omurgalılar"
+    },
+    "habitat": {
+      "en": "Open farmland, orchards and ruins",
+      "tr": "Açık tarım arazileri, meyve bahçeleri ve harabeler"
+    },
+    "sizeDescription": {
+      "en": "21-23cm, wingspan 51-58cm",
+      "tr": "21-23 cm, kanat açıklığı 51-58 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and North Africa",
+      "tr": "Avrupa, Asya ve Kuzey Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Eurasian Eagle-Owl",
+      "tr": "Puhu"
+    },
+    "scientificName": "Bubo bubo",
+    "family": "Strigidae",
+    "order": "Strigiformes",
+    "description": {
+      "en": "One of the largest owls in the world, with prominent ear tufts and bright orange eyes.",
+      "tr": "Dünyanın en büyük baykuşlarından biri; belirgin kulak tüyleri ve parlak turuncu gözleri vardır."
+    },
+    "lifespan": {
+      "en": "15-20 years",
+      "tr": "15-20 yıl"
+    },
+    "diet": {
+      "en": "Mammals, birds and reptiles",
+      "tr": "Memeliler, kuşlar ve sürüngenler"
+    },
+    "habitat": {
+      "en": "Rocky cliffs, forests and quarries",
+      "tr": "Kayalık yamaçlar, ormanlar ve taş ocakları"
+    },
+    "sizeDescription": {
+      "en": "56-75cm, wingspan 138-188cm",
+      "tr": "56-75 cm, kanat açıklığı 138-188 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe and Asia",
+      "tr": "Avrupa ve Asya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "White Wagtail",
+      "tr": "Akkuyruksallayan"
+    },
+    "scientificName": "Motacilla alba",
+    "family": "Motacillidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A slim black, white and grey bird that wags its long tail constantly as it runs across open ground.",
+      "tr": "Açık zeminde koşarken uzun kuyruğunu durmadan sallayan, ince yapılı siyah, beyaz ve gri bir kuş."
+    },
+    "lifespan": {
+      "en": "2-4 years",
+      "tr": "2-4 yıl"
+    },
+    "diet": {
+      "en": "Insects",
+      "tr": "Böcekler"
+    },
+    "habitat": {
+      "en": "Open ground near water, farmland and towns",
+      "tr": "Su kenarındaki açık araziler, tarım arazileri ve kasabalar"
+    },
+    "sizeDescription": {
+      "en": "16-19cm, wingspan 25-30cm",
+      "tr": "16-19 cm, kanat açıklığı 25-30 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe, Asia and North Africa",
+      "tr": "Avrupa, Asya ve Kuzey Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Greater Flamingo",
+      "tr": "Flamingo"
+    },
+    "scientificName": "Phoenicopterus roseus",
+    "family": "Phoenicopteridae",
+    "order": "Phoenicopteriformes",
+    "description": {
+      "en": "A tall, pink wading bird that filters tiny food from shallow salt lakes with its bent bill.",
+      "tr": "Kıvrık gagasıyla sığ tuzlu göllerden küçük besinleri süzen, uzun boylu pembe bir su kuşu."
+    },
+    "lifespan": {
+      "en": "30-40 years",
+      "tr": "30-40 yıl"
+    },
+    "diet": {
+      "en": "Algae, brine shrimp and small crustaceans",
+      "tr": "Algler, tuzlu su karidesleri ve küçük kabuklular"
+    },
+    "habitat": {
+      "en": "Shallow salt lakes and lagoons",
+      "tr": "Sığ tuzlu göller ve lagünler"
+    },
+    "sizeDescription": {
+      "en": "110-150cm, wingspan 140-165cm",
+      "tr": "110-150 cm, kanat açıklığı 140-165 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Southern Europe, Africa, the Middle East and South Asia",
+      "tr": "Güney Avrupa, Afrika, Orta Doğu ve Güney Asya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Dalmatian Pelican",
+      "tr": "Tepeli Pelikan"
+    },
+    "scientificName": "Pelecanus crispus",
+    "family": "Pelecanidae",
+    "order": "Pelecaniformes",
+    "description": {
+      "en": "The largest pelican, with curly grey crest feathers and a large throat pouch used to scoop up fish.",
+      "tr": "Kıvırcık gri ibik tüyleri ve balık toplamak için kullandığı büyük bir gagaaltı kesesi olan en büyük pelikan."
+    },
+    "lifespan": {
+      "en": "20-25 years",
+      "tr": "20-25 yıl"
+    },
+    "diet": {
+      "en": "Fish",
+      "tr": "Balıklar"
+    },
+    "habitat": {
+      "en": "Large lakes, deltas and lagoons",
+      "tr": "Büyük göller, deltalar ve lagünler"
+    },
+    "sizeDescription": {
+      "en": "160-180cm, wingspan 290-345cm",
+      "tr": "160-180 cm, kanat açıklığı 290-345 cm"
+    },
+    "conservationStatus": {
+      "en": "Near Threatened",
+      "tr": "Tehdide Yakın"
+    },
+    "nativeRange": {
+      "en": "South-eastern Europe to Central and East Asia",
+      "tr": "Güneydoğu Avrupa'dan Orta ve Doğu Asya'ya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Northern Bald Ibis",
+      "tr": "Kelaynak"
+    },
+    "scientificName": "Geronticus eremita",
+    "family": "Threskiornithidae",
+    "order": "Pelecaniformes",
+    "description": {
+      "en": "A rare, black, bald-headed ibis with a long red curved bill. A small colony in Birecik, Turkey, is famous.",
+      "tr": "Uzun kırmızı kıvrık gagalı, siyah ve kel başlı, nadir bir ibis. Türkiye'deki Birecik'te küçük bir koloni ile tanınır."
+    },
+    "lifespan": {
+      "en": "20-25 years",
+      "tr": "20-25 yıl"
+    },
+    "diet": {
+      "en": "Insects, lizards and small animals",
+      "tr": "Böcekler, kertenkeleler ve küçük hayvanlar"
+    },
+    "habitat": {
+      "en": "Cliffs and dry, rocky open country",
+      "tr": "Kayalıklar ve kuru, kayalık açık araziler"
+    },
+    "sizeDescription": {
+      "en": "70-80cm, wingspan 125-135cm",
+      "tr": "70-80 cm, kanat açıklığı 125-135 cm"
+    },
+    "conservationStatus": {
+      "en": "Endangered",
+      "tr": "Tehlike Altında"
+    },
+    "nativeRange": {
+      "en": "Morocco, Syria and Turkey; reintroduced in Europe",
+      "tr": "Fas, Suriye ve Türkiye; Avrupa'da yeniden yerleştirilmiştir"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Crane",
+      "tr": "Turna"
+    },
+    "scientificName": "Grus grus",
+    "family": "Gruidae",
+    "order": "Gruiformes",
+    "description": {
+      "en": "A tall, elegant grey crane with a black-and-white head and a red crown patch, known for its trumpeting call and migration in V formation.",
+      "tr": "Siyah-beyaz başlı ve kırmızı tepe lekeli, boru gibi sesiyle ve V şeklindeki göçüyle tanınan uzun boylu, zarif gri bir turna."
+    },
+    "lifespan": {
+      "en": "20-30 years",
+      "tr": "20-30 yıl"
+    },
+    "diet": {
+      "en": "Plant matter, grain, insects and small animals",
+      "tr": "Bitkisel besinler, taneler, böcekler ve küçük hayvanlar"
+    },
+    "habitat": {
+      "en": "Wetlands, bogs and farmland",
+      "tr": "Sulak alanlar, turbalıklar ve tarım arazileri"
+    },
+    "sizeDescription": {
+      "en": "100-120cm, wingspan 180-240cm",
+      "tr": "100-120 cm, kanat açıklığı 180-240 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Northern Europe and Asia; winters in Africa and the Mediterranean",
+      "tr": "Kuzey Avrupa ve Asya; kışı Afrika ve Akdeniz çevresinde geçirir"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Mute Swan",
+      "tr": "Kuğu"
+    },
+    "scientificName": "Cygnus olor",
+    "family": "Anatidae",
+    "order": "Anseriformes",
+    "description": {
+      "en": "A large, graceful white waterbird with an orange bill and a black knob. Aggressive when defending its nest.",
+      "tr": "Turuncu gagalı ve siyah çıkıntılı, büyük ve zarif beyaz bir su kuşu. Yuvasını savunurken saldırgandır."
+    },
+    "lifespan": {
+      "en": "10-20 years",
+      "tr": "10-20 yıl"
+    },
+    "diet": {
+      "en": "Water plants, algae and grass",
+      "tr": "Su bitkileri, algler ve otlar"
+    },
+    "habitat": {
+      "en": "Lakes, slow rivers and park ponds",
+      "tr": "Göller, yavaş akan nehirler ve park göletleri"
+    },
+    "sizeDescription": {
+      "en": "125-170cm, wingspan 200-240cm",
+      "tr": "125-170 cm, kanat açıklığı 200-240 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Europe and Asia; introduced elsewhere",
+      "tr": "Avrupa ve Asya; başka yerlere de götürülmüştür"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Pheasant",
+      "tr": "Sülün"
+    },
+    "scientificName": "Phasianus colchicus",
+    "family": "Phasianidae",
+    "order": "Galliformes",
+    "description": {
+      "en": "A large, long-tailed game bird. Males are brightly coloured with a red face and a glossy green head.",
+      "tr": "Büyük, uzun kuyruklu bir av kuşu. Erkekler parlak renkli, yüzü kırmızı ve başı parlak yeşildir."
+    },
+    "lifespan": {
+      "en": "2-3 years",
+      "tr": "2-3 yıl"
+    },
+    "diet": {
+      "en": "Seeds, grain, berries and insects",
+      "tr": "Tohumlar, taneler, meyveler ve böcekler"
+    },
+    "habitat": {
+      "en": "Farmland, woodland edges and reedbeds",
+      "tr": "Tarım arazileri, orman kenarları ve sazlıklar"
+    },
+    "sizeDescription": {
+      "en": "53-89cm, wingspan 70-90cm",
+      "tr": "53-89 cm, kanat açıklığı 70-90 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Asia; introduced to Europe, North America and Australia",
+      "tr": "Asya; Avrupa, Kuzey Amerika ve Avustralya'ya götürülmüştür"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Chukar Partridge",
+      "tr": "Kınalı Keklik"
+    },
+    "scientificName": "Alectoris chukar",
+    "family": "Phasianidae",
+    "order": "Galliformes",
+    "description": {
+      "en": "A plump, sandy-grey partridge with a black-bordered white throat and barred flanks. Calls loudly from rocky slopes.",
+      "tr": "Siyah çerçeveli beyaz boğazlı ve çizgili yanlı, tombul, kumlu-gri bir keklik. Kayalık yamaçlardan yüksek sesle ötüşür."
+    },
+    "lifespan": {
+      "en": "3-5 years",
+      "tr": "3-5 yıl"
+    },
+    "diet": {
+      "en": "Seeds, grasses and insects",
+      "tr": "Tohumlar, otlar ve böcekler"
+    },
+    "habitat": {
+      "en": "Dry rocky hillsides and open scrub",
+      "tr": "Kuru kayalık yamaçlar ve açık çalılıklar"
+    },
+    "sizeDescription": {
+      "en": "32-35cm, wingspan 47-52cm",
+      "tr": "32-35 cm, kanat açıklığı 47-52 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "South-eastern Europe, the Middle East and Central Asia",
+      "tr": "Güneydoğu Avrupa, Orta Doğu ve Orta Asya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Bald Eagle",
+      "tr": "Kel Kartal"
+    },
+    "scientificName": "Haliaeetus leucocephalus",
+    "family": "Accipitridae",
+    "order": "Accipitriformes",
+    "description": {
+      "en": "The national bird of the United States, with a white head and tail, a dark brown body and a strong yellow bill.",
+      "tr": "Beyaz baş ve kuyruğu, koyu kahverengi gövdesi ve güçlü sarı gagasıyla Amerika Birleşik Devletleri'nin ulusal kuşu."
+    },
+    "lifespan": {
+      "en": "20-30 years",
+      "tr": "20-30 yıl"
+    },
+    "diet": {
+      "en": "Fish, waterfowl and carrion",
+      "tr": "Balıklar, su kuşları ve leşler"
+    },
+    "habitat": {
+      "en": "Large lakes, rivers and coasts",
+      "tr": "Büyük göller, nehirler ve kıyılar"
+    },
+    "sizeDescription": {
+      "en": "70-102cm, wingspan 180-230cm",
+      "tr": "70-102 cm, kanat açıklığı 180-230 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "North America",
+      "tr": "Kuzey Amerika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Emperor Penguin",
+      "tr": "İmparator Penguen"
+    },
+    "scientificName": "Aptenodytes forsteri",
+    "family": "Spheniscidae",
+    "order": "Sphenisciformes",
+    "description": {
+      "en": "The largest penguin. It breeds on Antarctic sea ice in winter, and males incubate the egg on their feet.",
+      "tr": "En büyük penguen. Kışın Antarktika deniz buzunda ürer, erkekler yumurtayı ayaklarının üzerinde kuluçkaya yatırır."
+    },
+    "lifespan": {
+      "en": "15-20 years",
+      "tr": "15-20 yıl"
+    },
+    "diet": {
+      "en": "Fish, squid and krill",
+      "tr": "Balıklar, kalamarlar ve krill"
+    },
+    "habitat": {
+      "en": "Antarctic sea ice and cold seas",
+      "tr": "Antarktika deniz buzu ve soğuk denizler"
+    },
+    "sizeDescription": {
+      "en": "100-130cm",
+      "tr": "100-130 cm"
+    },
+    "conservationStatus": {
+      "en": "Near Threatened",
+      "tr": "Tehdide Yakın"
+    },
+    "nativeRange": {
+      "en": "Antarctica",
+      "tr": "Antarktika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Common Ostrich",
+      "tr": "Devekuşu"
+    },
+    "scientificName": "Struthio camelus",
+    "family": "Struthionidae",
+    "order": "Struthioniformes",
+    "description": {
+      "en": "The world's largest and heaviest bird. It cannot fly but can run at up to 70 km/h.",
+      "tr": "Dünyanın en büyük ve en ağır kuşu. Uçamaz ama saatte 70 km hıza kadar koşabilir."
+    },
+    "lifespan": {
+      "en": "30-40 years",
+      "tr": "30-40 yıl"
+    },
+    "diet": {
+      "en": "Plants, seeds and insects",
+      "tr": "Bitkiler, tohumlar ve böcekler"
+    },
+    "habitat": {
+      "en": "Savannas and semi-desert",
+      "tr": "Savanlar ve yarı çöller"
+    },
+    "sizeDescription": {
+      "en": "175-275cm",
+      "tr": "175-275 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Africa",
+      "tr": "Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Snowy Owl",
+      "tr": "Kar Baykuşu"
+    },
+    "scientificName": "Bubo scandiacus",
+    "family": "Strigidae",
+    "order": "Strigiformes",
+    "description": {
+      "en": "A large white owl with yellow eyes that hunts by day in the Arctic tundra.",
+      "tr": "Kuzey Kutbu tundrasında gündüz avlanan, sarı gözlü, büyük beyaz bir baykuş."
+    },
+    "lifespan": {
+      "en": "8-10 years",
+      "tr": "8-10 yıl"
+    },
+    "diet": {
+      "en": "Lemmings, other small mammals and birds",
+      "tr": "Lemingler, diğer küçük memeliler ve kuşlar"
+    },
+    "habitat": {
+      "en": "Arctic tundra",
+      "tr": "Kuzey Kutbu tundrası"
+    },
+    "sizeDescription": {
+      "en": "52-71cm, wingspan 125-150cm",
+      "tr": "52-71 cm, kanat açıklığı 125-150 cm"
+    },
+    "conservationStatus": {
+      "en": "Vulnerable",
+      "tr": "Hassas"
+    },
+    "nativeRange": {
+      "en": "Arctic regions of North America and Eurasia",
+      "tr": "Kuzey Amerika ve Avrasya'nın Kuzey Kutbu bölgeleri"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Scarlet Macaw",
+      "tr": "Kırmızı Ara"
+    },
+    "scientificName": "Ara macao",
+    "family": "Psittacidae",
+    "order": "Psittaciformes",
+    "description": {
+      "en": "A large, vividly coloured parrot with red, yellow and blue feathers and a very loud call.",
+      "tr": "Kırmızı, sarı ve mavi tüylü, çok yüksek sesli, büyük ve canlı renkli bir papağan."
+    },
+    "lifespan": {
+      "en": "40-50 years",
+      "tr": "40-50 yıl"
+    },
+    "diet": {
+      "en": "Fruit, nuts, seeds and flowers",
+      "tr": "Meyveler, kuruyemişler, tohumlar ve çiçekler"
+    },
+    "habitat": {
+      "en": "Tropical rainforest",
+      "tr": "Tropikal yağmur ormanları"
+    },
+    "sizeDescription": {
+      "en": "81-96cm, wingspan 100-120cm",
+      "tr": "81-96 cm, kanat açıklığı 100-120 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Central and South America",
+      "tr": "Orta ve Güney Amerika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Atlantic Puffin",
+      "tr": "Atlantik Deniz Papağanı"
+    },
+    "scientificName": "Fratercula arctica",
+    "family": "Alcidae",
+    "order": "Charadriiformes",
+    "description": {
+      "en": "A small seabird with a colourful triangular bill and orange feet, nesting in burrows on sea cliffs.",
+      "tr": "Renkli üçgen bir gagası ve turuncu ayakları olan, deniz kayalıklarında oyuklara yuva yapan küçük bir deniz kuşu."
+    },
+    "lifespan": {
+      "en": "20-25 years",
+      "tr": "20-25 yıl"
+    },
+    "diet": {
+      "en": "Small fish such as sand eels",
+      "tr": "Kum balığı gibi küçük balıklar"
+    },
+    "habitat": {
+      "en": "Open sea and coastal cliffs",
+      "tr": "Açık deniz ve kıyı kayalıkları"
+    },
+    "sizeDescription": {
+      "en": "26-29cm, wingspan 47-63cm",
+      "tr": "26-29 cm, kanat açıklığı 47-63 cm"
+    },
+    "conservationStatus": {
+      "en": "Vulnerable",
+      "tr": "Hassas"
+    },
+    "nativeRange": {
+      "en": "North Atlantic",
+      "tr": "Kuzey Atlantik"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Northern Cardinal",
+      "tr": "Kuzey Kardinal Kuşu"
+    },
+    "scientificName": "Cardinalis cardinalis",
+    "family": "Cardinalidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A crested songbird. Males are bright red with a black face mask; females are warm brown with red touches.",
+      "tr": "İbikli bir ötücü kuş. Erkekler siyah yüz maskeli parlak kırmızı, dişiler kırmızı dokunuşlu sıcak kahverengidir."
+    },
+    "lifespan": {
+      "en": "3-5 years",
+      "tr": "3-5 yıl"
+    },
+    "diet": {
+      "en": "Seeds, fruit and insects",
+      "tr": "Tohumlar, meyveler ve böcekler"
+    },
+    "habitat": {
+      "en": "Woodland edges, gardens and thickets",
+      "tr": "Orman kenarları, bahçeler ve çalılıklar"
+    },
+    "sizeDescription": {
+      "en": "21-23cm, wingspan 25-31cm",
+      "tr": "21-23 cm, kanat açıklığı 25-31 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Eastern and central North America",
+      "tr": "Doğu ve orta Kuzey Amerika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Budgerigar",
+      "tr": "Muhabbet Kuşu"
+    },
+    "scientificName": "Melopsittacus undulatus",
+    "family": "Psittaculidae",
+    "order": "Psittaciformes",
+    "description": {
+      "en": "A small, social parrot, the most popular pet bird. Wild birds are green and yellow; pet birds come in many colours.",
+      "tr": "Küçük ve sosyal bir papağan, en sevilen evcil kuş. Yabani kuşlar yeşil-sarıdır; evcil kuşlar birçok renkte olabilir."
+    },
+    "lifespan": {
+      "en": "5-10 years",
+      "tr": "5-10 yıl"
+    },
+    "diet": {
+      "en": "Grass seeds, with fresh greens and vegetables as pets",
+      "tr": "Ot tohumları; evde taze yeşillikler ve sebzeler"
+    },
+    "habitat": {
+      "en": "Open grassland and scrub in Australia; homes as pets",
+      "tr": "Avustralya'da açık otlaklar ve çalılıklar; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "18-20cm, wingspan 30-35cm",
+      "tr": "18-20 cm, kanat açıklığı 30-35 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Australia",
+      "tr": "Avustralya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Cockatiel",
+      "tr": "Sultan Papağanı"
+    },
+    "scientificName": "Nymphicus hollandicus",
+    "family": "Cacatuidae",
+    "order": "Psittaciformes",
+    "description": {
+      "en": "A small, crested parrot, gentle and a good whistler, with orange cheek patches in the wild form.",
+      "tr": "Küçük, ibikli bir papağan; sakin ve iyi bir ıslıkçıdır, yabani formunda turuncu yanak lekeleri vardır."
+    },
+    "lifespan": {
+      "en": "15-20 years",
+      "tr": "15-20 yıl"
+    },
+    "diet": {
+      "en": "Seeds, grains and fresh greens",
+      "tr": "Tohumlar, taneler ve taze yeşillikler"
+    },
+    "habitat": {
+      "en": "Dry open country in Australia; homes as pets",
+      "tr": "Avustralya'da kuru açık araziler; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "30-33cm, wingspan 45-50cm",
+      "tr": "30-33 cm, kanat açıklığı 45-50 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Australia",
+      "tr": "Avustralya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Atlantic Canary",
+      "tr": "Kanarya"
+    },
+    "scientificName": "Serinus canaria",
+    "family": "Fringillidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "The wild ancestor of the pet canary. Bred for its song and colours, the domestic canary is often yellow.",
+      "tr": "Evcil kanaryanın yabani atası. Şarkısı ve renkleri için yetiştirilen evcil kanarya çoğunlukla sarıdır."
+    },
+    "lifespan": {
+      "en": "8-12 years",
+      "tr": "8-12 yıl"
+    },
+    "diet": {
+      "en": "Seeds, with fresh greens and fruit",
+      "tr": "Tohumlar; taze yeşillikler ve meyveler"
+    },
+    "habitat": {
+      "en": "Gardens, woodland and scrub on the Canary Islands, Madeira and the Azores; homes as pets",
+      "tr": "Kanarya Adaları, Madeira ve Azorlar'da bahçeler, ormanlar ve çalılıklar; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "11-13cm, wingspan 20-23cm",
+      "tr": "11-13 cm, kanat açıklığı 20-23 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Canary Islands, Madeira and the Azores",
+      "tr": "Kanarya Adaları, Madeira ve Azor Adaları"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Zebra Finch",
+      "tr": "Zebra İspinozu"
+    },
+    "scientificName": "Taeniopygia guttata",
+    "family": "Estrildidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A tiny, social finch with a striped throat, orange cheeks and bill. A popular pet that lives in pairs and flocks.",
+      "tr": "Çizgili boğazlı, turuncu yanaklı ve gagalı minik, sosyal bir ispinoz. Çiftler ve sürüler halinde yaşayan sevilen bir evcil kuş."
+    },
+    "lifespan": {
+      "en": "5-7 years",
+      "tr": "5-7 yıl"
+    },
+    "diet": {
+      "en": "Grass seeds and small insects",
+      "tr": "Ot tohumları ve küçük böcekler"
+    },
+    "habitat": {
+      "en": "Dry grassland and scrub in Australia; homes as pets",
+      "tr": "Avustralya'da kuru otlaklar ve çalılıklar; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "10-11cm, wingspan 15-16cm",
+      "tr": "10-11 cm, kanat açıklığı 15-16 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Australia and the Lesser Sunda Islands",
+      "tr": "Avustralya ve Küçük Sunda Adaları"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Gouldian Finch",
+      "tr": "Gould İspinozu"
+    },
+    "scientificName": "Chloebia gouldiae",
+    "family": "Estrildidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "One of the most colourful finches, with a purple chest, yellow belly, green back and a face in red, black or yellow.",
+      "tr": "Mor göğüslü, sarı karınlı, yeşil sırtlı ve yüzü kırmızı, siyah veya sarı olan, en renkli ispinozlardan biri."
+    },
+    "lifespan": {
+      "en": "5-7 years",
+      "tr": "5-7 yıl"
+    },
+    "diet": {
+      "en": "Grass seeds",
+      "tr": "Ot tohumları"
+    },
+    "habitat": {
+      "en": "Tropical savanna in northern Australia; homes as pets",
+      "tr": "Kuzey Avustralya'da tropikal savan; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "12-14cm, wingspan 15-18cm",
+      "tr": "12-14 cm, kanat açıklığı 15-18 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Northern Australia",
+      "tr": "Kuzey Avustralya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Rosy-faced Lovebird",
+      "tr": "Gülyüzlü Sevgi Papağanı"
+    },
+    "scientificName": "Agapornis roseicollis",
+    "family": "Psittaculidae",
+    "order": "Psittaciformes",
+    "description": {
+      "en": "A small, stocky parrot with a green body, peach-pink face and blue rump. Lovebirds bond closely in pairs.",
+      "tr": "Yeşil gövdeli, şeftali-pembe yüzlü ve mavi kıçlı küçük, tıknaz bir papağan. Sevgi papağanları çiftler halinde sıkı bağ kurar."
+    },
+    "lifespan": {
+      "en": "10-15 years",
+      "tr": "10-15 yıl"
+    },
+    "diet": {
+      "en": "Seeds, fruit and fresh greens",
+      "tr": "Tohumlar, meyveler ve taze yeşillikler"
+    },
+    "habitat": {
+      "en": "Dry scrub and rocky areas in south-western Africa; homes as pets",
+      "tr": "Güneybatı Afrika'da kuru çalılıklar ve kayalık alanlar; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "15-17cm",
+      "tr": "15-17 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "South-western Africa",
+      "tr": "Güneybatı Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Grey Parrot",
+      "tr": "Gri Papağan"
+    },
+    "scientificName": "Psittacus erithacus",
+    "family": "Psittacidae",
+    "order": "Psittaciformes",
+    "description": {
+      "en": "A very intelligent grey parrot with a red tail, famous for its ability to mimic human speech.",
+      "tr": "Kırmızı kuyruklu, insan konuşmasını taklit etme becerisiyle ünlü, çok zeki bir gri papağan."
+    },
+    "lifespan": {
+      "en": "40-60 years",
+      "tr": "40-60 yıl"
+    },
+    "diet": {
+      "en": "Fruit, nuts, seeds and palm fruit",
+      "tr": "Meyveler, kuruyemişler, tohumlar ve palmiye meyveleri"
+    },
+    "habitat": {
+      "en": "Lowland rainforest and savanna edges in Africa; homes as pets",
+      "tr": "Afrika'da ova yağmur ormanları ve savan kenarları; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "33cm, wingspan 46-52cm",
+      "tr": "33 cm, kanat açıklığı 46-52 cm"
+    },
+    "conservationStatus": {
+      "en": "Endangered",
+      "tr": "Tehlike Altında"
+    },
+    "nativeRange": {
+      "en": "Central and West Africa",
+      "tr": "Orta ve Batı Afrika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Monk Parakeet",
+      "tr": "Keşiş Papağanı"
+    },
+    "scientificName": "Myiopsitta monachus",
+    "family": "Psittacidae",
+    "order": "Psittaciformes",
+    "description": {
+      "en": "A green parrot with a grey face and chest. It is the only parrot to build large, communal stick nests.",
+      "tr": "Yüzü ve göğsü gri, yeşil bir papağan. Büyük, ortak dal yuvalar yapan tek papağandır."
+    },
+    "lifespan": {
+      "en": "15-20 years",
+      "tr": "15-20 yıl"
+    },
+    "diet": {
+      "en": "Seeds, fruit and flowers",
+      "tr": "Tohumlar, meyveler ve çiçekler"
+    },
+    "habitat": {
+      "en": "Open woodland, parks and towns; homes as pets",
+      "tr": "Açık ormanlar, parklar ve kasabalar; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "28-33cm, wingspan 48cm",
+      "tr": "28-33 cm, kanat açıklığı 48 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "South America; feral populations elsewhere",
+      "tr": "Güney Amerika; başka yerlerde yabanileşmiş sürüler"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Rose-ringed Parakeet",
+      "tr": "Yüzük Boyunlu Papağan"
+    },
+    "scientificName": "Psittacula krameri",
+    "family": "Psittaculidae",
+    "order": "Psittaciformes",
+    "description": {
+      "en": "A bright green parakeet with a long tail. Males have a pink and black neck ring. Feral flocks live in many cities.",
+      "tr": "Uzun kuyruklu, parlak yeşil bir papağan. Erkeklerin boynunda pembe ve siyah bir halka vardır. Birçok şehirde yabanileşmiş sürüler yaşar."
+    },
+    "lifespan": {
+      "en": "15-25 years",
+      "tr": "15-25 yıl"
+    },
+    "diet": {
+      "en": "Fruit, seeds, nuts and buds",
+      "tr": "Meyveler, tohumlar, kuruyemişler ve tomurcuklar"
+    },
+    "habitat": {
+      "en": "Woodland, parks and gardens; homes as pets",
+      "tr": "Ormanlar, parklar ve bahçeler; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "38-42cm, wingspan 42-48cm",
+      "tr": "38-42 cm, kanat açıklığı 42-48 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "Africa and South Asia; feral populations in Europe",
+      "tr": "Afrika ve Güney Asya; Avrupa'da yabanileşmiş sürüler"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Eclectus Parrot",
+      "tr": "Eklektus Papağanı"
+    },
+    "scientificName": "Eclectus roratus",
+    "family": "Psittaculidae",
+    "order": "Psittaciformes",
+    "description": {
+      "en": "A parrot where males are bright green and females are red and purple-blue, so different they were once thought separate species.",
+      "tr": "Erkekleri parlak yeşil, dişileri kırmızı ve mor-mavi olan bir papağan; öyle farklıdır ki bir zamanlar ayrı türler sanılmıştır."
+    },
+    "lifespan": {
+      "en": "30-50 years",
+      "tr": "30-50 yıl"
+    },
+    "diet": {
+      "en": "Fruit, nuts, flowers and leaf buds",
+      "tr": "Meyveler, kuruyemişler, çiçekler ve yaprak tomurcukları"
+    },
+    "habitat": {
+      "en": "Tropical rainforest in New Guinea and nearby islands; homes as pets",
+      "tr": "Yeni Gine ve yakın adalarda tropikal yağmur ormanları; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "35-37cm",
+      "tr": "35-37 cm"
+    },
+    "conservationStatus": {
+      "en": "Least Concern",
+      "tr": "Az Endişe Verici"
+    },
+    "nativeRange": {
+      "en": "New Guinea, Solomon Islands and northern Australia",
+      "tr": "Yeni Gine, Solomon Adaları ve Kuzey Avustralya"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Sun Parakeet",
+      "tr": "Güneş Papağanı"
+    },
+    "scientificName": "Aratinga solstitialis",
+    "family": "Psittacidae",
+    "order": "Psittaciformes",
+    "description": {
+      "en": "A small parrot with golden-yellow and orange plumage, green-tipped wings and a loud, shrill call.",
+      "tr": "Altın sarısı ve turuncu tüylü, uçları yeşil kanatlı ve yüksek, tiz sesli küçük bir papağan."
+    },
+    "lifespan": {
+      "en": "20-30 years",
+      "tr": "20-30 yıl"
+    },
+    "diet": {
+      "en": "Fruit, seeds, flowers and nuts",
+      "tr": "Meyveler, tohumlar, çiçekler ve kuruyemişler"
+    },
+    "habitat": {
+      "en": "Savanna and dry forest in north-eastern South America; homes as pets",
+      "tr": "Kuzeydoğu Güney Amerika'da savan ve kuru ormanlar; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "30cm",
+      "tr": "30 cm"
+    },
+    "conservationStatus": {
+      "en": "Endangered",
+      "tr": "Tehlike Altında"
+    },
+    "nativeRange": {
+      "en": "North-eastern South America",
+      "tr": "Kuzeydoğu Güney Amerika"
+    }
+  },
+  {
+    "commonName": {
+      "en": "Java Sparrow",
+      "tr": "Java Serçesi"
+    },
+    "scientificName": "Padda oryzivora",
+    "family": "Estrildidae",
+    "order": "Passeriformes",
+    "description": {
+      "en": "A grey finch with a black head, white cheeks and a large pink bill. A popular cage bird, endangered in the wild.",
+      "tr": "Siyah başlı, beyaz yanaklı ve büyük pembe gagalı gri bir ispinoz. Sevilen bir kafes kuşudur, doğada tehlike altındadır."
+    },
+    "lifespan": {
+      "en": "7-11 years",
+      "tr": "7-11 yıl"
+    },
+    "diet": {
+      "en": "Rice and other grain, seeds",
+      "tr": "Pirinç ve diğer taneler, tohumlar"
+    },
+    "habitat": {
+      "en": "Grassland, farmland and parks in Java and Bali; homes as pets",
+      "tr": "Java ve Bali'de otlaklar, tarım arazileri ve parklar; evcil olarak evler"
+    },
+    "sizeDescription": {
+      "en": "16-17cm",
+      "tr": "16-17 cm"
+    },
+    "conservationStatus": {
+      "en": "Endangered",
+      "tr": "Tehlike Altında"
+    },
+    "nativeRange": {
+      "en": "Java, Bali and Bawean (Indonesia)",
+      "tr": "Java, Bali ve Bawean (Endonezya)"
+    }
+  }
+]
