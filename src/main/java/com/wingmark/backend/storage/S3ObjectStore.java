@@ -3,6 +3,7 @@ package com.wingmark.backend.storage;
 import com.wingmark.backend.config.R2Properties;
 import com.wingmark.backend.exception.FileStorageException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -41,6 +42,7 @@ public class S3ObjectStore implements ObjectStore {
     private final S3Client client;
     private final String bucket;
 
+    @Autowired
     public S3ObjectStore(R2Properties properties) {
         this(buildClient(properties), properties.bucket());
     }

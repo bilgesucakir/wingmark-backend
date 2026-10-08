@@ -5,13 +5,12 @@ import com.wingmark.backend.storage.ObjectStore;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Starts the application the way it runs with UPLOAD_STORAGE=r2, but with dummy settings and the bucket replaced by a
- * mock, so it proves the wiring without any connection to R2.
+ * Starts the application the way it runs with UPLOAD_STORAGE=r2, with dummy settings and the REAL S3 store bean (building
+ * the client makes no network call), so it proves the whole wiring, including the S3 constructor, without any connection to R2.
  */
 @SpringBootTest(properties = {
         "wingmark.uploads.storage=r2",
@@ -21,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "wingmark.r2.secret-access-key=dummy-secret"})
 class R2ModeWiringTest {
 
-    @MockBean
+    @Autowired
     private ObjectStore objectStore;
 
     @Autowired
@@ -32,6 +31,7 @@ class R2ModeWiringTest {
 
     @Test
     void inR2ModeTheR2StorageIsTheOneThatIsUsedAndTheMigrationExists() {
+        assertThat(objectStore).isInstanceOf(com.wingmark.backend.storage.S3ObjectStore.class);
         assertThat(fileStorageService).isInstanceOf(R2FileStorageServiceImpl.class);
         assertThat(migration).isNotNull();
     }
