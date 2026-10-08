@@ -129,6 +129,12 @@ Signups whose email address is never verified can be deleted after a number of d
 
 Signup and resend limits: at most 5 signups per hour and 20 per day per client address; a repeated resend-verification request within 60 seconds for the same account is ignored (same 202 response).
 
+### Photo limits and cleanup
+
+- **Per-user limit:** each uploaded photo records its owner; a user may have at most `MAX_PHOTOS_PER_USER` (default 200, 0 = no limit) stored photos. More are refused with `403 PHOTO_QUOTA_EXCEEDED`; deleting a sighting or photo frees a place. Thumbnails are not counted. A sighting has one photo (`photoUrl`).
+- **Cleanup of abandoned photos (off by default):** a daily job finds stored photos that no bird log, profile picture or species image uses and deletes them with their thumbnail. Photos younger than `UPLOAD_CLEANUP_GRACE_DAYS` (7) are never touched, because the photo is uploaded before its log is saved. Settings: `UPLOAD_CLEANUP_ENABLED` (default `false`), `UPLOAD_CLEANUP_DRY_RUN` (default `true`: only logs), `UPLOAD_CLEANUP_GRACE_DAYS` (7), `UPLOAD_CLEANUP_MAX_PER_RUN` (100), `UPLOAD_CLEANUP_CRON` (daily 04:45 UTC). Run it with the dry run first and read the logs.
+- Later, when storage grows: WebP, and moving files to object storage with long cache headers.
+
 ## Database
 
 Uses **MongoDB**. By default it connects to a local instance at

@@ -1,6 +1,7 @@
 package com.wingmark.backend.service.impl;
 
 import com.mongodb.client.gridfs.model.GridFSFile;
+import com.wingmark.backend.config.UploadProperties;
 import com.wingmark.backend.exception.ApiException;
 import com.wingmark.backend.exception.BadRequestException;
 import com.wingmark.backend.exception.ErrorCode;
@@ -29,6 +30,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -57,11 +60,23 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
     private static final float THUMBNAIL_QUALITY = 0.7f;
 
     private final GridFsTemplate gridFsTemplate;
+    private final UploadProperties uploadProperties;
 
     @Override
     public String store(MultipartFile file) {
+        return store(file, null);
+    }
+
+    @Override
+    public String store(MultipartFile file, UUID ownerId) {
         if (file == null || file.isEmpty()) {
             throw new BadRequestException(ErrorCode.INVALID_FILE, "Uploaded file is empty");
+        }
+        if (ownerId != null && uploadProperties.maxPhotosPerUser() > 0
+                && countPhotosOwnedBy(ownerId) >= uploadProperties.maxPhotosPerUser()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, ErrorCode.PHOTO_QUOTA_EXCEEDED,
+                    "You have reached the limit of " + uploadProperties.maxPhotosPerUser()
+                            + " stored photos; delete some sightings or photos first");
         }
 
         // Only images, and only formats the JDK can decode and re-encode. Anything else is
@@ -92,16 +107,19 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
 
         String base = UUID.randomUUID().toString();
         String filename = base + extension;
-        saveRaw(filename, encoded, contentType);
-        saveRaw(base + THUMBNAIL_SUFFIX, thumbnail, "image/jpeg");
+        saveRaw(filename, encoded, contentType, ownerId);
+        saveRaw(base + THUMBNAIL_SUFFIX, thumbnail, "image/jpeg", null);
         return UPLOADS_PREFIX + filename;
     }
 
     /** Saves bytes unchanged in GridFS under the given filename. */
-    private void saveRaw(String filename, byte[] content, String contentType) {
+    private void saveRaw(String filename, byte[] content, String contentType, UUID ownerId) {
         try {
-            gridFsTemplate.store(new ByteArrayInputStream(content), filename, contentType,
-                    new Document("contentType", contentType));
+            Document metadata = new Document("contentType", contentType);
+            if (ownerId != null) {
+                metadata.append("ownerId", ownerId.toString());
+            }
+            gridFsTemplate.store(new ByteArrayInputStream(content), filename, contentType, metadata);
         } catch (RuntimeException e) {
             log.error("Failed to store uploaded file {} in GridFS", filename, e);
             throw new FileStorageException("Failed to store uploaded file", e);
@@ -122,6 +140,26 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
             return Optional.empty();
         }
         return Optional.of(filename);
+    }
+
+    @Override
+    public long countPhotosOwnedBy(UUID ownerId) {
+        Query query = Query.query(Criteria.where("metadata.ownerId").is(ownerId.toString())
+                .and("filename").regex("^(?!.*_thumb\\.jpg$)"));
+        long count = 0;
+        for (GridFSFile ignored : gridFsTemplate.find(query)) {
+            count++;
+        }
+        return count;
+    }
+
+    @Override
+    public List<StoredFileInfo> listFiles() {
+        List<StoredFileInfo> files = new ArrayList<>();
+        for (GridFSFile file : gridFsTemplate.find(new Query())) {
+            files.add(new StoredFileInfo(file.getFilename(), file.getUploadDate().toInstant(), file.getLength()));
+        }
+        return files;
     }
 
     @Override
@@ -164,7 +202,7 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
                     return Optional.empty();
                 }
                 byte[] thumbnail = thumbnailBytes(image);
-                saveRaw(thumbnailName, thumbnail, "image/jpeg");
+                saveRaw(thumbnailName, thumbnail, "image/jpeg", null);
                 return Optional.of(new StoredFile(thumbnail, "image/jpeg"));
             } catch (IOException e) {
                 log.warn("Could not create the thumbnail for {}", base + extension, e);
