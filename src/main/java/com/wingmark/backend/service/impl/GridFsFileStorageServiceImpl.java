@@ -16,7 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -44,7 +48,13 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
             "jpeg", "image/jpeg",
             "png", "image/png");
     /** Longest edge in pixels after re-encoding. */
-    static final int MAX_DIMENSION = 1600;
+    static final int MAX_DIMENSION = 1280;
+    /** Longest edge in pixels of the thumbnail shown in lists and the guide. */
+    static final int THUMBNAIL_DIMENSION = 400;
+    /** Suffix of the thumbnail stored next to each photo: {@code <name>_thumb.jpg}. */
+    static final String THUMBNAIL_SUFFIX = "_thumb.jpg";
+    private static final float JPEG_QUALITY = 0.75f;
+    private static final float THUMBNAIL_QUALITY = 0.7f;
 
     private final GridFsTemplate gridFsTemplate;
 
@@ -65,6 +75,7 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
         }
 
         byte[] encoded;
+        byte[] thumbnail;
         try (InputStream in = file.getInputStream()) {
             BufferedImage image = ImageIO.read(in);
             if (image == null) {
@@ -72,14 +83,17 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
             }
             // Re-encoding drops EXIF metadata (including GPS tags) - the sighting's location
             // is already captured explicitly on the log - and downscaling caps storage use.
-            encoded = encode(downscale(image), extension.substring(1));
+            encoded = encode(downscale(image, MAX_DIMENSION), extension.substring(1), JPEG_QUALITY);
+            thumbnail = thumbnailBytes(image);
         } catch (IOException e) {
             // Includes images ImageIO can open but not decode (e.g. CMYK JPEGs): a bad file, not a server fault.
             throw new BadRequestException(ErrorCode.INVALID_FILE, "Uploaded file could not be read as an image");
         }
 
-        String filename = UUID.randomUUID() + extension;
+        String base = UUID.randomUUID().toString();
+        String filename = base + extension;
         saveRaw(filename, encoded, contentType);
+        saveRaw(base + THUMBNAIL_SUFFIX, thumbnail, "image/jpeg");
         return UPLOADS_PREFIX + filename;
     }
 
@@ -111,6 +125,13 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
+    public Optional<String> thumbnailUrl(String photoUrl) {
+        return storedFilename(photoUrl)
+                .filter(name -> !name.endsWith(THUMBNAIL_SUFFIX) && name.contains("."))
+                .map(name -> UPLOADS_PREFIX + name.substring(0, name.lastIndexOf('.')) + THUMBNAIL_SUFFIX);
+    }
+
+    @Override
     public boolean exists(String filename) {
         return gridFsTemplate.findOne(byName(filename)) != null;
     }
@@ -119,7 +140,8 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
     public Optional<StoredFile> load(String filename) {
         GridFSFile file = gridFsTemplate.findOne(byName(filename));
         if (file == null) {
-            return Optional.empty();
+            // Photos uploaded before thumbnails existed get theirs the first time one is asked for.
+            return filename.endsWith(THUMBNAIL_SUFFIX) ? createMissingThumbnail(filename) : Optional.empty();
         }
         try (InputStream in = gridFsTemplate.getResource(file).getInputStream()) {
             return Optional.of(new StoredFile(in.readAllBytes(), contentTypeOf(file, filename)));
@@ -128,10 +150,41 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
         }
     }
 
+    /** Builds and stores the thumbnail of an existing photo; empty if the photo itself does not exist. */
+    private Optional<StoredFile> createMissingThumbnail(String thumbnailName) {
+        String base = thumbnailName.substring(0, thumbnailName.length() - THUMBNAIL_SUFFIX.length());
+        for (String extension : IMAGE_EXTENSIONS.values()) {
+            Optional<StoredFile> original = load(base + extension);
+            if (original.isEmpty()) {
+                continue;
+            }
+            try {
+                BufferedImage image = ImageIO.read(new ByteArrayInputStream(original.get().content()));
+                if (image == null) {
+                    return Optional.empty();
+                }
+                byte[] thumbnail = thumbnailBytes(image);
+                saveRaw(thumbnailName, thumbnail, "image/jpeg");
+                return Optional.of(new StoredFile(thumbnail, "image/jpeg"));
+            } catch (IOException e) {
+                log.warn("Could not create the thumbnail for {}", base + extension, e);
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static byte[] thumbnailBytes(BufferedImage image) throws IOException {
+        return encode(downscale(image, THUMBNAIL_DIMENSION), "jpg", THUMBNAIL_QUALITY);
+    }
+
     @Override
     public void delete(String filename) {
         try {
             gridFsTemplate.delete(byName(filename));
+            if (!filename.endsWith(THUMBNAIL_SUFFIX) && filename.contains(".")) {
+                gridFsTemplate.delete(byName(filename.substring(0, filename.lastIndexOf('.')) + THUMBNAIL_SUFFIX));
+            }
         } catch (RuntimeException e) {
             log.error("Failed to delete uploaded file {}", filename, e);
         }
@@ -156,14 +209,14 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
         return Query.query(Criteria.where("filename").is(filename));
     }
 
-    private static BufferedImage downscale(BufferedImage image) {
+    private static BufferedImage downscale(BufferedImage image, int maxDimension) {
         int width = image.getWidth();
         int height = image.getHeight();
         int longest = Math.max(width, height);
-        if (longest <= MAX_DIMENSION) {
+        if (longest <= maxDimension) {
             return image;
         }
-        double scale = (double) MAX_DIMENSION / longest;
+        double scale = (double) maxDimension / longest;
         int newWidth = Math.max(1, (int) Math.round(width * scale));
         int newHeight = Math.max(1, (int) Math.round(height * scale));
         int type = image.getColorModel().hasAlpha() ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
@@ -176,7 +229,7 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
         return scaled;
     }
 
-    private static byte[] encode(BufferedImage image, String format) throws IOException {
+    private static byte[] encode(BufferedImage image, String format, float jpegQuality) throws IOException {
         BufferedImage toWrite = image;
         if ("jpg".equals(format) && image.getColorModel().hasAlpha()) {
             // JPEG has no alpha channel; ImageIO refuses ARGB input for it.
@@ -186,7 +239,18 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
             g.dispose();
         }
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        if (!ImageIO.write(toWrite, format, out)) {
+        if ("jpg".equals(format)) {
+            ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+            try (ImageOutputStream imageOut = ImageIO.createImageOutputStream(out)) {
+                ImageWriteParam param = writer.getDefaultWriteParam();
+                param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                param.setCompressionQuality(jpegQuality);
+                writer.setOutput(imageOut);
+                writer.write(null, new IIOImage(toWrite, null, null), param);
+            } finally {
+                writer.dispose();
+            }
+        } else if (!ImageIO.write(toWrite, format, out)) {
             throw new FileStorageException("No image writer available for " + format);
         }
         return out.toByteArray();
