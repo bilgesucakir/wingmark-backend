@@ -54,7 +54,7 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
             Map.entry(400, "Invalid request: validation failed, malformed body or bad parameter (codes VALIDATION_FAILED, "
                     + "MALFORMED_REQUEST, INVALID_PARAMETER, BAD_REQUEST, AGE_NOT_CONFIRMED and operation-specific ones)"),
             Map.entry(401, "Missing, invalid or expired token (UNAUTHENTICATED, INVALID_CREDENTIALS, INVALID_OR_EXPIRED_TOKEN)"),
-            Map.entry(403, "Not allowed (FORBIDDEN, EMAIL_NOT_VERIFIED, WRONG_PASSWORD, CANNOT_MODIFY_SELF)"),
+            Map.entry(403, "Not allowed (FORBIDDEN, EMAIL_NOT_VERIFIED, WRONG_PASSWORD, CANNOT_MODIFY_SELF, PHOTO_QUOTA_EXCEEDED)"),
             Map.entry(404, "Not found, or not the caller's own resource (NOT_FOUND)"),
             Map.entry(409, "Conflict with existing data (EMAIL_TAKEN, USERNAME_TAKEN, LAST_ADMIN, CONFLICT)"),
             Map.entry(413, "Body or file too large (REQUEST_TOO_LARGE, FILE_TOO_LARGE)"),
@@ -80,7 +80,7 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
             Map.entry("PUT /api/bird-logs/{id}", List.of(422)),
             Map.entry("POST /api/species", List.of(409)),
             Map.entry("PUT /api/species/{id}", List.of(409)),
-            Map.entry("POST /api/uploads/photo", List.of(413, 415)),
+            Map.entry("POST /api/uploads/photo", List.of(403, 413, 415)),
             Map.entry("GET /api/species/{id}/sound", List.of(502)),
             Map.entry("GET /api/species/{id}/photo-candidates", List.of(502)));
 

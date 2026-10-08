@@ -20,6 +20,7 @@ public record BirdLogResponseDto(
         LifeStage lifeStage,
         Gender gender,
         String photoUrl,
+        String photoThumbnailUrl,
         String note,
         Double latitude,
         Double longitude,

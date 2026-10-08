@@ -100,4 +100,74 @@ class GridFsFileStorageServiceImplTest {
         assertThat(storage.storedFilename("/uploads/../secret")).isEmpty();
         assertThat(storage.storedFilename(null)).isEmpty();
     }
+
+    private static String thumbnailNameOf(String url) {
+        return filenameOf(url).replaceAll("\\.(jpg|png)$", "") + GridFsFileStorageServiceImpl.THUMBNAIL_SUFFIX;
+    }
+
+    @Test
+    void everyUploadGetsASmallJpegThumbnailNextToIt() throws Exception {
+        String url = storage.store(new MockMultipartFile("file", "big.jpg", "image/jpeg", image(3000, 1500, "jpg")));
+
+        var thumbnail = storage.load(thumbnailNameOf(url)).orElseThrow();
+        BufferedImage decoded = ImageIO.read(new ByteArrayInputStream(thumbnail.content()));
+        assertThat(thumbnail.contentType()).isEqualTo("image/jpeg");
+        assertThat(decoded.getWidth()).isEqualTo(GridFsFileStorageServiceImpl.THUMBNAIL_DIMENSION);
+        assertThat(decoded.getHeight()).isEqualTo(GridFsFileStorageServiceImpl.THUMBNAIL_DIMENSION / 2);
+    }
+
+    @Test
+    void aPngUploadStillGetsAJpegThumbnail() throws Exception {
+        String url = storage.store(new MockMultipartFile("file", "p.png", "image/png", image(800, 600, "png")));
+
+        var thumbnail = storage.load(thumbnailNameOf(url)).orElseThrow();
+        assertThat(thumbnail.contentType()).isEqualTo("image/jpeg");
+        assertThat(thumbnailNameOf(url)).endsWith("_thumb.jpg");
+    }
+
+    @Test
+    void smallImagesAreNotEnlargedForTheThumbnail() throws Exception {
+        String url = storage.store(new MockMultipartFile("file", "s.jpg", "image/jpeg", image(100, 50, "jpg")));
+
+        BufferedImage decoded = ImageIO.read(new ByteArrayInputStream(storage.load(thumbnailNameOf(url)).orElseThrow().content()));
+        assertThat(decoded.getWidth()).isEqualTo(100);
+    }
+
+    @Test
+    void aPhotoWithoutAThumbnailGetsItTheFirstTimeItIsAskedFor() throws Exception {
+        String url = storage.store(new MockMultipartFile("file", "old.jpg", "image/jpeg", image(1000, 1000, "jpg")));
+        String thumbnailName = thumbnailNameOf(url);
+        storage.delete(thumbnailName); // as for a photo uploaded before thumbnails existed
+        assertThat(storage.exists(thumbnailName)).isFalse();
+
+        var created = storage.load(thumbnailName).orElseThrow();
+
+        assertThat(created.contentType()).isEqualTo("image/jpeg");
+        assertThat(ImageIO.read(new ByteArrayInputStream(created.content())).getWidth()).isEqualTo(GridFsFileStorageServiceImpl.THUMBNAIL_DIMENSION);
+        assertThat(storage.exists(thumbnailName)).isTrue();
+    }
+
+    @Test
+    void aThumbnailForAPhotoThatDoesNotExistIsNotFound() {
+        assertThat(storage.load("00000000-0000-0000-0000-000000000000_thumb.jpg")).isEmpty();
+    }
+
+    @Test
+    void deletingAPhotoAlsoDeletesItsThumbnail() throws Exception {
+        String url = storage.store(new MockMultipartFile("file", "p.jpg", "image/jpeg", image(600, 600, "jpg")));
+
+        storage.delete(filenameOf(url));
+
+        assertThat(storage.exists(filenameOf(url))).isFalse();
+        assertThat(storage.exists(thumbnailNameOf(url))).isFalse();
+    }
+
+    @Test
+    void thumbnailUrlsAreDerivedOnlyForOwnPhotos() {
+        assertThat(storage.thumbnailUrl("/uploads/abc.jpg")).contains("/uploads/abc_thumb.jpg");
+        assertThat(storage.thumbnailUrl("https://wingmark-backend.onrender.com/uploads/abc.png")).contains("/uploads/abc_thumb.jpg");
+        assertThat(storage.thumbnailUrl("/uploads/abc_thumb.jpg")).isEmpty();
+        assertThat(storage.thumbnailUrl("https://example.com/me.png")).isEmpty();
+        assertThat(storage.thumbnailUrl(null)).isEmpty();
+    }
 }

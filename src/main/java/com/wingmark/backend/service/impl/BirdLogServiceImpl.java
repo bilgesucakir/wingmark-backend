@@ -14,6 +14,7 @@ import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.service.BadgeService;
+import com.wingmark.backend.service.FileStorageService;
 import com.wingmark.backend.service.BirdLogService;
 import com.wingmark.backend.util.LocalizedTextResolver;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,8 @@ public class BirdLogServiceImpl implements BirdLogService {
     private final BirdLogRepository birdLogRepository;
     private final SpeciesRepository speciesRepository;
     private final BadgeService badgeService;
+    private final FileStorageService fileStorageService;
+    private final UploadedFileCleaner uploadedFileCleaner;
 
     @Override
     public List<BirdLogResponseDto> getAll(Boolean hasSpecies, Gender gender, LifeStage lifeStage, Sort.Direction sortDirection, Locale locale) {
@@ -128,6 +131,7 @@ public class BirdLogServiceImpl implements BirdLogService {
         log.setCustomName(request.customName());
         log.setLifeStage(request.lifeStage());
         log.setGender(request.gender());
+        String previousPhotoUrl = log.getPhotoUrl();
         log.setPhotoUrl(request.photoUrl());
         log.setNote(request.note());
         log.setLatitude(request.latitude());
@@ -140,6 +144,9 @@ public class BirdLogServiceImpl implements BirdLogService {
         }
 
         log = birdLogRepository.save(log);
+        if (previousPhotoUrl != null && !previousPhotoUrl.equals(request.photoUrl())) {
+            uploadedFileCleaner.deleteIfUnreferenced(previousPhotoUrl);
+        }
         badgeService.evaluateForUser(userId);
 
         return toResponse(log, locale);
@@ -149,6 +156,7 @@ public class BirdLogServiceImpl implements BirdLogService {
     public void delete(UUID userId, UUID logId) {
         BirdLog log = findOwnedLog(userId, logId);
         birdLogRepository.delete(log);
+        uploadedFileCleaner.deleteIfUnreferenced(log.getPhotoUrl());
         badgeService.evaluateForUser(userId);
     }
 
@@ -192,6 +200,7 @@ public class BirdLogServiceImpl implements BirdLogService {
                 log.getLifeStage(),
                 log.getGender(),
                 log.getPhotoUrl(),
+                fileStorageService.thumbnailUrl(log.getPhotoUrl()).orElse(null),
                 log.getNote(),
                 log.getLatitude(),
                 log.getLongitude(),
