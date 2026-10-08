@@ -144,6 +144,7 @@ final class ApiFieldDocs {
             BirdLogResponseDto.id|Bird log id (UUID).|%1$s
             BirdLogResponseDto.userId|Id of the user who owns the log.|%1$s
             SpeciesResponseDto.id|Species id (UUID).|%1$s
+            thumbnailUrl|Small (400 px) JPEG thumbnail of the image, for lists; null if the image is not one of our uploads.|/uploads/9d2f6c1e_thumb.jpg
             SpeciesImageResponseDto.id|Image id (UUID).|%1$s
             SpeciesRecordingResponseDto.id|Xeno-canto recording id.|123456
             SpeciesRecordingResponseDto.type|Recording type such as call or song.|song
