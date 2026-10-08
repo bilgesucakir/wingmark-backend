@@ -61,6 +61,8 @@ class UserServiceImplTest {
     private FileStorageService fileStorageService;
     @Mock
     private BadgeService badgeService;
+    @Mock
+    private UploadedFileCleaner uploadedFileCleaner;
 
     private UserServiceImpl userService;
 
@@ -69,7 +71,7 @@ class UserServiceImplTest {
     @BeforeEach
     void setUp() {
         userService = new UserServiceImpl(userRepository, userSettingsRepository, speciesRepository, accountDeletionService, passwordEncoder,
-                new AvatarCatalog(), fileStorageService, badgeService);
+                new AvatarCatalog(), fileStorageService, badgeService, uploadedFileCleaner);
     }
 
     @Test
@@ -346,5 +348,51 @@ class UserServiceImplTest {
 
         assertThat(user.getProfilePicture()).isEqualTo("legacy-value");
         assertThat(user.getFirstName()).isEqualTo("New");
+    }
+
+    private User userWithPicture(String picture) {
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).profilePicture(picture).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        return user;
+    }
+
+    @Test
+    void replacingACustomProfilePictureDeletesTheOldFile() {
+        userWithPicture("/uploads/old.jpg");
+        when(fileStorageService.storedFilename("/uploads/new.jpg")).thenReturn(Optional.of("new.jpg"));
+        when(fileStorageService.exists("new.jpg")).thenReturn(true);
+
+        userService.updateProfile(userId, new UpdateProfileRequestDto("A", "B", "/uploads/new.jpg", null), Locale.ENGLISH);
+
+        verify(uploadedFileCleaner).deleteIfUnreferenced("/uploads/old.jpg");
+    }
+
+    @Test
+    void switchingToAPresetAvatarOrRemovingThePictureDeletesTheOldFile() {
+        userWithPicture("/uploads/old.jpg");
+
+        userService.updateProfile(userId, new UpdateProfileRequestDto("A", "B", "avatar-1", null), Locale.ENGLISH);
+        verify(uploadedFileCleaner).deleteIfUnreferenced("/uploads/old.jpg");
+    }
+
+    @Test
+    void keepingTheSamePictureOrHavingNoneDeletesNothing() {
+        userWithPicture("/uploads/same.jpg");
+        userService.updateProfile(userId, new UpdateProfileRequestDto("A", "B", "/uploads/same.jpg", null), Locale.ENGLISH);
+
+        userWithPicture(null);
+        userService.updateProfile(userId, new UpdateProfileRequestDto("A", "B", "avatar-1", null), Locale.ENGLISH);
+
+        verify(uploadedFileCleaner, org.mockito.Mockito.never()).deleteIfUnreferenced(any());
+    }
+
+    @Test
+    void anAdminChangingTheProfilePictureAlsoDeletesTheOldFile() {
+        userWithPicture("/uploads/old.jpg");
+
+        userService.adminUpdateUser(userId, new AdminUpdateUserRequestDto("A", "B", Role.USER, true, null, null), Locale.ENGLISH);
+
+        verify(uploadedFileCleaner).deleteIfUnreferenced("/uploads/old.jpg");
     }
 }

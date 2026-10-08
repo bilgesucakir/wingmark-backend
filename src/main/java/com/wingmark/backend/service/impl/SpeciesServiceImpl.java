@@ -11,6 +11,7 @@ import com.wingmark.backend.exception.DuplicateResourceException;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.SpeciesImageRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
+import com.wingmark.backend.service.FileStorageService;
 import com.wingmark.backend.service.SpeciesService;
 import com.wingmark.backend.util.SearchPattern;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,8 @@ public class SpeciesServiceImpl implements SpeciesService {
 
     private final SpeciesRepository speciesRepository;
     private final SpeciesImageRepository speciesImageRepository;
+    private final FileStorageService fileStorageService;
+    private final UploadedFileCleaner uploadedFileCleaner;
 
     @Override
     public Page<SpeciesResponseDto> getAll(String search, Pageable pageable) {
@@ -102,8 +105,10 @@ public class SpeciesServiceImpl implements SpeciesService {
         if (!speciesRepository.existsById(id)) {
             throw ResourceNotFoundException.of("Species", id);
         }
+        List<String> imageUrls = speciesImageRepository.findBySpeciesId(id).stream().map(SpeciesImage::getImageUrl).toList();
         speciesImageRepository.deleteBySpeciesId(id);
         speciesRepository.deleteById(id);
+        imageUrls.forEach(uploadedFileCleaner::deleteIfUnreferenced);
     }
 
     @Override
@@ -137,6 +142,7 @@ public class SpeciesServiceImpl implements SpeciesService {
         }
 
         speciesImageRepository.delete(image);
+        uploadedFileCleaner.deleteIfUnreferenced(image.getImageUrl());
     }
 
     private void validateCommonName(Map<String, String> commonName) {
@@ -178,6 +184,7 @@ public class SpeciesServiceImpl implements SpeciesService {
                 image.getLifeStage(),
                 image.getGender(),
                 image.getImageUrl(),
+                fileStorageService.thumbnailUrl(image.getImageUrl()).orElse(null),
                 image.getCaption(),
                 image.getLicenseCode(),
                 image.getAttribution(),

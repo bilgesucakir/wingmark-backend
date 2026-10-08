@@ -12,6 +12,7 @@ import com.wingmark.backend.enums.LifeStageImage;
 import com.wingmark.backend.exception.DuplicateResourceException;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.SpeciesImageRepository;
+import com.wingmark.backend.service.FileStorageService;
 import com.wingmark.backend.repository.SpeciesRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,12 +43,16 @@ class SpeciesServiceImplTest {
     private SpeciesRepository speciesRepository;
     @Mock
     private SpeciesImageRepository speciesImageRepository;
+    @Mock
+    private FileStorageService fileStorageService;
+    @Mock
+    private UploadedFileCleaner uploadedFileCleaner;
 
     private SpeciesServiceImpl speciesService;
 
     @BeforeEach
     void setUp() {
-        speciesService = new SpeciesServiceImpl(speciesRepository, speciesImageRepository);
+        speciesService = new SpeciesServiceImpl(speciesRepository, speciesImageRepository, fileStorageService, uploadedFileCleaner);
     }
 
     @Test
@@ -204,5 +210,47 @@ class SpeciesServiceImplTest {
 
         assertThatThrownBy(() -> speciesService.deleteImage(speciesId, imageId))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void anImageThatIsOurOwnUploadCarriesItsThumbnailUrl() {
+        UUID speciesId = UUID.randomUUID();
+        Species species = Species.builder().id(speciesId).commonName(Map.of("en", "House Sparrow")).scientificName("Passer domesticus").build();
+        SpeciesImage own = SpeciesImage.builder().id(UUID.randomUUID()).speciesId(speciesId).imageUrl("/uploads/a.jpg").build();
+        SpeciesImage external = SpeciesImage.builder().id(UUID.randomUUID()).speciesId(speciesId).imageUrl("https://example.com/x.jpg").build();
+        when(speciesRepository.findById(speciesId)).thenReturn(Optional.of(species));
+        when(speciesImageRepository.findBySpeciesId(speciesId)).thenReturn(List.of(own, external));
+        when(fileStorageService.thumbnailUrl("/uploads/a.jpg")).thenReturn(Optional.of("/uploads/a_thumb.jpg"));
+
+        var images = speciesService.getById(speciesId).images();
+
+        assertThat(images.get(0).thumbnailUrl()).isEqualTo("/uploads/a_thumb.jpg");
+        assertThat(images.get(1).thumbnailUrl()).isNull();
+    }
+
+    @Test
+    void deletingAnImageReleasesItsUploadedFile() {
+        UUID speciesId = UUID.randomUUID();
+        UUID imageId = UUID.randomUUID();
+        SpeciesImage image = SpeciesImage.builder().id(imageId).speciesId(speciesId).imageUrl("/uploads/a.jpg").build();
+        when(speciesImageRepository.findById(imageId)).thenReturn(Optional.of(image));
+
+        speciesService.deleteImage(speciesId, imageId);
+
+        verify(speciesImageRepository).delete(image);
+        verify(uploadedFileCleaner).deleteIfUnreferenced("/uploads/a.jpg");
+    }
+
+    @Test
+    void deletingASpeciesReleasesTheUploadedFilesOfItsImages() {
+        UUID id = UUID.randomUUID();
+        when(speciesRepository.existsById(id)).thenReturn(true);
+        when(speciesImageRepository.findBySpeciesId(id)).thenReturn(List.of(
+                SpeciesImage.builder().imageUrl("/uploads/a.jpg").build(), SpeciesImage.builder().imageUrl("https://example.com/x.jpg").build()));
+
+        speciesService.delete(id);
+
+        verify(uploadedFileCleaner).deleteIfUnreferenced("/uploads/a.jpg");
+        verify(uploadedFileCleaner).deleteIfUnreferenced("https://example.com/x.jpg");
     }
 }

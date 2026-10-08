@@ -46,6 +46,7 @@ public class UserServiceImpl implements UserService {
     private final AvatarCatalog avatarCatalog;
     private final FileStorageService fileStorageService;
     private final BadgeService badgeService;
+    private final UploadedFileCleaner uploadedFileCleaner;
 
     @Override
     public UserProfileResponseDto getProfile(UUID userId, Locale locale) {
@@ -62,11 +63,13 @@ public class UserServiceImpl implements UserService {
 
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
+        String previousPicture = user.getProfilePicture();
         user.setProfilePicture(validateProfilePicture(request.profilePicture(), user.getProfilePicture()));
         boolean favoriteChanged = !java.util.Objects.equals(user.getFavoriteSpeciesId(), request.favoriteSpeciesId());
         user.setFavoriteSpeciesId(request.favoriteSpeciesId());
 
         User saved = userRepository.save(user);
+        releasePreviousPicture(previousPicture, saved.getProfilePicture());
         if (favoriteChanged) {
             badgeService.evaluateForUser(userId);
         }
@@ -93,6 +96,13 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll().stream().map(user -> toResponse(user, locale)).toList();
     }
 
+    /** Deletes the old custom profile picture file once it is replaced or removed, unless something else still uses it. */
+    private void releasePreviousPicture(String previous, String current) {
+        if (previous != null && !previous.equals(current)) {
+            uploadedFileCleaner.deleteIfUnreferenced(previous);
+        }
+    }
+
     @Override
     public UserProfileResponseDto adminUpdateUser(UUID userId, AdminUpdateUserRequestDto request, Locale locale) {
         User user = findUser(userId);
@@ -107,8 +117,10 @@ public class UserServiceImpl implements UserService {
         user.setEmailVerified(request.emailVerified());
         boolean favoriteChanged = !java.util.Objects.equals(user.getFavoriteSpeciesId(), request.favoriteSpeciesId());
         user.setFavoriteSpeciesId(request.favoriteSpeciesId());
+        String previousPicture = user.getProfilePicture();
         user.setProfilePicture(validateProfilePicture(request.profilePicture(), user.getProfilePicture()));
         User saved = userRepository.save(user);
+        releasePreviousPicture(previousPicture, saved.getProfilePicture());
         if (favoriteChanged) {
             badgeService.evaluateForUser(userId);
         }
