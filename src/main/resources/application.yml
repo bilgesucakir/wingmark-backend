@@ -98,6 +98,9 @@ wingmark:
     older-than-days: ${UNVERIFIED_OLDER_THAN_DAYS:7}
     max-per-run: ${UNVERIFIED_MAX_PER_RUN:100}
     cron: ${UNVERIFIED_CRON:0 15 4 * * *}
+  # Anonymous usage statistics: a species, region or bucket is shown only with at least this many different users.
+  stats:
+    min-group-size: ${STATS_MIN_GROUP_SIZE:5}
   uploads:
     # Most photos one user may have stored at once (0 = no limit).
     max-photos-per-user: ${MAX_PHOTOS_PER_USER:200}

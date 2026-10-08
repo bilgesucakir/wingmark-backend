@@ -140,6 +140,15 @@ WINGMARK_ADMIN_TOKEN=<admin access token> python3 scripts/import_species.py     
 
 The script goes through the admin API (`POST /api/species`) and skips species whose scientific name already exists, so it is safe to run twice. Get a token by logging in as an admin (`POST /api/auth/login`); it lasts 15 minutes. If Python reports a certificate error on macOS, run `pip3 install certifi` or Python's `Install Certificates.command`. Photos are added later in the admin panel. `PopularSpeciesSeedTest` checks the file (both languages everywhere, unique names, valid statuses).
 
+### Anonymous usage statistics
+
+`GET /api/admin/usage-stats` (admin only) answers "which birds are popular and how is the app used" with aggregates only. It is computed from data we already hold on every call; nothing is stored and no tracking library is used.
+
+- Returns: user and activity counts (active in 7 / 30 days, from last login or refresh), new users, logs per day (30 days) and per week (12 weeks), how many users have 0 / 1 / 2-5 / 6-20 / 21+ logs, the most-logged species, and coarse one-degree regions (about 110 km).
+- Never returns email, name, user id, device or an exact location.
+- A species, region or bucket is listed only when at least `STATS_MIN_GROUP_SIZE` (default 5) different users contribute, so nobody can be singled out. With few users these lists are empty on purpose.
+- If a third-party analytics SDK is ever added, update the privacy policy and the App Privacy label before it ships.
+
 ### Photo limits and cleanup
 
 - **Per-user limit:** each uploaded photo records its owner; a user may have at most `MAX_PHOTOS_PER_USER` (default 200, 0 = no limit) stored photos. More are refused with `403 PHOTO_QUOTA_EXCEEDED`; deleting a sighting or photo frees a place. Thumbnails are not counted. A sighting has one photo (`photoUrl`).
