@@ -101,6 +101,17 @@ wingmark:
   # Anonymous usage statistics: a species, region or bucket is shown only with at least this many different users.
   stats:
     min-group-size: ${STATS_MIN_GROUP_SIZE:5}
+  uploads:
+    # Most photos one user may have stored at once (0 = no limit).
+    max-photos-per-user: ${MAX_PHOTOS_PER_USER:200}
+  # Deletes stored photos nothing refers to any more, after a grace period. Off by default; when on it only logs
+  # until UPLOAD_CLEANUP_DRY_RUN=false.
+  upload-cleanup:
+    enabled: ${UPLOAD_CLEANUP_ENABLED:false}
+    dry-run: ${UPLOAD_CLEANUP_DRY_RUN:true}
+    grace-days: ${UPLOAD_CLEANUP_GRACE_DAYS:7}
+    max-per-run: ${UPLOAD_CLEANUP_MAX_PER_RUN:100}
+    cron: ${UPLOAD_CLEANUP_CRON:0 45 4 * * *}
   badges:
     # Recompute every user's badge progress at startup (set BADGE_RECOMPUTE_ON_STARTUP=false to skip).
     recompute-on-startup: ${BADGE_RECOMPUTE_ON_STARTUP:true}

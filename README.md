@@ -103,7 +103,7 @@ so it always deploys as a container). To deploy:
 Uploaded images are stored **in MongoDB** (GridFS: the `uploads.files` / `uploads.chunks`
 collections), not on disk - so every instance (Render, a laptop, tests) sees the same
 photos through the same database, and nothing is lost on deploy. Images are downscaled to
-at most 1600px on the longest side, so each is typically a few hundred KB; keep an eye on
+at most 1280px on the longest side (JPEG quality 75%), plus a 400px thumbnail, so each is typically 100-300 KB; keep an eye on
 Atlas storage (the free tier is 512MB).
 
 **Running locally:** don't copy the production `.env` as-is - it points the database at
@@ -137,6 +137,12 @@ Signup and resend limits: at most 5 signups per hour and 20 per day per client a
 - Never returns email, name, user id, device or an exact location.
 - A species, region or bucket is listed only when at least `STATS_MIN_GROUP_SIZE` (default 5) different users contribute, so nobody can be singled out. With few users these lists are empty on purpose.
 - If a third-party analytics SDK is ever added, update the privacy policy and the App Privacy label before it ships.
+
+### Photo limits and cleanup
+
+- **Per-user limit:** each uploaded photo records its owner; a user may have at most `MAX_PHOTOS_PER_USER` (default 200, 0 = no limit) stored photos. More are refused with `403 PHOTO_QUOTA_EXCEEDED`; deleting a sighting or photo frees a place. Thumbnails are not counted. A sighting has one photo (`photoUrl`).
+- **Cleanup of abandoned photos (off by default):** a daily job finds stored photos that no bird log, profile picture or species image uses and deletes them with their thumbnail. Photos younger than `UPLOAD_CLEANUP_GRACE_DAYS` (7) are never touched, because the photo is uploaded before its log is saved. Settings: `UPLOAD_CLEANUP_ENABLED` (default `false`), `UPLOAD_CLEANUP_DRY_RUN` (default `true`: only logs), `UPLOAD_CLEANUP_GRACE_DAYS` (7), `UPLOAD_CLEANUP_MAX_PER_RUN` (100), `UPLOAD_CLEANUP_CRON` (daily 04:45 UTC). Run it with the dry run first and read the logs.
+- Later, when storage grows: WebP, and moving files to object storage with long cache headers.
 
 ## Database
 
@@ -1043,14 +1049,21 @@ Response: same shape as one `/catalog` entry above.
 part named `file` (the image). Response:
 
 ```json
-{ "url": "/uploads/3f2b9c1e-6d0a-4f7e-9b1a-2c4d5e6f7a8b.jpg" }
+{ "url": "/uploads/3f2b9c1e-6d0a-4f7e-9b1a-2c4d5e6f7a8b.jpg",
+  "thumbnailUrl": "/uploads/3f2b9c1e-6d0a-4f7e-9b1a-2c4d5e6f7a8b_thumb.jpg" }
 ```
+
+`thumbnailUrl` is a small (400px) JPEG for lists and the guide. Bird log responses carry the same thing as
+`photoThumbnailUrl` (null when the photo is not one of our uploads). Photos uploaded before thumbnails existed
+get theirs the first time `/uploads/<uuid>_thumb.jpg` is requested, so the field works for old logs too. When a
+log is deleted, or its photo is replaced or removed, the photo and its thumbnail are deleted unless another log,
+profile picture or species image still uses it.
 
 The URL is always **relative** to this backend (`/uploads/<uuid>.<ext>`). Store it as-is
 in `photoUrl` / `profilePicture`, and prefix the backend's base URL only when loading
 the image (e.g. `https://wingmark-backend.onrender.com/uploads/...`). `GET /uploads/{file}`
 is public, returns the image with a long-lived immutable `Cache-Control`, and `404 NOT_FOUND`
-if it doesn't exist. Images are stored in the database and downscaled to at most 1600px on
+if it doesn't exist. Images are stored in the database and downscaled to at most 1280px on
 the longest side.
 
 Only `image/jpeg` and `image/png` are accepted - anything else (including HEIC and WebP)

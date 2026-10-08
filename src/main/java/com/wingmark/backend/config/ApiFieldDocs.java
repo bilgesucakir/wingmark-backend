@@ -65,6 +65,7 @@ final class ApiFieldDocs {
             lifeStage|Life stage: BABY, ADULT or UNKNOWN.|ADULT
             gender|Gender: MALE, FEMALE or UNKNOWN.|UNKNOWN
             photoUrl|Photo URL, usually from POST /api/uploads/photo.|/uploads/9d2f6c1e.jpg
+            photoThumbnailUrl|Small (400 px) JPEG thumbnail of the photo, for lists; null if the photo is not one of our uploads.|/uploads/9d2f6c1e_thumb.jpg
             note|Free-text note.|Feeding at the balcony.
             latitude|Latitude in degrees, -90 to 90.|40.9397
             longitude|Longitude in degrees, -180 to 180.|29.1196

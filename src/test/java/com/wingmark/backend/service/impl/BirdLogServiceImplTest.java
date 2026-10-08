@@ -12,6 +12,7 @@ import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.BirdLogRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.service.BadgeService;
+import com.wingmark.backend.service.FileStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +26,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +39,10 @@ class BirdLogServiceImplTest {
     private SpeciesRepository speciesRepository;
     @Mock
     private BadgeService badgeService;
+    @Mock
+    private FileStorageService fileStorageService;
+    @Mock
+    private UploadedFileCleaner uploadedFileCleaner;
 
     private BirdLogServiceImpl birdLogService;
 
@@ -44,7 +50,7 @@ class BirdLogServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        birdLogService = new BirdLogServiceImpl(birdLogRepository, speciesRepository, badgeService);
+        birdLogService = new BirdLogServiceImpl(birdLogRepository, speciesRepository, badgeService, fileStorageService, uploadedFileCleaner);
     }
 
     @Test
@@ -151,5 +157,81 @@ class BirdLogServiceImplTest {
 
         verify(birdLogRepository).delete(existing);
         verify(badgeService).evaluateForUser(userId);
+    }
+
+    private BirdLog logWithPhoto(UUID logId, String photoUrl) {
+        return BirdLog.builder().id(logId).userId(userId).lifeStage(LifeStage.UNKNOWN).gender(Gender.UNKNOWN)
+                .latitude(1.0).longitude(1.0).photoUrl(photoUrl).build();
+    }
+
+    private UpdateBirdLogRequestDto updateWithPhoto(String photoUrl) {
+        return new UpdateBirdLogRequestDto(null, null, false, null, LifeStage.UNKNOWN, Gender.UNKNOWN, photoUrl, null, 1.0, 1.0, null, null);
+    }
+
+    @Test
+    void deleteReleasesThePhotoOfTheDeletedLog() {
+        UUID logId = UUID.randomUUID();
+        when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(logWithPhoto(logId, "/uploads/a.jpg")));
+
+        birdLogService.delete(userId, logId);
+
+        verify(uploadedFileCleaner).deleteIfUnreferenced("/uploads/a.jpg");
+    }
+
+    @Test
+    void updatingToADifferentPhotoReleasesTheOldOne() {
+        UUID logId = UUID.randomUUID();
+        when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(logWithPhoto(logId, "/uploads/old.jpg")));
+        when(birdLogRepository.save(any(BirdLog.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        birdLogService.update(userId, logId, updateWithPhoto("/uploads/new.jpg"), Locale.ENGLISH);
+
+        verify(uploadedFileCleaner).deleteIfUnreferenced("/uploads/old.jpg");
+    }
+
+    @Test
+    void removingThePhotoFromALogReleasesIt() {
+        UUID logId = UUID.randomUUID();
+        when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(logWithPhoto(logId, "/uploads/old.jpg")));
+        when(birdLogRepository.save(any(BirdLog.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        birdLogService.update(userId, logId, updateWithPhoto(null), Locale.ENGLISH);
+
+        verify(uploadedFileCleaner).deleteIfUnreferenced("/uploads/old.jpg");
+    }
+
+    @Test
+    void keepingTheSamePhotoOrHavingNoneReleasesNothing() {
+        UUID logId = UUID.randomUUID();
+        when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(logWithPhoto(logId, "/uploads/same.jpg")));
+        when(birdLogRepository.save(any(BirdLog.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        birdLogService.update(userId, logId, updateWithPhoto("/uploads/same.jpg"), Locale.ENGLISH);
+
+        UUID noPhotoLog = UUID.randomUUID();
+        when(birdLogRepository.findByIdAndUserId(noPhotoLog, userId)).thenReturn(Optional.of(logWithPhoto(noPhotoLog, null)));
+        birdLogService.update(userId, noPhotoLog, updateWithPhoto("/uploads/new.jpg"), Locale.ENGLISH);
+
+        verify(uploadedFileCleaner, never()).deleteIfUnreferenced(any());
+    }
+
+    @Test
+    void theResponseCarriesTheThumbnailUrlOfTheLogsPhoto() {
+        UUID logId = UUID.randomUUID();
+        when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(logWithPhoto(logId, "/uploads/a.jpg")));
+        when(fileStorageService.thumbnailUrl("/uploads/a.jpg")).thenReturn(Optional.of("/uploads/a_thumb.jpg"));
+
+        BirdLogResponseDto response = birdLogService.getById(userId, logId, Locale.ENGLISH);
+
+        assertThat(response.photoUrl()).isEqualTo("/uploads/a.jpg");
+        assertThat(response.photoThumbnailUrl()).isEqualTo("/uploads/a_thumb.jpg");
+    }
+
+    @Test
+    void aLogWithoutAnOwnPhotoHasNoThumbnailUrl() {
+        UUID logId = UUID.randomUUID();
+        when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(logWithPhoto(logId, "https://example.com/x.jpg")));
+
+        assertThat(birdLogService.getById(userId, logId, Locale.ENGLISH).photoThumbnailUrl()).isNull();
     }
 }

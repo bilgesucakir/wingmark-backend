@@ -70,7 +70,8 @@ class UploadControllerTest {
                         .file(file)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.startsWith("/uploads/")));
+                .andExpect(jsonPath("$.url").value(org.hamcrest.Matchers.startsWith("/uploads/")))
+                .andExpect(jsonPath("$.thumbnailUrl").value(org.hamcrest.Matchers.endsWith("_thumb.jpg")));
     }
 
     @Test
