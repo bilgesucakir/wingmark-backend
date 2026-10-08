@@ -113,6 +113,7 @@ final class ApiFieldDocs {
             caption|Optional image caption.|Adult male
             licenseCode|Image license such as cc-by, or null for the operator's own uploads.|cc-by
             attribution|Credit line the app must show for the image, or null.|(c) Jane Doe
+            commonsFileUrl|Page address of a Wikimedia Commons file, like https://commons.wikimedia.org/wiki/File:Example.jpg. When set, licenseCode, attribution and sourceUrl are read from Commons and the values sent for them are ignored; only public domain, CC0, CC BY and CC BY-SA files are accepted.|https://commons.wikimedia.org/wiki/File:Example.jpg
             sourceUrl|Where the image came from, or null.|https://www.inaturalist.org/observations/1
             observationId|iNaturalist observation id.|1234567
             observationUrl|Link to the iNaturalist observation.|https://www.inaturalist.org/observations/1234567

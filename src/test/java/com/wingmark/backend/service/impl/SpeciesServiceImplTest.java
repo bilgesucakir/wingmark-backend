@@ -12,6 +12,7 @@ import com.wingmark.backend.enums.LifeStageImage;
 import com.wingmark.backend.exception.DuplicateResourceException;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.repository.SpeciesImageRepository;
+import com.wingmark.backend.service.CommonsService;
 import com.wingmark.backend.repository.SpeciesRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,12 +42,14 @@ class SpeciesServiceImplTest {
     private SpeciesRepository speciesRepository;
     @Mock
     private SpeciesImageRepository speciesImageRepository;
+    @Mock
+    private CommonsService commonsService;
 
     private SpeciesServiceImpl speciesService;
 
     @BeforeEach
     void setUp() {
-        speciesService = new SpeciesServiceImpl(speciesRepository, speciesImageRepository);
+        speciesService = new SpeciesServiceImpl(speciesRepository, speciesImageRepository, commonsService);
     }
 
     @Test
@@ -167,7 +170,7 @@ class SpeciesServiceImplTest {
         when(speciesRepository.existsById(speciesId)).thenReturn(false);
 
         CreateSpeciesImageRequestDto request = new CreateSpeciesImageRequestDto(
-                LifeStageImage.ADULT, ImageGender.MALE, "https://example.com/photo.jpg", null, null, null, null);
+                LifeStageImage.ADULT, ImageGender.MALE, "https://example.com/photo.jpg", null, null, null, null, null);
 
         assertThatThrownBy(() -> speciesService.addImage(speciesId, request)).isInstanceOf(ResourceNotFoundException.class);
     }
@@ -184,7 +187,7 @@ class SpeciesServiceImplTest {
 
         CreateSpeciesImageRequestDto request = new CreateSpeciesImageRequestDto(
                 LifeStageImage.ADULT, ImageGender.MALE, "https://example.com/photo.jpg", "caption",
-                "cc-by", "(c) Jane Birder, some rights reserved (CC BY)", "https://www.inaturalist.org/observations/1");
+                "cc-by", "(c) Jane Birder, some rights reserved (CC BY)", "https://www.inaturalist.org/observations/1", null);
 
         SpeciesImageResponseDto response = speciesService.addImage(speciesId, request);
         assertThat(response.licenseCode()).isEqualTo("cc-by");
@@ -204,5 +207,36 @@ class SpeciesServiceImplTest {
 
         assertThatThrownBy(() -> speciesService.deleteImage(speciesId, imageId))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void anImageFromCommonsGetsItsLicenceCreditAndSourceFromCommonsNotFromTheRequest() {
+        UUID speciesId = UUID.randomUUID();
+        when(speciesRepository.existsById(speciesId)).thenReturn(true);
+        when(commonsService.describe("https://commons.wikimedia.org/wiki/File:Parrotlet.jpg")).thenReturn(
+                new CommonsService.CommonsFile("cc-by-sa-4.0", "Jane Doe / Wikimedia Commons, CC BY-SA 4.0",
+                        "https://commons.wikimedia.org/wiki/File:Parrotlet.jpg"));
+        when(speciesImageRepository.save(org.mockito.ArgumentMatchers.any(SpeciesImage.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CreateSpeciesImageRequestDto request = new CreateSpeciesImageRequestDto(LifeStageImage.ADULT, ImageGender.NOT_APPLICABLE,
+                "/uploads/a.jpg", null, "cc0", "forged credit", "https://example.com", "https://commons.wikimedia.org/wiki/File:Parrotlet.jpg");
+
+        var response = speciesService.addImage(speciesId, request);
+
+        assertThat(response.licenseCode()).isEqualTo("cc-by-sa-4.0");
+        assertThat(response.attribution()).isEqualTo("Jane Doe / Wikimedia Commons, CC BY-SA 4.0");
+        assertThat(response.sourceUrl()).isEqualTo("https://commons.wikimedia.org/wiki/File:Parrotlet.jpg");
+    }
+
+    @Test
+    void anImageWithoutACommonsAddressNeverAsksCommons() {
+        UUID speciesId = UUID.randomUUID();
+        when(speciesRepository.existsById(speciesId)).thenReturn(true);
+        when(speciesImageRepository.save(org.mockito.ArgumentMatchers.any(SpeciesImage.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        speciesService.addImage(speciesId, new CreateSpeciesImageRequestDto(LifeStageImage.ADULT, ImageGender.MALE,
+                "/uploads/a.jpg", null, null, null, null, "  "));
+
+        org.mockito.Mockito.verifyNoInteractions(commonsService);
     }
 }
