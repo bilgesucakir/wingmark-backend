@@ -103,7 +103,7 @@ so it always deploys as a container). To deploy:
 Uploaded images are stored **in MongoDB** (GridFS: the `uploads.files` / `uploads.chunks`
 collections), not on disk - so every instance (Render, a laptop, tests) sees the same
 photos through the same database, and nothing is lost on deploy. Images are downscaled to
-at most 1600px on the longest side, so each is typically a few hundred KB; keep an eye on
+at most 1280px on the longest side (JPEG quality 75%), plus a 400px thumbnail, so each is typically 100-300 KB; keep an eye on
 Atlas storage (the free tier is 512MB).
 
 **Running locally:** don't copy the production `.env` as-is - it points the database at
@@ -1034,14 +1034,21 @@ Response: same shape as one `/catalog` entry above.
 part named `file` (the image). Response:
 
 ```json
-{ "url": "/uploads/3f2b9c1e-6d0a-4f7e-9b1a-2c4d5e6f7a8b.jpg" }
+{ "url": "/uploads/3f2b9c1e-6d0a-4f7e-9b1a-2c4d5e6f7a8b.jpg",
+  "thumbnailUrl": "/uploads/3f2b9c1e-6d0a-4f7e-9b1a-2c4d5e6f7a8b_thumb.jpg" }
 ```
+
+`thumbnailUrl` is a small (400px) JPEG for lists and the guide. Bird log responses carry the same thing as
+`photoThumbnailUrl` (null when the photo is not one of our uploads). Photos uploaded before thumbnails existed
+get theirs the first time `/uploads/<uuid>_thumb.jpg` is requested, so the field works for old logs too. When a
+log is deleted, or its photo is replaced or removed, the photo and its thumbnail are deleted unless another log,
+profile picture or species image still uses it.
 
 The URL is always **relative** to this backend (`/uploads/<uuid>.<ext>`). Store it as-is
 in `photoUrl` / `profilePicture`, and prefix the backend's base URL only when loading
 the image (e.g. `https://wingmark-backend.onrender.com/uploads/...`). `GET /uploads/{file}`
 is public, returns the image with a long-lived immutable `Cache-Control`, and `404 NOT_FOUND`
-if it doesn't exist. Images are stored in the database and downscaled to at most 1600px on
+if it doesn't exist. Images are stored in the database and downscaled to at most 1280px on
 the longest side.
 
 Only `image/jpeg` and `image/png` are accepted - anything else (including HEIC and WebP)

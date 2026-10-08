@@ -26,11 +26,13 @@ public class UploadController {
     private final FileStorageService fileStorageService;
 
     /** Stores an uploaded photo, re-encoded to strip EXIF data, and returns its URL for a bird log's {@code photoUrl}. */
-    @Operation(summary = "Upload a photo", description = "Stores an uploaded photo (re-encoded to strip EXIF metadata) and returns its URL for use as a bird log's photoUrl.")
+    @Operation(summary = "Upload a photo", description = "Stores an uploaded photo (re-encoded to strip EXIF metadata, shrunk to at most 1280 px) and a 400 px thumbnail. Returns {url, thumbnailUrl}: send url as a bird log's photoUrl; use thumbnailUrl (also returned for each log as photoThumbnailUrl) in lists.")
     @PostMapping("/photo")
     public ResponseEntity<Map<String, String>> uploadPhoto(@AuthenticationPrincipal UserPrincipal principal,
                                                              @RequestParam("file") MultipartFile file) {
         String url = fileStorageService.store(file);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("url", url));
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "url", url,
+                "thumbnailUrl", fileStorageService.thumbnailUrl(url).orElse(url)));
     }
 }
