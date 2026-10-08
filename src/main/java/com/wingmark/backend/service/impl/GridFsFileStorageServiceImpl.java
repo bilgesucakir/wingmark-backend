@@ -17,22 +17,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -42,22 +33,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class GridFsFileStorageServiceImpl implements FileStorageService {
 
-    private static final String UPLOADS_PREFIX = "/uploads/";
-    private static final Map<String, String> IMAGE_EXTENSIONS = Map.of(
-            "image/jpeg", ".jpg",
-            "image/png", ".png");
-    private static final Map<String, String> CONTENT_TYPES_BY_EXTENSION = Map.of(
-            "jpg", "image/jpeg",
-            "jpeg", "image/jpeg",
-            "png", "image/png");
-    /** Longest edge in pixels after re-encoding. */
-    static final int MAX_DIMENSION = 1280;
-    /** Longest edge in pixels of the thumbnail shown in lists and the guide. */
-    static final int THUMBNAIL_DIMENSION = 400;
-    /** Suffix of the thumbnail stored next to each photo: {@code <name>_thumb.jpg}. */
-    static final String THUMBNAIL_SUFFIX = "_thumb.jpg";
-    private static final float JPEG_QUALITY = 0.75f;
-    private static final float THUMBNAIL_QUALITY = 0.7f;
+    static final int MAX_DIMENSION = PhotoImages.MAX_DIMENSION;
+    static final int THUMBNAIL_DIMENSION = PhotoImages.THUMBNAIL_DIMENSION;
+    static final String THUMBNAIL_SUFFIX = PhotoImages.THUMBNAIL_SUFFIX;
 
     private final GridFsTemplate gridFsTemplate;
     private final UploadProperties uploadProperties;
@@ -78,38 +56,10 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
                     "You have reached the limit of " + uploadProperties.maxPhotosPerUser()
                             + " stored photos; delete some sightings or photos first");
         }
-
-        // Only images, and only formats the JDK can decode and re-encode. Anything else is
-        // refused rather than stored as-is: /uploads is served publicly from the same origin
-        // as the admin panel, so an uploaded .html/.svg would be a stored-XSS vector.
-        String contentType = file.getContentType();
-        String extension = IMAGE_EXTENSIONS.get(contentType);
-        if (extension == null) {
-            throw new ApiException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ErrorCode.UNSUPPORTED_MEDIA_TYPE,
-                    "Only JPEG and PNG images are accepted (got " + contentType + ")");
-        }
-
-        byte[] encoded;
-        byte[] thumbnail;
-        try (InputStream in = file.getInputStream()) {
-            BufferedImage image = ImageIO.read(in);
-            if (image == null) {
-                throw new BadRequestException(ErrorCode.INVALID_FILE, "Uploaded file is not a valid image");
-            }
-            // Re-encoding drops EXIF metadata (including GPS tags) - the sighting's location
-            // is already captured explicitly on the log - and downscaling caps storage use.
-            encoded = encode(downscale(image, MAX_DIMENSION), extension.substring(1), JPEG_QUALITY);
-            thumbnail = thumbnailBytes(image);
-        } catch (IOException e) {
-            // Includes images ImageIO can open but not decode (e.g. CMYK JPEGs): a bad file, not a server fault.
-            throw new BadRequestException(ErrorCode.INVALID_FILE, "Uploaded file could not be read as an image");
-        }
-
-        String base = UUID.randomUUID().toString();
-        String filename = base + extension;
-        saveRaw(filename, encoded, contentType, ownerId);
-        saveRaw(base + THUMBNAIL_SUFFIX, thumbnail, "image/jpeg", null);
-        return UPLOADS_PREFIX + filename;
+        PhotoImages.Processed processed = PhotoImages.process(file);
+        saveRaw(processed.photoName(), processed.photo(), processed.contentType(), ownerId);
+        saveRaw(processed.thumbnailName(), processed.thumbnail(), "image/jpeg", null);
+        return PhotoImages.UPLOADS_PREFIX + processed.photoName();
     }
 
     /** Saves bytes unchanged in GridFS under the given filename. */
@@ -128,29 +78,36 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
 
     @Override
     public Optional<String> storedFilename(String url) {
-        if (url == null) {
-            return Optional.empty();
-        }
-        int index = url.lastIndexOf(UPLOADS_PREFIX);
-        if (index < 0) {
-            return Optional.empty();
-        }
-        String filename = url.substring(index + UPLOADS_PREFIX.length());
-        if (filename.isEmpty() || filename.contains("/") || filename.contains("\\") || filename.contains("..")) {
-            return Optional.empty();
-        }
-        return Optional.of(filename);
+        return PhotoImages.storedFilename(url);
     }
 
     @Override
     public long countPhotosOwnedBy(UUID ownerId) {
+        return photoFilenamesOwnedBy(ownerId).size();
+    }
+
+    /** Returns the filenames of the photos (thumbnails not counted) stored with this owner. */
+    public Set<String> photoFilenamesOwnedBy(UUID ownerId) {
         Query query = Query.query(Criteria.where("metadata.ownerId").is(ownerId.toString())
                 .and("filename").regex("^(?!.*_thumb\\.jpg$)"));
-        long count = 0;
-        for (GridFSFile ignored : gridFsTemplate.find(query)) {
-            count++;
+        Set<String> names = new HashSet<>();
+        for (GridFSFile file : gridFsTemplate.find(query)) {
+            names.add(file.getFilename());
         }
-        return count;
+        return names;
+    }
+
+    /** Returns the recorded owner of a stored photo, or empty if it has none (older uploads). */
+    public Optional<UUID> ownerOf(String filename) {
+        GridFSFile file = gridFsTemplate.findOne(byName(filename));
+        if (file == null || file.getMetadata() == null || file.getMetadata().getString("ownerId") == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(UUID.fromString(file.getMetadata().getString("ownerId")));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -164,9 +121,7 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
 
     @Override
     public Optional<String> thumbnailUrl(String photoUrl) {
-        return storedFilename(photoUrl)
-                .filter(name -> !name.endsWith(THUMBNAIL_SUFFIX) && name.contains("."))
-                .map(name -> UPLOADS_PREFIX + name.substring(0, name.lastIndexOf('.')) + THUMBNAIL_SUFFIX);
+        return PhotoImages.thumbnailUrl(photoUrl);
     }
 
     @Override
@@ -190,30 +145,21 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
 
     /** Builds and stores the thumbnail of an existing photo; empty if the photo itself does not exist. */
     private Optional<StoredFile> createMissingThumbnail(String thumbnailName) {
-        String base = thumbnailName.substring(0, thumbnailName.length() - THUMBNAIL_SUFFIX.length());
-        for (String extension : IMAGE_EXTENSIONS.values()) {
+        String base = PhotoImages.baseOf(thumbnailName);
+        for (String extension : PhotoImages.photoExtensions()) {
             Optional<StoredFile> original = load(base + extension);
             if (original.isEmpty()) {
                 continue;
             }
-            try {
-                BufferedImage image = ImageIO.read(new ByteArrayInputStream(original.get().content()));
-                if (image == null) {
-                    return Optional.empty();
-                }
-                byte[] thumbnail = thumbnailBytes(image);
-                saveRaw(thumbnailName, thumbnail, "image/jpeg", null);
-                return Optional.of(new StoredFile(thumbnail, "image/jpeg"));
-            } catch (IOException e) {
-                log.warn("Could not create the thumbnail for {}", base + extension, e);
+            Optional<byte[]> thumbnail = PhotoImages.thumbnailOf(original.get().content());
+            if (thumbnail.isEmpty()) {
+                log.warn("Could not create the thumbnail for {}", base + extension);
                 return Optional.empty();
             }
+            saveRaw(thumbnailName, thumbnail.get(), "image/jpeg", null);
+            return Optional.of(new StoredFile(thumbnail.get(), "image/jpeg"));
         }
         return Optional.empty();
-    }
-
-    private static byte[] thumbnailBytes(BufferedImage image) throws IOException {
-        return encode(downscale(image, THUMBNAIL_DIMENSION), "jpg", THUMBNAIL_QUALITY);
     }
 
     @Override
@@ -221,17 +167,11 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
         try {
             gridFsTemplate.delete(byName(filename));
             if (!filename.endsWith(THUMBNAIL_SUFFIX) && filename.contains(".")) {
-                gridFsTemplate.delete(byName(filename.substring(0, filename.lastIndexOf('.')) + THUMBNAIL_SUFFIX));
+                gridFsTemplate.delete(byName(PhotoImages.thumbnailNameOf(filename)));
             }
         } catch (RuntimeException e) {
             log.error("Failed to delete uploaded file {}", filename, e);
         }
-    }
-
-    /** Content type for a filename extension; null if it is not a served image type. */
-    private static String contentTypeForExtension(String filename) {
-        int dot = filename.lastIndexOf('.');
-        return dot < 0 ? null : CONTENT_TYPES_BY_EXTENSION.get(filename.substring(dot + 1).toLowerCase());
     }
 
     private static String contentTypeOf(GridFSFile file, String filename) {
@@ -239,58 +179,11 @@ public class GridFsFileStorageServiceImpl implements FileStorageService {
         if (metadata != null && metadata.getString("contentType") != null) {
             return metadata.getString("contentType");
         }
-        String byExtension = contentTypeForExtension(filename);
+        String byExtension = PhotoImages.contentTypeForExtension(filename);
         return byExtension != null ? byExtension : "application/octet-stream";
     }
 
     private static Query byName(String filename) {
         return Query.query(Criteria.where("filename").is(filename));
-    }
-
-    private static BufferedImage downscale(BufferedImage image, int maxDimension) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        int longest = Math.max(width, height);
-        if (longest <= maxDimension) {
-            return image;
-        }
-        double scale = (double) maxDimension / longest;
-        int newWidth = Math.max(1, (int) Math.round(width * scale));
-        int newHeight = Math.max(1, (int) Math.round(height * scale));
-        int type = image.getColorModel().hasAlpha() ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
-        BufferedImage scaled = new BufferedImage(newWidth, newHeight, type);
-        Graphics2D g = scaled.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g.drawImage(image, 0, 0, newWidth, newHeight, null);
-        g.dispose();
-        return scaled;
-    }
-
-    private static byte[] encode(BufferedImage image, String format, float jpegQuality) throws IOException {
-        BufferedImage toWrite = image;
-        if ("jpg".equals(format) && image.getColorModel().hasAlpha()) {
-            // JPEG has no alpha channel; ImageIO refuses ARGB input for it.
-            toWrite = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
-            Graphics2D g = toWrite.createGraphics();
-            g.drawImage(image, 0, 0, Color.WHITE, null);
-            g.dispose();
-        }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        if ("jpg".equals(format)) {
-            ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
-            try (ImageOutputStream imageOut = ImageIO.createImageOutputStream(out)) {
-                ImageWriteParam param = writer.getDefaultWriteParam();
-                param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-                param.setCompressionQuality(jpegQuality);
-                writer.setOutput(imageOut);
-                writer.write(null, new IIOImage(toWrite, null, null), param);
-            } finally {
-                writer.dispose();
-            }
-        } else if (!ImageIO.write(toWrite, format, out)) {
-            throw new FileStorageException("No image writer available for " + format);
-        }
-        return out.toByteArray();
     }
 }

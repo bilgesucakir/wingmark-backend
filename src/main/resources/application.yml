@@ -104,6 +104,23 @@ wingmark:
   uploads:
     # Most photos one user may have stored at once (0 = no limit).
     max-photos-per-user: ${MAX_PHOTOS_PER_USER:200}
+    # Where new photos are stored: gridfs (the database, default) or r2 (Cloudflare R2; older photos stay readable from the database).
+    storage: ${UPLOAD_STORAGE:gridfs}
+  # Cloudflare R2 bucket for photos, used only with UPLOAD_STORAGE=r2. The two keys are secrets: set them only in the
+  # host's environment, never in a file in the repo.
+  r2:
+    endpoint: ${R2_ENDPOINT:}
+    bucket: ${R2_BUCKET:}
+    region: ${R2_REGION:auto}
+    access-key-id: ${R2_ACCESS_KEY_ID:}
+    secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+  # Copies photos from the database to R2 (needs UPLOAD_STORAGE=r2). Off by default; when on it only reports until
+  # R2_MIGRATION_DRY_RUN=false. Never deletes anything from the database.
+  r2-migration:
+    enabled: ${R2_MIGRATION_ENABLED:false}
+    dry-run: ${R2_MIGRATION_DRY_RUN:true}
+    max-per-run: ${R2_MIGRATION_MAX_PER_RUN:50}
+    cron: ${R2_MIGRATION_CRON:0 20 * * * *}
   # Deletes stored photos nothing refers to any more, after a grace period. Off by default; when on it only logs
   # until UPLOAD_CLEANUP_DRY_RUN=false.
   upload-cleanup:

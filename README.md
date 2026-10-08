@@ -155,6 +155,17 @@ The script goes through the admin API (`POST /api/species`) and skips species wh
 - **Cleanup of abandoned photos (off by default):** a daily job finds stored photos that no bird log, profile picture or species image uses and deletes them with their thumbnail. Photos younger than `UPLOAD_CLEANUP_GRACE_DAYS` (7) are never touched, because the photo is uploaded before its log is saved. Settings: `UPLOAD_CLEANUP_ENABLED` (default `false`), `UPLOAD_CLEANUP_DRY_RUN` (default `true`: only logs), `UPLOAD_CLEANUP_GRACE_DAYS` (7), `UPLOAD_CLEANUP_MAX_PER_RUN` (100), `UPLOAD_CLEANUP_CRON` (daily 04:45 UTC). Run it with the dry run first and read the logs.
 - Later, when storage grows: WebP, and moving files to object storage with long cache headers.
 
+### Photo storage in Cloudflare R2 (optional)
+
+By default photos are stored in the MongoDB database (GridFS). The backend can store **new** photos in a private Cloudflare R2 bucket instead; older photos stay readable from the database. Nothing changes unless you set `UPLOAD_STORAGE=r2`.
+
+- **Settings** (on Render; the two keys are secrets: set them only in the Render environment, never in a file or in git, and they are never logged):
+  `UPLOAD_STORAGE` (`gridfs` default, or `r2`), `R2_ENDPOINT` (`https://<account id>.eu.r2.cloudflarestorage.com` for an EU bucket), `R2_BUCKET`, `R2_REGION` (`auto`), `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
+  With `UPLOAD_STORAGE=r2` and a missing R2 setting the app refuses to start and names the missing setting.
+- **How it works:** the bucket stays private and the backend serves photos at the same `/uploads/<name>` URLs (so no database row or app change), reading R2 first and the database as a fallback, with long immutable cache headers. A photo and its 400px thumbnail are stored as `photos/<name>` and `photos/<name>_thumb.jpg`. Deleting a photo removes it from both places. An index of uploads (owner, size) in the database drives the per-user limit and the cleanup, so R2 is never listed. Every R2 call has a timeout and at most two retries.
+- **Rollout:** (1) merge with `UPLOAD_STORAGE=gridfs`: nothing changes. (2) Set the R2 settings and `UPLOAD_STORAGE=r2`: new photos go to R2. (3) Copy the old photos: set `R2_MIGRATION_ENABLED=true` (dry run by default: it only reports how many files and bytes it would copy), read the log, then set `R2_MIGRATION_DRY_RUN=false`. `R2_MIGRATION_MAX_PER_RUN` (default 50) limits the photos handled per hourly run, which bounds the number of R2 requests; each copy is checked by size and a photo already copied costs no request. (4) The migration **never deletes** anything from the database; removing those copies would be a separate step after you have confirmed the photos are in R2.
+- Cloudflare R2 is a new service provider for uploaded photos (EU jurisdiction): the privacy policy and the data inventory must mention it before photos are stored there.
+
 ## Database
 
 Uses **MongoDB**. By default it connects to a local instance at
