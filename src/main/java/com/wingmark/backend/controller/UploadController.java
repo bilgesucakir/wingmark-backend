@@ -30,7 +30,7 @@ public class UploadController {
     @PostMapping("/photo")
     public ResponseEntity<Map<String, String>> uploadPhoto(@AuthenticationPrincipal UserPrincipal principal,
                                                              @RequestParam("file") MultipartFile file) {
-        String url = fileStorageService.store(file);
+        String url = fileStorageService.store(file, principal.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "url", url,
                 "thumbnailUrl", fileStorageService.thumbnailUrl(url).orElse(url)));
