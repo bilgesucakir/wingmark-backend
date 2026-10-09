@@ -12,7 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 
-/** Sends transactional emails only (no marketing). A failed send never fails the request; links and codes are logged at DEBUG only and addresses are masked. */
+/**
+ * Sends transactional emails only (no marketing).
+ * A failed send never fails the request; links and codes are logged at DEBUG only and addresses are masked.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

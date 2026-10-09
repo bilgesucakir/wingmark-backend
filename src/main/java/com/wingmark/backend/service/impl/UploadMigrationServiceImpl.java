@@ -3,7 +3,6 @@ package com.wingmark.backend.service.impl;
 import com.wingmark.backend.config.R2MigrationProperties;
 import com.wingmark.backend.entity.UploadedFile;
 import com.wingmark.backend.repository.UploadedFileRepository;
-import com.wingmark.backend.service.FileStorageService;
 import com.wingmark.backend.service.FileStorageService.StoredFile;
 import com.wingmark.backend.service.FileStorageService.StoredFileInfo;
 import com.wingmark.backend.service.UploadMigrationService;

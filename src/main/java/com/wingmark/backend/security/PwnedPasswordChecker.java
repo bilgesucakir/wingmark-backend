@@ -12,7 +12,11 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HexFormat;
 
-/** Checks a password against Have I Been Pwned using k-anonymity (only the first 5 SHA-1 characters leave the server). Fails open when the API is unavailable. */
+/**
+ * Checks a password against Have I Been Pwned using k-anonymity (only the first 5 SHA-1 characters leave the
+ * server).
+ * Fails open when the API is unavailable.
+ */
 @Slf4j
 @Component
 public class PwnedPasswordChecker {

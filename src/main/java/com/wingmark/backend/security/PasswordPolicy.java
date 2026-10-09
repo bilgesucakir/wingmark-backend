@@ -8,7 +8,10 @@ import org.springframework.stereotype.Component;
 import java.util.Locale;
 import java.util.Set;
 
-/** Server-side password rules applied at signup, reset and change: not derived from the email or username, not a common password, and not in a known breach. */
+/**
+ * Server-side password rules applied at signup, reset and change: not derived from the email or username, not a
+ * common password, and not in a known breach.
+ */
 @Component
 @RequiredArgsConstructor
 public class PasswordPolicy {

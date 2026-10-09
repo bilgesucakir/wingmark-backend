@@ -38,7 +38,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-/** The caller's own profile, settings, consents, data export and account deletion. The path userId must be the caller's own; any other id gives 404. */
+/**
+ * The caller's own profile, settings, consents, data export and account deletion.
+ * The path userId must be the caller's own; any other id gives 404.
+ */
 @Tag(name = "Users", description = "The caller's own profile and settings")
 @RestController
 @RequestMapping("/api/users/{userId}")

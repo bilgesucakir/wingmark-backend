@@ -291,7 +291,11 @@ public class BadgeServiceImpl implements BadgeService {
         return maxDistinctSpecies;
     }
 
-    /** Returns the size of the densest cluster of sightings, counting raw sightings rather than distinct species. Every log is tried as a cluster center. Progress can drop but a badge once earned is never revoked. */
+    /**
+     * Returns the size of the densest cluster of sightings, counting raw sightings rather than distinct species.
+     * Every log is tried as a cluster center.
+     * Progress can drop but a badge once earned is never revoked.
+     */
     private int computeMaxSightingsInRadius(UUID userId, Badge badge) {
         double radiusMeters = extractRadiusMeters(badge.getCriteriaMetadata());
         List<BirdLog> logs = birdLogRepository.findByUserId(userId);
