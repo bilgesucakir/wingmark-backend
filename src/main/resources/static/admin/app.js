@@ -961,7 +961,7 @@ let logsDebounceTimer = null;
 
 async function loadLogsList() {
   showMsg(logsListMsg, "", "");
-  logsTbody.innerHTML = '<tr><td colspan="8" class="muted">Loading…</td></tr>';
+  logsTbody.innerHTML = '<tr><td colspan="9" class="muted">Loading…</td></tr>';
   try {
     const [logs, users] = await Promise.all([
       Api.request("/api/bird-logs"),
@@ -990,7 +990,7 @@ function renderLogsList(filterText) {
       });
 
   if (!filtered.length) {
-    logsTbody.innerHTML = '<tr><td colspan="8" class="muted">No bird logs found.</td></tr>';
+    logsTbody.innerHTML = '<tr><td colspan="9" class="muted">No bird logs found.</td></tr>';
     return;
   }
 
@@ -1006,9 +1006,25 @@ function renderLogsList(filterText) {
       "<td>" + (log.pet ? "Yes" : "No") + "</td>" +
       "<td>" + escapeHtml(formatDate(log.observedAt)) + "</td>" +
       "<td>" + escapeHtml(formatDate(log.createdAt)) + "</td>" +
-      "<td>" + escapeHtml(log.note || "") + "</td>";
+      "<td>" + escapeHtml(log.note || "") + "</td>" +
+      '<td><button class="danger delete-log-btn">Delete</button></td>';
+    tr.querySelector(".delete-log-btn").addEventListener("click", () => deleteLog(log, user));
     logsTbody.appendChild(tr);
   });
+}
+
+async function deleteLog(log, user) {
+  const owner = (user && user.email) || log.userId;
+  if (!confirm("Permanently delete this log by " + owner + " (" + (log.speciesCommonName || "Unknown") +
+      ")? Its photo is removed too and the user's badges are recalculated. This cannot be undone.")) return;
+  try {
+    await Api.request("/api/admin/bird-logs/" + log.id, { method: "DELETE" });
+    allLogs = allLogs.filter((l) => l.id !== log.id);
+    renderLogsList(logsSearchInput.value.trim());
+    showMsg(logsListMsg, "Log deleted.", "success");
+  } catch (err) {
+    showMsg(logsListMsg, err.message, "error");
+  }
 }
 
 logsSearchInput.addEventListener("input", () => {
