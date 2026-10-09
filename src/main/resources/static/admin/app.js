@@ -72,6 +72,7 @@ const sections = {
   badges: document.getElementById("section-badges"),
   logs: document.getElementById("section-logs"),
   metrics: document.getElementById("section-metrics"),
+  usage: document.getElementById("section-usage"),
 };
 
 function goToSection(name) {
@@ -84,6 +85,7 @@ function goToSection(name) {
   if (name === "badges") loadBadgesList();
   if (name === "logs") loadLogsList();
   if (name === "metrics") loadMetrics();
+  if (name === "usage") loadUsage();
 }
 
 tabButtons.forEach((btn) => btn.addEventListener("click", () => goToSection(btn.dataset.section)));
@@ -1076,6 +1078,66 @@ async function loadMetrics() {
 }
 
 reloadMetricsBtn.addEventListener("click", loadMetrics);
+
+/* =====================================================================
+ * Usage (anonymous aggregates from /api/admin/usage-stats)
+ * ===================================================================== */
+
+const usageMsg = document.getElementById("usage-msg");
+const usageGeneratedAt = document.getElementById("usage-generated-at");
+const usageNote = document.getElementById("usage-note");
+const usageStatGrid = document.getElementById("usage-stat-grid");
+const reloadUsageBtn = document.getElementById("reload-usage-btn");
+
+function renderUsageCards(stats) {
+  const cards = [
+    ["Users", stats.totalUsers],
+    ["Active last 7 days", stats.activeUsersLast7Days],
+    ["Active last 30 days", stats.activeUsersLast30Days],
+    ["New last 30 days", stats.newUsersLast30Days],
+    ["Logs total", stats.totalLogs],
+    ["Logs last 7 days", stats.logsLast7Days],
+    ["Logs last 30 days", stats.logsLast30Days],
+  ];
+  usageStatGrid.innerHTML = "";
+  cards.forEach(([label, value]) => {
+    const card = document.createElement("div");
+    card.className = "stat-card";
+    card.innerHTML =
+      '<div class="stat-value">' + escapeHtml(String(value)) + "</div>" +
+      '<div class="stat-label">' + escapeHtml(label) + "</div>";
+    usageStatGrid.appendChild(card);
+  });
+}
+
+async function loadUsage() {
+  showMsg(usageMsg, "", "");
+  usageGeneratedAt.textContent = "Calculating…";
+  try {
+    const stats = await Api.request("/api/admin/usage-stats");
+    usageGeneratedAt.textContent = "Calculated " + formatDate(stats.generatedAt);
+    usageNote.textContent =
+      "Aggregates only: no emails, names or exact locations. A species, region or group is listed only when at least " +
+      stats.minGroupSize + " different users contribute, so with few users those lists stay empty on purpose.";
+    renderUsageCards(stats);
+    renderBarChart(document.getElementById("usage-logs-per-day"), stats.logsPerDay,
+      (d) => d.date, (d) => d.logs);
+    renderBarChart(document.getElementById("usage-logs-per-week"), stats.logsPerWeek,
+      (w) => "Week of " + w.weekStart, (w) => w.logs);
+    // A bucket with too few users has users = null: shown as hidden, not as zero.
+    renderBarChart(document.getElementById("usage-sightings-per-user"), stats.sightingsPerUser,
+      (b) => b.range + " logs" + (b.users === null ? " (too few users to show)" : ""), (b) => b.users || 0);
+    renderBarChart(document.getElementById("usage-top-species"), stats.topSpecies,
+      (s) => s.speciesName, (s) => s.logs);
+    renderBarChart(document.getElementById("usage-regions"), stats.regions,
+      (r) => r.cell, (r) => r.logs);
+  } catch (err) {
+    usageGeneratedAt.textContent = "";
+    showMsg(usageMsg, err.message, "error");
+  }
+}
+
+reloadUsageBtn.addEventListener("click", loadUsage);
 
 /* =====================================================================
  * Init

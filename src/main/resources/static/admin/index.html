@@ -23,6 +23,7 @@
     <button class="tab-btn" data-section="badges">Badges</button>
     <button class="tab-btn" data-section="logs">Logs</button>
     <button class="tab-btn" data-section="metrics">Metrics</button>
+    <button class="tab-btn" data-section="usage">Usage</button>
   </nav>
 
   <div class="container">
@@ -546,6 +547,45 @@
       <div class="panel">
         <div class="panel-header"><h2>Locale usage</h2></div>
         <div class="bar-chart" id="metrics-locale-usage"></div>
+      </div>
+    </section>
+
+    <!-- ============ Usage ============ -->
+    <section id="section-usage" class="section hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Anonymous usage</h2>
+          <button class="secondary" id="reload-usage-btn">Reload</button>
+        </div>
+        <p class="muted" id="usage-generated-at"></p>
+        <p class="muted" id="usage-note"></p>
+        <div id="usage-msg"></div>
+        <div class="stat-grid" id="usage-stat-grid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Logs per day (last 30 days)</h2></div>
+        <div class="bar-chart" id="usage-logs-per-day"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Logs per week (last 12 weeks)</h2></div>
+        <div class="bar-chart" id="usage-logs-per-week"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Logs per user</h2></div>
+        <div class="bar-chart" id="usage-sightings-per-user"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Most-logged species</h2></div>
+        <div class="bar-chart" id="usage-top-species"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>Regions (about 110 km cells)</h2></div>
+        <div class="bar-chart" id="usage-regions"></div>
       </div>
     </section>
   </div>

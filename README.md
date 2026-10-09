@@ -142,7 +142,7 @@ The script goes through the admin API (`POST /api/species`) and skips species wh
 
 ### Anonymous usage statistics
 
-`GET /api/admin/usage-stats` (admin only) answers "which birds are popular and how is the app used" with aggregates only. It is computed from data we already hold on every call; nothing is stored and no tracking library is used.
+`GET /api/admin/usage-stats` (admin only) answers "which birds are popular and how is the app used" with aggregates only. It is computed from data we already hold on every call; nothing is stored and no tracking library is used. The admin panel shows it in the **Usage** tab.
 
 - Returns: user and activity counts (active in 7 / 30 days, from last login or refresh), new users, logs per day (30 days) and per week (12 weeks), how many users have 0 / 1 / 2-5 / 6-20 / 21+ logs, the most-logged species, and coarse one-degree regions (about 110 km).
 - Never returns email, name, user id, device or an exact location.
