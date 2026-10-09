@@ -114,9 +114,7 @@ final class ApiFieldDocs {
             licenseCode|Image license such as cc-by, or null for the operator's own uploads.|cc-by
             attribution|Credit line the app must show for the image, or null.|(c) Jane Doe
             commonsFileUrl|Page address of a Wikimedia Commons file, like https://commons.wikimedia.org/wiki/File:Example.jpg. When set, licenseCode, attribution and sourceUrl are read from Commons and the values sent for them are ignored; only public domain, CC0, CC BY and CC BY-SA files are accepted.|https://commons.wikimedia.org/wiki/File:Example.jpg
-            sourceUrl|Where the image came from, or null.|https://www.inaturalist.org/observations/1
-            observationId|iNaturalist observation id.|1234567
-            observationUrl|Link to the iNaturalist observation.|https://www.inaturalist.org/observations/1234567
+            sourceUrl|Where the image came from, or null.|https://commons.wikimedia.org/wiki/File:Example.jpg
             recordingUrl|Link to the recording.|https://xeno-canto.org/123456
             quality|Recording quality grade from Xeno-canto, A to E.|A
             recordist|Person who made the recording.|Jane Doe
@@ -197,7 +195,6 @@ final class ApiFieldDocs {
             RegionCount.cell|Grid cell as "{latitude}, {longitude}" rounded down to whole degrees (about 110 km).|40, 29
             RegionCount.logs|Number of logs in the cell.|58
             RegionCount.users|Number of different users with logs in the cell.|9
-            PhotoCandidateDto.photoUrl|URL of the candidate photo.|https://static.inaturalist.org/photos/1/medium.jpg
             """;
 
     private static final Map<String, Doc> DOCS = parse();

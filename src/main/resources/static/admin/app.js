@@ -139,9 +139,6 @@ const imagesMsg = document.getElementById("images-msg");
 const imageGrid = document.getElementById("image-grid");
 const uploadBtn = document.getElementById("upload-btn");
 const attachUrlBtn = document.getElementById("attach-url-btn");
-const searchCandidatesBtn = document.getElementById("search-candidates-btn");
-const candidateGrid = document.getElementById("candidate-grid");
-const candidatesMsg = document.getElementById("candidates-msg");
 
 const SPECIES_FIELDS = ["scientificName", "family", "order"];
 // Translated fields are edited as separate EN/TR inputs (e.g. "commonName-en") but
@@ -284,8 +281,6 @@ async function openEditForm(id) {
     showSpeciesFormView();
     renderImages(species.images || []);
     imagesPanel.classList.remove("hidden");
-    candidateGrid.innerHTML = "";
-    showMsg(candidatesMsg, "", "");
   } catch (err) {
     showMsg(speciesListMsg, err.message, "error");
   }
@@ -473,68 +468,6 @@ attachUrlBtn.addEventListener("click", async () => {
     attachUrlBtn.disabled = false;
   }
 });
-
-searchCandidatesBtn.addEventListener("click", async () => {
-  if (!currentSpeciesId) return;
-  const lifeStage = document.getElementById("candidate-lifeStage").value;
-  const gender = document.getElementById("candidate-gender").value;
-  showMsg(candidatesMsg, "Searching…", "success");
-  candidateGrid.innerHTML = "";
-  searchCandidatesBtn.disabled = true;
-  try {
-    const query = "?lifeStage=" + encodeURIComponent(lifeStage) + "&gender=" + encodeURIComponent(gender);
-    const candidates = await Api.request("/api/species/" + currentSpeciesId + "/photo-candidates" + query);
-    showMsg(candidatesMsg, "", "");
-    renderCandidates(candidates, lifeStage, gender);
-  } catch (err) {
-    showMsg(candidatesMsg, err.message, "error");
-  } finally {
-    searchCandidatesBtn.disabled = false;
-  }
-});
-
-function renderCandidates(candidates, lifeStage, gender) {
-  if (!candidates.length) {
-    candidateGrid.innerHTML = '<p class="muted">No candidates found.</p>';
-    return;
-  }
-  candidateGrid.innerHTML = "";
-  candidates.forEach((c) => {
-    const card = document.createElement("div");
-    card.className = "candidate-card";
-    card.innerHTML =
-      '<a href="' + escapeHtml(c.observationUrl) + '" target="_blank" rel="noopener">' +
-      '<img src="' + escapeHtml(c.photoUrl) + '" /></a>' +
-      '<div class="meta">' + escapeHtml(c.licenseCode || "") + " · " + escapeHtml(c.attribution || "") + "</div>" +
-      '<button class="secondary use-btn">Use this photo</button>';
-    card.querySelector(".use-btn").addEventListener("click", async (e) => {
-      e.target.disabled = true;
-      e.target.textContent = "Attaching…";
-      try {
-        await Api.request("/api/species/" + currentSpeciesId + "/images", {
-          method: "POST",
-          body: JSON.stringify({
-            lifeStage,
-            gender,
-            imageUrl: c.photoUrl,
-            caption: c.attribution || null,
-            // Kept so the app can credit the photographer - iNaturalist's CC licenses require it.
-            licenseCode: c.licenseCode || null,
-            attribution: c.attribution || null,
-            sourceUrl: c.observationUrl || null,
-          }),
-        });
-        await refreshImages();
-        showMsg(imagesMsg, "Candidate attached.", "success");
-      } catch (err) {
-        showMsg(candidatesMsg, err.message, "error");
-        e.target.disabled = false;
-        e.target.textContent = "Use this photo";
-      }
-    });
-    candidateGrid.appendChild(card);
-  });
-}
 
 /* =====================================================================
  * Users
