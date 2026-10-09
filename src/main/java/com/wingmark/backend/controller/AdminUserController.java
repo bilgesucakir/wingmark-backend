@@ -44,7 +44,10 @@ public class AdminUserController {
         return ResponseEntity.ok(userService.getAllUsers(locale));
     }
 
-    /** Admin-only: replaces a user's name, role, verified flag, favorite species and picture. Omitted fields are cleared; admins cannot demote or un-verify themselves. */
+    /**
+     * Admin-only: replaces a user's name, role, verified flag, favorite species and picture.
+     * Omitted fields are cleared; admins cannot demote or un-verify themselves.
+     */
     @Operation(summary = "Update a user", description = "Admin-only. Replaces a user's name, role, email-verified flag, favorite species and profilePicture - a full replacement, so omitted fields are cleared. " +
             "Role and verification changes take effect on the user's very next request. Un-verifying a user locks them out until they verify again. " +
             "409 CANNOT_MODIFY_SELF if an admin tries to remove their own admin role or un-verify themselves. 422 INVALID_REFERENCE if favoriteSpeciesId doesn't exist. " +

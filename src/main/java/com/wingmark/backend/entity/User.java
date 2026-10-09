@@ -54,7 +54,11 @@ public class User extends BaseEntity {
     /** When the inactivity warning email was sent for the current period of inactivity, or null. */
     private Instant inactivityWarningSentAt;
 
-    /** Token version stamped into access tokens as the {@code tv} claim. Tokens with a lower value are rejected; it is bumped on password change, reset and logout-all. Null counts as 0. */
+    /**
+     * Token version stamped into access tokens as the {@code tv} claim.
+     * Tokens with a lower value are rejected; it is bumped on password change, reset and logout-all.
+     * Null counts as 0.
+     */
     private Integer tokenVersion;
 
     public int currentTokenVersion() {

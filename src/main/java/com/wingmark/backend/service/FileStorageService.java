@@ -21,7 +21,11 @@ public interface FileStorageService {
     /** Lists every stored file, thumbnails included, with when it was stored and its size. */
     List<StoredFileInfo> listFiles();
 
-    /** Stores a JPEG or PNG (415 otherwise), re-encoded to strip EXIF and shrunk (at most 1280 px), plus a 400 px JPEG thumbnail next to it. Returns the photo's relative URL such as {@code /uploads/xxx.jpg}. */
+    /**
+     * Stores a JPEG or PNG (415 otherwise), re-encoded to strip EXIF and shrunk (at most 1280 px), plus a 400 px
+     * JPEG thumbnail next to it.
+     * Returns the photo's relative URL such as {@code /uploads/xxx.jpg}.
+     */
     String store(MultipartFile file);
 
     /**

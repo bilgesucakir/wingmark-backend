@@ -15,10 +15,16 @@ import java.util.UUID;
 /** Manages bird sighting logs. */
 public interface BirdLogService {
 
-    /** Admin-only: returns every user's logs, filtered by {@code hasSpecies}, {@code gender} and {@code lifeStage} (null = no filter) and sorted by {@code observedAt}. */
+    /**
+     * Admin-only: returns every user's logs, filtered by {@code hasSpecies}, {@code gender} and {@code
+     * lifeStage} (null = no filter) and sorted by {@code observedAt}.
+     */
     List<BirdLogResponseDto> getAll(Boolean hasSpecies, Gender gender, LifeStage lifeStage, Sort.Direction sortDirection, Locale locale);
 
-    /** Returns the user's logs, filtered by {@code hasSpecies}, {@code gender} and {@code lifeStage} (null = no filter) and sorted by {@code observedAt}. */
+    /**
+     * Returns the user's logs, filtered by {@code hasSpecies}, {@code gender} and {@code lifeStage} (null = no
+     * filter) and sorted by {@code observedAt}.
+     */
     List<BirdLogResponseDto> getByUserId(UUID userId, Boolean hasSpecies, Gender gender, LifeStage lifeStage, Sort.Direction sortDirection, Locale locale);
 
     /** Returns one of this user's logs by id, or throws if it doesn't exist/isn't theirs. */

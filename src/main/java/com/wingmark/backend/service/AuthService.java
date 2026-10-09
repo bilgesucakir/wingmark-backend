@@ -28,7 +28,10 @@ public interface AuthService {
     /** Revokes every refresh token belonging to a user and invalidates their already-issued access tokens. */
     void logoutAll(UUID userId);
 
-    /** Emails a 6-digit reset code (15 minutes, single use) if the account exists; does nothing otherwise or if one was sent in the last 60 seconds. */
+    /**
+     * Emails a 6-digit reset code (15 minutes, single use) if the account exists; does nothing otherwise or if
+     * one was sent in the last 60 seconds.
+     */
     void forgotPassword(ForgotPasswordRequestDto request);
 
     /** Sets a new password with a reset code and ends every session. The code is burned after 5 wrong guesses; the current password is rejected. */
