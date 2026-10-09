@@ -13,7 +13,7 @@ go. Personal-only for now: every user sees just their own logs, never anyone els
 - MongoDB (local instance by default, or point it at MongoDB Atlas) — see [Database](#database)
 - springdoc-openapi (Swagger UI)
 - Lombok
-- Xeno-canto API v3 (bird sound recordings) and iNaturalist API (photo curation)
+- Xeno-canto API v3 (bird sound recordings) and the Wikimedia Commons API (photo license and credit)
 
 ## Getting started
 
@@ -274,7 +274,7 @@ A `406` (client refuses JSON) has no body at all.
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | Upload that isn't JPEG/PNG, or a request body in an unsupported content type |
 | `INVALID_REFERENCE` | 422 | Body points at a species that doesn't exist (`speciesId`, `favoriteSpeciesId`) |
 | `RATE_LIMITED` | 429 | Too many attempts - wait `Retry-After` seconds (see [Rate limits](#rate-limits)) |
-| `EXTERNAL_SERVICE_ERROR` | 502 | Xeno-canto / iNaturalist failed or isn't configured |
+| `EXTERNAL_SERVICE_ERROR` | 502 | Xeno-canto / Wikimedia Commons failed or isn't configured |
 | `INTERNAL_ERROR` | 500 | Unexpected server error (logged server-side) |
 
 Status codes used across the API:
@@ -819,7 +819,6 @@ same shape as GET.
 | PUT    | `/{id}`                   | 🛡️  | Update a species                                                               |
 | DELETE | `/{id}`                   | 🛡️  | Delete a species (and its images)                                              |
 | POST   | `/{id}/images`            | 🛡️  | Attach a curated reference image (life stage + gender)                         |
-| GET    | `/{id}/photo-candidates`  | 🛡️  | **Curation tool** — searches iNaturalist for candidate photos (`?lifeStage=ADULT\|BABY&gender=MALE\|FEMALE\|NOT_APPLICABLE`) to review and save via the endpoint above. Does not save anything itself. |
 | DELETE | `/{id}/images/{imageId}`  | 🛡️  | Remove a reference image                                                       |
 
 **Sorting** the list uses the standard `?sort=<field>,<asc|desc>` param:
@@ -941,26 +940,11 @@ Response:
 }
 ```
 
-For a third-party photo (an iNaturalist candidate), send its `licenseCode` (e.g.
-`cc-by`), `attribution` and `sourceUrl` (the observation page). Every species image in the
+For a third-party photo, send its `licenseCode` (e.g.
+`cc-by`), `attribution` and `sourceUrl` (the page it came from), or for a Wikimedia Commons photo send only `commonsFileUrl` and the three are filled in for you. Every species image in the
 API carries these three fields; **the app must show the attribution under photos that have
 a `licenseCode`**, since Creative Commons licenses require crediting the author. They're null
-for photos you uploaded yourself. Photo candidates only include openly licensed
-photos; "all rights reserved" photos are filtered out.
-
-**GET `/{id}/photo-candidates?lifeStage=ADULT&gender=MALE`** → `200 OK`. No request body.
-
-```json
-[
-  {
-    "observationId": "123456789",
-    "photoUrl": "https://static.inaturalist.org/photos/123456/medium.jpg",
-    "licenseCode": "cc-by-nc",
-    "attribution": "(c) Jane Birder, some rights reserved",
-    "observationUrl": "https://www.inaturalist.org/observations/123456789"
-  }
-]
-```
+for photos you uploaded yourself.
 
 **DELETE `/{id}/images/{imageId}`** → `204 No Content`. No request or response body.
 
@@ -1182,7 +1166,6 @@ only ever appended; an existing key is never renamed or removed.
   job, no separate "sync" step.
 - **Species photos and sounds are handled differently on purpose**: sounds are
   fetched live from Xeno-canto on every request, since any call/song recording for a
-  species is as good as any other. Photos are curated once by an admin (via the
-  iNaturalist-backed `photo-candidates` endpoint) and stored, since a specific
-  crowd-sourced photo needs a human to check it's actually a good, correctly-labeled
-  picture before it goes in the guide.
+  species is as good as any other. Photos are curated once by an admin (Wikimedia Commons
+  or our own uploads) and stored, since a specific photo needs a human to check it's
+  actually a good, correctly-labeled picture before it goes in the guide.

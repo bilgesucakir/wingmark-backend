@@ -208,16 +208,6 @@ class SpeciesControllerTest {
     }
 
     @Test
-    void photoCandidatesEndpointIsAdminOnly() throws Exception {
-        String userToken = registerAndGetToken("nonadmin");
-
-        mockMvc.perform(get("/api/species/22222222-2222-2222-2222-222222222201/photo-candidates")
-                        .param("lifeStage", "ADULT")
-                        .header("Authorization", "Bearer " + userToken))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
     void searchMatchesTurkishNamesWithoutAccentsAndScientificNames() throws Exception {
         String marker = Long.toString(System.nanoTime());
         speciesRepository.save(Species.builder()

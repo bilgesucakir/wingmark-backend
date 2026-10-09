@@ -72,7 +72,7 @@ public class SecurityConfig {
                         .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
                         // The admin panel loads only its own scripts and styles: no inline code, so an
                         // injected <script> can't run even if some escaping were ever missed. Images
-                        // may come from https (iNaturalist candidates). Scoped to /admin/** because
+                        // may come from https (Commons and other attached URLs). Scoped to /admin/** because
                         // Swagger UI relies on inline scripts.
                         .addHeaderWriter(new DelegatingRequestMatcherHeaderWriter(
                                 new AntPathRequestMatcher("/admin/**"),

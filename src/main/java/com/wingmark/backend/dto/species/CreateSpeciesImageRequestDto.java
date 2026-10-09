@@ -11,7 +11,7 @@ public record CreateSpeciesImageRequestDto(
         @NotNull ImageGender gender,
         @NotBlank String imageUrl,
         String caption,
-        // Set when attaching a third-party photo (e.g. an iNaturalist candidate); null for your own uploads.
+        // Set when attaching a third-party photo (e.g. a Wikimedia Commons file); null for your own uploads.
         String licenseCode,
         String attribution,
         String sourceUrl,

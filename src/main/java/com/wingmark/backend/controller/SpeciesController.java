@@ -2,14 +2,10 @@ package com.wingmark.backend.controller;
 
 import com.wingmark.backend.dto.species.CreateSpeciesImageRequestDto;
 import com.wingmark.backend.dto.species.CreateSpeciesRequestDto;
-import com.wingmark.backend.dto.species.PhotoCandidateDto;
 import com.wingmark.backend.dto.species.SpeciesImageResponseDto;
 import com.wingmark.backend.dto.species.SpeciesRecordingResponseDto;
 import com.wingmark.backend.dto.species.SpeciesResponseDto;
 import com.wingmark.backend.dto.species.UpdateSpeciesRequestDto;
-import com.wingmark.backend.enums.ImageGender;
-import com.wingmark.backend.enums.LifeStageImage;
-import com.wingmark.backend.service.INaturalistService;
 import com.wingmark.backend.service.SpeciesService;
 import com.wingmark.backend.service.XenoCantoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,7 +43,6 @@ public class SpeciesController {
 
     private final SpeciesService speciesService;
     private final XenoCantoService xenoCantoService;
-    private final INaturalistService iNaturalistService;
 
     /** Returns a page of species, optionally filtered by a name substring and sortable. Public. */
     @Operation(summary = "Get all species", description = "Returns a page of species in the guide, optionally filtered by a substring (?search=) of the common name (English or Turkish) or the scientific name, case- and accent-insensitive (serce finds Serçe), " +
@@ -101,31 +96,13 @@ public class SpeciesController {
 
     /** Admin-only: attaches a curated reference image (life stage + gender) to a species. */
     @Operation(summary = "Add a species image", description = "Admin-only. Attaches a curated reference image (life stage + gender) to a species. " +
-            "Typically the URL comes from reviewing results of GET /{id}/photo-candidates first. For a Wikimedia Commons photo send commonsFileUrl (the file page address): " +
+            "For a Wikimedia Commons photo send commonsFileUrl (the file page address): " +
             "the license, credit line and source page are then read from Commons and stored, and files that are not public domain, CC0, CC BY or CC BY-SA are refused with 400.")
     @PostMapping("/{id}/images")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SpeciesImageResponseDto> createImage(@PathVariable UUID id,
                                                            @Valid @RequestBody CreateSpeciesImageRequestDto request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(speciesService.addImage(id, request));
-    }
-
-    /** Admin-only: searches iNaturalist for candidate photos of the species by life stage and sex. Saves nothing; attach one via {@code POST /{id}/images}. */
-    @Operation(
-            summary = "Get species photo candidates",
-            description = "Admin-only curation tool - does not save anything. Searches iNaturalist for candidate " +
-                    "reference photos of this species matching the given lifeStage (and optionally gender), " +
-                    "returning attribution/license info for each so one can be reviewed and saved via " +
-                    "POST /{id}/images. Not called on every guide page view - species photos are curated " +
-                    "once, not live-fetched per request."
-    )
-    @GetMapping("/{id}/photo-candidates")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<PhotoCandidateDto>> getPhotoCandidates(@PathVariable UUID id,
-                                                                    @RequestParam LifeStageImage lifeStage,
-                                                                    @RequestParam(defaultValue = "NOT_APPLICABLE") ImageGender gender) {
-        SpeciesResponseDto species = speciesService.getById(id);
-        return ResponseEntity.ok(iNaturalistService.findPhotoCandidates(species.scientificName(), lifeStage, gender));
     }
 
     /** Admin-only: removes one of a species' reference images. */

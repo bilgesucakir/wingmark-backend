@@ -81,8 +81,7 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
             Map.entry("POST /api/species", List.of(409)),
             Map.entry("PUT /api/species/{id}", List.of(409)),
             Map.entry("POST /api/uploads/photo", List.of(403, 413, 415)),
-            Map.entry("GET /api/species/{id}/sound", List.of(502)),
-            Map.entry("GET /api/species/{id}/photo-candidates", List.of(502)));
+            Map.entry("GET /api/species/{id}/sound", List.of(502)));
 
     private static final Map<String, String> PARAMETERS = Map.ofEntries(
             Map.entry("userId", "Id of the user. Must be the caller's own id; any other id gives 404, except for admins."),
@@ -153,7 +152,6 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
             statuses.add(401);
         }
         boolean adminOnly = path.startsWith("/api/admin")
-                || path.endsWith("/photo-candidates")
                 || (secured && (path.startsWith("/api/badges") || path.startsWith("/api/species"))
                 && method != PathItem.HttpMethod.GET);
         if (adminOnly) {
@@ -193,12 +191,6 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
             String description = PARAMETERS.get(parameter.getName());
             if ("id".equals(parameter.getName())) {
                 description = idDescription(path);
-            }
-            if ("gender".equals(parameter.getName()) && path.endsWith("/photo-candidates")) {
-                description = "Sex of the bird in the photos: MALE, FEMALE or NOT_APPLICABLE (default).";
-            }
-            if ("lifeStage".equals(parameter.getName()) && path.endsWith("/photo-candidates")) {
-                description = "Life stage of the bird in the photos: BABY or ADULT.";
             }
             if (description != null) {
                 parameter.setDescription(description);

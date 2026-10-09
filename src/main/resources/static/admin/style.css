@@ -330,31 +330,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .image-card .meta button { width: 100%; margin-top: 6px; padding: 4px; font-size: 11px; }
 
-/* ---------- Candidates ---------- */
-.candidate-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.candidate-card {
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  background: #fafafa;
-}
-
-.candidate-card img {
-  width: 100%;
-  height: 100px;
-  object-fit: cover;
-  display: block;
-}
-
-.candidate-card .meta { padding: 6px 8px; font-size: 10px; color: var(--muted); }
-.candidate-card button { width: 100%; margin-top: 4px; }
-
 /* ---------- Messages ---------- */
 .msg {
   padding: 10px 12px;

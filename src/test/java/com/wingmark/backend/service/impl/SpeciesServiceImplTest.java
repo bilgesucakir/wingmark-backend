@@ -193,12 +193,12 @@ class SpeciesServiceImplTest {
 
         CreateSpeciesImageRequestDto request = new CreateSpeciesImageRequestDto(
                 LifeStageImage.ADULT, ImageGender.MALE, "https://example.com/photo.jpg", "caption",
-                "cc-by", "(c) Jane Birder, some rights reserved (CC BY)", "https://www.inaturalist.org/observations/1", null);
+                "cc-by", "(c) Jane Birder, some rights reserved (CC BY)", "https://example.org/photo/1", null);
 
         SpeciesImageResponseDto response = speciesService.addImage(speciesId, request);
         assertThat(response.licenseCode()).isEqualTo("cc-by");
         assertThat(response.attribution()).isEqualTo("(c) Jane Birder, some rights reserved (CC BY)");
-        assertThat(response.sourceUrl()).isEqualTo("https://www.inaturalist.org/observations/1");
+        assertThat(response.sourceUrl()).isEqualTo("https://example.org/photo/1");
 
         assertThat(response.imageUrl()).isEqualTo("https://example.com/photo.jpg");
     }
