@@ -13,6 +13,6 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties(prefix = "wingmark.commons")
 public record CommonsProperties(
         @DefaultValue("https://commons.wikimedia.org") String baseUrl,
-        @DefaultValue("Wingmark/1.0 (support.wingmark@gmail.com)") String userAgent
+        @DefaultValue("Wingmark/1.0 (support@wingmarkapp.com)") String userAgent
 ) {
 }

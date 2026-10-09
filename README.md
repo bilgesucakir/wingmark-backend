@@ -86,7 +86,8 @@ so it always deploys as a container). To deploy:
      sender details, shown in every email's footer once `BUSINESS_LEGAL_NAME` is set.
      Empty by default; nothing is shown until you fill them in.
    - `TERMS_VERSION` / `TERMS_URL` / `PRIVACY_VERSION` / `PRIVACY_URL` — set these once
-     the documents are published; see [Legal](#legal-apilegal).
+     the documents are published, e.g. `PRIVACY_URL=https://wingmarkapp.com/privacy` (Turkish:
+     `/privacy-tr`); see [Legal](#legal-apilegal).
    - `LOG_LEVEL` — leave unset (INFO). **Never set `DEBUG` in production**: at DEBUG,
      undelivered verification links and reset codes are logged.
    - `CORS_ALLOWED_ORIGINS` — leave unset. Only needed if a browser app on another origin

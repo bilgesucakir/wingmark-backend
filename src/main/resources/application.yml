@@ -76,7 +76,7 @@ wingmark:
     base-url: ${XENO_CANTO_BASE_URL:https://xeno-canto.org/api/3}
     api-key: ${XENO_CANTO_API_KEY:}
   mail:
-    from: ${MAIL_FROM:no-reply@wingmark.app}
+    from: ${MAIL_FROM:noreply@wingmarkapp.com}
     # Most emails sent per UTC day; more are skipped with a warning. 0 = no cap.
     daily-cap: ${MAIL_DAILY_CAP:200}
   # Deletes accounts with no activity for two years after a warning email. Off by default; when on it only
