@@ -36,4 +36,7 @@ public interface BirdLogService {
 
     /** Deletes one of this user's logs and re-evaluates their badge progress. */
     void delete(UUID userId, UUID logId);
+
+    /** Admin-only: deletes any user's log, releases its photo and re-evaluates the owner's badge progress. */
+    void deleteAsAdmin(UUID logId);
 }

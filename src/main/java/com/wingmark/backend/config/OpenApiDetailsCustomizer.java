@@ -205,6 +205,9 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
         if (path.startsWith("/api/species")) {
             return "Id of the species.";
         }
+        if (path.startsWith("/api/admin/bird-logs")) {
+            return "Id of the bird log to delete (any user's).";
+        }
         if (path.startsWith("/api/bird-logs")) {
             return "Id of the bird log; it must be the caller's own.";
         }

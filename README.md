@@ -656,6 +656,12 @@ immediately. `403` when targeting your own account.
 
 </details>
 
+### Admin - Bird logs (`/api/admin/bird-logs`) — 🛡️
+
+| Method | Path     | Description                                                                                                   |
+|--------|----------|---------------------------------------------------------------------------------------------------------------|
+| DELETE | `/{id}`  | Deletes any user's log (the Logs tab's Delete button): releases its photo and recalculates the owner's badges. `204`, `404` if unknown |
+
 ### Admin - Metrics (`/api/admin/metrics`) — 🛡️
 
 | Method | Path | Description                                                                 |

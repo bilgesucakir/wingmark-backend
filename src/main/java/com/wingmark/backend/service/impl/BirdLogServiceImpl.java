@@ -160,6 +160,15 @@ public class BirdLogServiceImpl implements BirdLogService {
         badgeService.evaluateForUser(userId);
     }
 
+    @Override
+    public void deleteAsAdmin(UUID logId) {
+        BirdLog log = birdLogRepository.findById(logId)
+                .orElseThrow(() -> ResourceNotFoundException.of("BirdLog", logId));
+        birdLogRepository.delete(log);
+        uploadedFileCleaner.deleteIfUnreferenced(log.getPhotoUrl());
+        badgeService.evaluateForUser(log.getUserId());
+    }
+
     /** Rejects sightings dated in the future, with slack for a fast phone clock. */
     private Instant validateObservedAt(Instant observedAt) {
         if (observedAt.isAfter(Instant.now().plus(OBSERVED_AT_CLOCK_SKEW))) {

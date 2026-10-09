@@ -169,6 +169,29 @@ class BirdLogServiceImplTest {
     }
 
     @Test
+    void anAdminDeleteRemovesAnyUsersLogReleasesItsPhotoAndReEvaluatesTheOwnersBadges() {
+        UUID logId = UUID.randomUUID();
+        BirdLog existing = logWithPhoto(logId, "/uploads/a.jpg");
+        existing.setUserId(userId);
+        when(birdLogRepository.findById(logId)).thenReturn(Optional.of(existing));
+
+        birdLogService.deleteAsAdmin(logId);
+
+        verify(birdLogRepository).delete(existing);
+        verify(uploadedFileCleaner).deleteIfUnreferenced("/uploads/a.jpg");
+        verify(badgeService).evaluateForUser(userId);
+    }
+
+    @Test
+    void anAdminDeleteOfAnUnknownLogIsNotFound() {
+        UUID logId = UUID.randomUUID();
+        when(birdLogRepository.findById(logId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> birdLogService.deleteAsAdmin(logId)).isInstanceOf(ResourceNotFoundException.class);
+        verify(birdLogRepository, never()).delete(any());
+    }
+
+    @Test
     void deleteReleasesThePhotoOfTheDeletedLog() {
         UUID logId = UUID.randomUUID();
         when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(logWithPhoto(logId, "/uploads/a.jpg")));
