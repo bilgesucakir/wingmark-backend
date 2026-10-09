@@ -70,8 +70,8 @@ so it always deploys as a container). To deploy:
 
 1. In the Render dashboard: **New > Blueprint**, point it at this repo/branch.
 2. Render reads `render.yaml` and creates one web service (`wingmark-backend`) with a
-   1GB persistent disk mounted at `/data` for uploaded photos, and a health check at
-   `/actuator/health`.
+   health check at `/actuator/health`. It has no disk: photos are stored in MongoDB or
+   Cloudflare R2.
 3. Before the first deploy succeeds, set these env vars on the service (Render prompts
    for any `sync: false` var from the blueprint, but confirm they're filled in):
    - `DB_CONNECTION_STRING` — required. Render has no managed MongoDB, so point this at

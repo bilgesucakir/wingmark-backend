@@ -7,10 +7,6 @@ services:
     region: frankfurt
     healthCheckPath: /actuator/health
     autoDeploy: true
-    disk:
-      name: wingmark-uploads
-      mountPath: /data
-      sizeGB: 1
     envVars:
       # Render has no managed MongoDB - point this at an Atlas cluster (or any
       # other reachable instance). Set the real value in the Render dashboard;
