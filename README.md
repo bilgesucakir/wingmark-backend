@@ -88,9 +88,8 @@ so it always deploys as a container). To deploy:
      reply-to of every email; the other two are empty by default.
    - `TERMS_VERSION` / `TERMS_URL` / `PRIVACY_VERSION` / `PRIVACY_URL` — set these once
      the documents are published, e.g. `PRIVACY_URL=https://wingmarkapp.com/privacy` (English)
-     and `https://wingmarkapp.com/privacy-tr` (Turkish). The API serves one `privacyUrl`, so
-     set the English one; the app opens the Turkish page itself for Turkish users. See
-     [Legal](#legal-apilegal).
+     and `https://wingmarkapp.com/privacy-tr` (Turkish). The API serves a single `privacyUrl`
+     (set it to the English one). See [Legal](#legal-apilegal).
    - `LOG_LEVEL` — leave unset (INFO). **Never set `DEBUG` in production**: at DEBUG,
      undelivered verification links and reset codes are logged.
    - `CORS_ALLOWED_ORIGINS` — leave unset. Only needed if a browser app on another origin
