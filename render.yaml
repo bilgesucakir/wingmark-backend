@@ -60,7 +60,7 @@ services:
       - key: SMTP_PASSWORD
         sync: false
       # Must be an address your SMTP provider is authorized to send from (most
-      # providers reject an unverified sender domain). Set it to noreply@wingmarkapp.com
+      # providers reject an unverified sender domain). Set it to no-reply@wingmarkapp.com
       # in the dashboard once that sender is verified in Brevo.
       - key: MAIL_FROM
         sync: false
