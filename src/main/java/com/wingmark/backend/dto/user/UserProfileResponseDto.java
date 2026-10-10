@@ -17,6 +17,7 @@ public record UserProfileResponseDto(
         String favoriteSpeciesName,
         Role role,
         boolean emailVerified,
-        Instant createdAt
+        Instant createdAt,
+        Instant walkthroughSeenAt
 ) {
 }

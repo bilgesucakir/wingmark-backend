@@ -128,6 +128,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void markWalkthroughSeen(UUID userId) {
+        User user = findUser(userId);
+        if (user.getWalkthroughSeenAt() == null) {
+            user.setWalkthroughSeenAt(java.time.Instant.now());
+            userRepository.save(user);
+        }
+    }
+
+    @Override
     public void deleteUser(UUID userId) {
         accountDeletionService.deleteAccount(userId, DeletionInitiator.ADMIN);
     }
@@ -198,7 +207,8 @@ public class UserServiceImpl implements UserService {
                 favoriteSpeciesName,
                 user.getRole(),
                 user.isEmailVerified(),
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                user.getWalkthroughSeenAt()
         );
     }
 }

@@ -95,6 +95,39 @@ class UserServiceImplTest {
     }
 
     @Test
+    void markingTheWalkthroughSeenStoresTheTimeOnce() {
+        User user = User.builder().id(userId).email("user@example.com").role(Role.USER).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        userService.markWalkthroughSeen(userId);
+        java.time.Instant first = user.getWalkthroughSeenAt();
+        userService.markWalkthroughSeen(userId);
+
+        assertThat(first).isNotNull();
+        assertThat(user.getWalkthroughSeenAt()).isEqualTo(first);
+        verify(userRepository, org.mockito.Mockito.times(1)).save(user);
+    }
+
+    @Test
+    void markingTheWalkthroughSeenForAMissingUserIsNotFound() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.markWalkthroughSeen(userId)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void theProfileCarriesWalkthroughSeenAtAndItIsNullForANewAccount() {
+        java.time.Instant seen = java.time.Instant.parse("2026-10-10T10:00:00Z");
+        User seenUser = User.builder().id(userId).email("a@example.com").role(Role.USER).walkthroughSeenAt(seen).build();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(seenUser));
+        assertThat(userService.getProfile(userId, Locale.ENGLISH).walkthroughSeenAt()).isEqualTo(seen);
+
+        UUID otherId = UUID.randomUUID();
+        when(userRepository.findById(otherId)).thenReturn(Optional.of(User.builder().id(otherId).email("b@example.com").role(Role.USER).build()));
+        assertThat(userService.getProfile(otherId, Locale.ENGLISH).walkthroughSeenAt()).isNull();
+    }
+
+    @Test
     void getProfileResolvesFavoriteSpeciesNameForLocale() {
         UUID speciesId = UUID.randomUUID();
         User user = User.builder().id(userId).email("user@example.com").role(Role.USER)

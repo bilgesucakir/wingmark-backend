@@ -32,7 +32,7 @@ Tests: 202 passing.
 
 | Collection | Personal data | Purpose | Kept |
 |---|---|---|---|
-| `users` | email, password hash (bcrypt), username, first/last name (optional), profile picture (avatar key or own upload), favorite species, role, email-verified flag, `lastLoginAt`, `tokenVersion` | Account, login, profile | Until account deletion |
+| `users` | email, password hash (bcrypt), username, first/last name (optional), profile picture (avatar key or own upload), favorite species, role, email-verified flag, `lastLoginAt`, `walkthroughSeenAt` (whether the in-app intro was seen), `tokenVersion` | Account, login, profile | Until account deletion |
 | `user_settings` | unit preference, locale | App preferences | Until account deletion |
 | `bird_logs` | **precise latitude/longitude** of sightings, free-text location name and note, photo URL, custom name, species, observed time | The core diary and map | Until the log or the account is deleted |
 | `uploads.files/.chunks` (GridFS) | Photos (EXIF/GPS stripped, ≤1600px) | Log photos, custom avatars | Until account deletion, unless another account references the same file |

@@ -118,6 +118,16 @@ public class UserController {
         return ResponseEntity.ok(consentService.history(userId));
     }
 
+    /** Records that the caller has seen the in-app walkthrough; repeating the call changes nothing. */
+    @Operation(summary = "Mark the walkthrough as seen", description = "Records that the caller has seen the in-app walkthrough (walkthroughSeenAt in the profile). " +
+            "Idempotent: if it is already recorded nothing changes. No request body; 204. userId must match the authenticated caller.")
+    @PostMapping("/walkthrough-seen")
+    public ResponseEntity<Void> markWalkthroughSeen(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID userId) {
+        requireSelf(principal, userId);
+        userService.markWalkthroughSeen(userId);
+        return ResponseEntity.noContent().build();
+    }
+
     /** Records acceptance of the current version of a legal document (e.g. after it changed). */
     @Operation(summary = "Accept a legal document", description = "Body: {type: TERMS|PRIVACY, version}. version must equal the current one from GET /api/legal " +
             "(400 CONSENT_VERSION_MISMATCH otherwise). Returns the documents still pending - show the acceptance screen until it's empty. " +
