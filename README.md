@@ -1011,7 +1011,7 @@ also need extra parameters in `criteriaMetadata`:
 | `SIGHTINGS_IN_RADIUS`    | Max raw sightings (any species) clustered within a radius     | `{ "radiusMeters": <number> }` (default 5000) |
 | `SPECIES_LOGS`           | Logs of one specific species                                 | `{ "speciesId": "<uuid>" }` |
 | `FAVORITE_SPECIES_LOGS`  | Logs of the user's favorite species; 0 without one. `/user/{userId}` omits these badges for users who have no favorite species | — |
-| `SAME_GENUS_SPECIES`     | Max distinct species logged within one genus (pet logs ignored), the first word of the scientific name, case-insensitive; a subspecies such as `Anas platyrhynchos domesticus` counts as its species | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
+| `SAME_GENUS_SPECIES`     | Max distinct species logged within one genus (pet logs count), the first word of the scientific name, case-insensitive; a subspecies such as `Anas platyrhynchos domesticus` counts as its species | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
 | `SAME_GENUS_ANY`         | Same rules as `SAME_GENUS_SPECIES` without a fixed genus: the best genus counts | — |
 | `EARLY_BIRD_LOGS`        | Non-pet logs whose local time is from 04:00 up to (not including) 06:00, from `observedAt` plus the log's `utcOffsetMinutes`; logs without an offset never count | — |
 | `FAMILY_PORTRAIT`        | For the best species: how many of a male, a female and a baby it has, each from a different non-pet log (0-3); the target must be 1 to 3 | — |

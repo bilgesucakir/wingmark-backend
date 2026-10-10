@@ -208,7 +208,7 @@ class SecretBadgesAndNewCriteriaTest {
     // ---- genus (any) ----
 
     @Test
-    void anyGenusBadgeIgnoresPetLogsAndFoldsSubspeciesIntoTheirSpecies() {
+    void anyGenusBadgeCountsPetLogsAndFoldsSubspeciesIntoTheirSpecies() {
         Species mallard = species("Anas platyrhynchos", null);
         Species domesticDuck = species("Anas platyrhynchos domesticus", null);
         Species teal = species("Anas crecca", null);
@@ -221,9 +221,9 @@ class SecretBadgesAndNewCriteriaTest {
 
         UserBadge saved = evaluateOne(badge(BadgeCriteriaType.SAME_GENUS_ANY, 3), logs, mallard, domesticDuck, teal, petTeal);
 
-        // Mallard and its domestic form count once, the pet log is ignored: 2 of 3.
-        assertThat(saved.getProgress()).isEqualTo(2);
-        assertThat(saved.getEarnedAt()).isNull();
+        // Mallard and its domestic form count once; the teal, and the pet log's species, count too: 3 of 3.
+        assertThat(saved.getProgress()).isEqualTo(3);
+        assertThat(saved.getEarnedAt()).isNotNull();
     }
 
     @Test

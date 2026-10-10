@@ -26,7 +26,7 @@ public enum BadgeCriteriaType {
     EARLY_BIRD_LOGS,
     /** One species logged as a male, a female and a baby, each in a different log (progress 0-3). */
     FAMILY_PORTRAIT,
-    /** Distinct species within any single genus; subspecies count as their species. Pet logs are ignored. */
+    /** Distinct species within any single genus; subspecies count as their species. Pet logs count. */
     SAME_GENUS_ANY,
     /** Logs of species whose conservation status is Endangered or Critically Endangered; pet logs are ignored. */
     RARE_SPECIES_LOGS,

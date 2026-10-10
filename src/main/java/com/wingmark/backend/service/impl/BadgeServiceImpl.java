@@ -300,13 +300,12 @@ public class BadgeServiceImpl implements BadgeService {
     /**
      * Returns the largest number of distinct species the user logged within one genus (the first word of the
      * scientific name, case-insensitive), or within {@code criteriaMetadata.genus} when set on a
-     * {@code SAME_GENUS_SPECIES} badge. Pet logs and logs without a species are ignored. A subspecies such as
-     * "Anas platyrhynchos domesticus" counts as its species ("Anas platyrhynchos").
+     * {@code SAME_GENUS_SPECIES} badge. Logs without a species are ignored; pet logs count like any other. A subspecies
+     * such as "Anas platyrhynchos domesticus" counts as its species ("Anas platyrhynchos").
      */
     private int computeSameGenusSpecies(UUID userId, Badge badge) {
         Set<UUID> speciesIds = new HashSet<>();
-        birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId).stream()
-                .filter(birdLog -> !birdLog.isPet())
+        birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId)
                 .forEach(birdLog -> speciesIds.add(birdLog.getSpeciesId()));
         if (speciesIds.isEmpty()) {
             return 0;
