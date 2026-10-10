@@ -102,27 +102,75 @@ class SecretBadgesAndNewCriteriaTest {
 
     // ---- early bird ----
 
+    private static Badge earlyBirdBadge(String from, String to) {
+        Badge badge = badge(BadgeCriteriaType.EARLY_BIRD_LOGS, 1);
+        badge.setCriteriaMetadata(Map.of("from", from, "to", to));
+        return badge;
+    }
+
     @Test
     void earlyBirdCoversFourToSixLocalTimeWithTheFirstSecondIncludedAndSixExcluded() {
-        assertThat(BadgeServiceImpl.isEarlyBird(Instant.parse("2026-10-09T01:00:00Z"), 180)).isTrue();   // 04:00
-        assertThat(BadgeServiceImpl.isEarlyBird(Instant.parse("2026-10-09T00:59:59Z"), 180)).isFalse();  // 03:59:59
-        assertThat(BadgeServiceImpl.isEarlyBird(Instant.parse("2026-10-09T02:59:59Z"), 180)).isTrue();   // 05:59:59
-        assertThat(BadgeServiceImpl.isEarlyBird(Instant.parse("2026-10-09T03:00:00Z"), 180)).isFalse();  // 06:00
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T01:00:00Z"), 180, 4 * 60, 6 * 60)).isTrue();   // 04:00
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T00:59:59Z"), 180, 4 * 60, 6 * 60)).isFalse();  // 03:59:59
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T02:59:59Z"), 180, 4 * 60, 6 * 60)).isTrue();   // 05:59:59
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T03:00:00Z"), 180, 4 * 60, 6 * 60)).isFalse();  // 06:00
     }
 
     @Test
     void earlyBirdUsesTheOffsetAcrossMidnightAndWestOfGreenwich() {
         // 09:30 UTC at UTC-05:00 is 04:30 local; 23:30 UTC at UTC+05:30 is 05:00 the next day.
-        assertThat(BadgeServiceImpl.isEarlyBird(Instant.parse("2026-10-09T09:30:00Z"), -300)).isTrue();
-        assertThat(BadgeServiceImpl.isEarlyBird(Instant.parse("2026-10-08T23:30:00Z"), 330)).isTrue();
-        assertThat(BadgeServiceImpl.isEarlyBird(Instant.parse("2026-10-09T04:30:00Z"), 0)).isTrue();
-        assertThat(BadgeServiceImpl.isEarlyBird(Instant.parse("2026-10-09T09:30:00Z"), 0)).isFalse();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T09:30:00Z"), -300, 4 * 60, 6 * 60)).isTrue();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-08T23:30:00Z"), 330, 4 * 60, 6 * 60)).isTrue();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T04:30:00Z"), 0, 4 * 60, 6 * 60)).isTrue();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T09:30:00Z"), 0, 4 * 60, 6 * 60)).isFalse();
+    }
+
+    @Test
+    void theWindowCanBeSetInMinutesAndCanCrossMidnight() {
+        // 04:30 to 05:45 local, UTC+03:00: 01:45 UTC is 04:45 (inside), 02:45 UTC is 05:45 (the end is excluded).
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T01:45:00Z"), 180, 4 * 60 + 30, 5 * 60 + 45)).isTrue();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T02:45:00Z"), 180, 4 * 60 + 30, 5 * 60 + 45)).isFalse();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T01:29:00Z"), 180, 4 * 60 + 30, 5 * 60 + 45)).isFalse();
+        // A night owl window 22:00 to 02:00 local (UTC): 23:30 and 01:00 are inside, 12:00 and 02:00 are not.
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T23:30:00Z"), 0, 22 * 60, 2 * 60)).isTrue();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T01:00:00Z"), 0, 22 * 60, 2 * 60)).isTrue();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T12:00:00Z"), 0, 22 * 60, 2 * 60)).isFalse();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T02:00:00Z"), 0, 22 * 60, 2 * 60)).isFalse();
+    }
+
+    @Test
+    void aTimeWindowBadgeUsesTheWindowSetInTheBadge() {
+        Instant atQuarterPastSixLocal = Instant.parse("2026-10-09T03:15:00Z"); // 06:15 local at UTC+03:00
+        List<BirdLog> logs = List.of(BirdLog.builder().observedAt(atQuarterPastSixLocal).utcOffsetMinutes(180).build());
+
+        assertThat(evaluateOne(earlyBirdBadge("06:00", "07:00"), logs).getProgress()).isEqualTo(1);
+    }
+
+    @Test
+    void aTimeWindowBadgeWithoutAWindowCountsNothingInsteadOfUsingFixedHours() {
+        List<BirdLog> logs = List.of(BirdLog.builder().observedAt(Instant.parse("2026-10-09T01:30:00Z")).utcOffsetMinutes(180).build());
+
+        assertThat(evaluateOne(badge(BadgeCriteriaType.EARLY_BIRD_LOGS, 1), logs).getProgress()).isZero();
+    }
+
+    @Test
+    void aTimeWindowThatIsMissingNotATimeOrEmptyIsRejected() {
+        java.util.Map<String, Object> onlyFrom = new java.util.HashMap<>();
+        onlyFrom.put("from", "04:00");
+        for (Map<String, Object> metadata : java.util.Arrays.<Map<String, Object>>asList(
+                null, Map.of(), onlyFrom, Map.of("from", "25:00", "to", "06:00"), Map.of("from", "abc", "to", "06:00"),
+                Map.of("from", "05:00", "to", "05:00"))) {
+            CreateBadgeRequestDto request = new CreateBadgeRequestDto(Map.of("en", "E"), null, null,
+                    BadgeCriteriaType.EARLY_BIRD_LOGS, 1, metadata, BadgeTier.BRONZE, null, true);
+
+            assertThatThrownBy(() -> badgeService.create(request)).isInstanceOf(IllegalArgumentException.class);
+        }
     }
 
     @Test
     void aLogWithoutAnOffsetNeverCountsAsEarlyBird() {
-        assertThat(BadgeServiceImpl.isEarlyBird(Instant.parse("2026-10-09T04:30:00Z"), null)).isFalse();
-        assertThat(BadgeServiceImpl.isEarlyBird(null, 0)).isFalse();
+        assertThat(BadgeServiceImpl.isInTimeWindow(Instant.parse("2026-10-09T04:30:00Z"), null, 4 * 60, 6 * 60)).isFalse();
+        assertThat(BadgeServiceImpl.isInTimeWindow(null, 0, 4 * 60, 6 * 60)).isFalse();
     }
 
     @Test
@@ -134,7 +182,7 @@ class SecretBadgesAndNewCriteriaTest {
                 BirdLog.builder().observedAt(early).build(),
                 BirdLog.builder().observedAt(Instant.parse("2026-10-09T12:00:00Z")).utcOffsetMinutes(180).build());
 
-        UserBadge saved = evaluateOne(badge(BadgeCriteriaType.EARLY_BIRD_LOGS, 1), logs);
+        UserBadge saved = evaluateOne(earlyBirdBadge("04:00", "06:00"), logs);
 
         assertThat(saved.getProgress()).isEqualTo(2);
         assertThat(saved.getEarnedAt()).isNotNull();
@@ -469,7 +517,7 @@ class SecretBadgesAndNewCriteriaTest {
         when(userRepository.findAll()).thenReturn(List.of());
 
         BadgeResponseDto secret = badgeService.create(new CreateBadgeRequestDto(Map.of("en", "S"), null, null,
-                BadgeCriteriaType.EARLY_BIRD_LOGS, 1, null, BadgeTier.BRONZE, null, true));
+                BadgeCriteriaType.EARLY_BIRD_LOGS, 1, Map.of("from", "04:00", "to", "06:00"), BadgeTier.BRONZE, null, true));
         BadgeResponseDto plain = badgeService.create(new CreateBadgeRequestDto(Map.of("en", "P"), null, null,
                 BadgeCriteriaType.TOTAL_LOGS, 1, null, BadgeTier.DIAMOND, null));
 

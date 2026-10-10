@@ -463,7 +463,7 @@
                 <option value="SPECIES_LOGS">Specific species logs</option>
                 <option value="SAME_GENUS_SPECIES">Same genus species</option>
                 <option value="FAVORITE_SPECIES_LOGS">Favorite species logs (only shown to users with a favorite species)</option>
-                <option value="EARLY_BIRD_LOGS">Early bird logs (seen 04:00-06:00 local time)</option>
+                <option value="EARLY_BIRD_LOGS">Sighting between two times of day (e.g. early bird 04:00-06:00, night owl 22:00-02:00)</option>
                 <option value="FAMILY_PORTRAIT">Family portrait (male + female + baby of one species; target 1-3)</option>
                 <option value="SAME_GENUS_ANY">Same genus, any genus (species of one genus; subspecies count as their species)</option>
                 <option value="RARE_SPECIES_LOGS">Rare species logs (Endangered or Critically Endangered)</option>
@@ -488,6 +488,16 @@
           <div class="field" id="genus-field-wrap">
             <label for="badge-genus">Genus (optional, e.g. Passer) — only for "Same genus species"</label>
             <input type="text" id="badge-genus" placeholder="e.g. Passer" />
+          </div>
+          <div class="grid-2 hidden" id="time-window-field-wrap">
+            <div class="field">
+              <label for="badge-timeFrom">From (local time of day) — only for "Sighting between two times of day"</label>
+              <input type="time" id="badge-timeFrom" />
+            </div>
+            <div class="field">
+              <label for="badge-timeTo">Until (local time of day, not included; earlier than From means past midnight)</label>
+              <input type="time" id="badge-timeTo" />
+            </div>
           </div>
           <div class="actions">
             <button type="submit" class="primary" id="save-badge-btn">Save badge</button>

@@ -49,7 +49,7 @@ final class ApiFieldDocs {
             icon|Emoji or icon identifier shown for the badge.|🐦
             criteriaType|What the badge counts: TOTAL_LOGS, UNIQUE_SPECIES, BABY_LOGS, UNKNOWN_SPECIES_LOGS, PET_LOGS, SPECIES_IN_RADIUS, SIGHTINGS_IN_RADIUS, SPECIES_LOGS, SAME_GENUS_SPECIES, FAVORITE_SPECIES_LOGS, EARLY_BIRD_LOGS, FAMILY_PORTRAIT, SAME_GENUS_ANY, RARE_SPECIES_LOGS or ALL_OTHER_BADGES (the last ignores the target and counts the earned badges among all others; FAMILY_PORTRAIT target is 1 to 3).|TOTAL_LOGS
             criteriaValue|Target the progress must reach to earn the badge (at least 1).|10
-            criteriaMetadata|Optional parameters for some types: radiusMeters (*_IN_RADIUS, default 5000), speciesId (SPECIES_LOGS), genus (SAME_GENUS_SPECIES, must be a non-blank string when given).|
+            criteriaMetadata|Optional parameters for some types: radiusMeters (*_IN_RADIUS, default 5000), speciesId (SPECIES_LOGS), genus (SAME_GENUS_SPECIES, must be a non-blank string when given), from and to (EARLY_BIRD_LOGS, required: local times of day like 04:00 and 06:00; from after to crosses midnight).|
             tier|Badge tier: BRONZE, SILVER, GOLD or DIAMOND.|BRONZE
             secret|Whether the badge is secret: a user who has not earned it sees no details, and the public catalog leaves it out. Omitted means false.|false
             displayOrder|Position in the badge lists, lowest first; badges without one come last.|1
