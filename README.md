@@ -1172,49 +1172,6 @@ only ever appended; an existing key is never renamed or removed.
 
 </details>
 
-## Design notes
+## Health
 
-- **Ownership scoping, not just permission checks**: bird logs and user profiles are
-  looked up by `(id, ownerId)` in the same query, not fetched then checked — so another
-  user's id returns a plain 404, never a 403 that would confirm it exists.
-- **Tokens are re-checked against the database**: the JWT filter loads the user on every
-  authenticated request, so deleting or un-verifying an account, or changing its role,
-  takes effect immediately instead of when the 15-minute access token expires. Each
-  access token also carries the user's `tokenVersion`; password change/reset and
-  logout-all bump it, which ends every already-issued session at once.
-- **Password reset uses a short emailed code, not a link**: the app just needs a text
-  field, no universal links. A 6-digit code is only safe with limits, so it expires in 15
-  minutes, is single use, is burned after 5 wrong guesses, and is hashed with the user's
-  id (codes can repeat across users).
-- **Legacy timestamps are backfilled on startup**: documents saved before auditing worked
-  have no `createdAt` (and very old bird logs no `observedAt`). `LegacyTimestampBackfill`
-  fills `createdAt` from the earliest timestamp the document already has (or now), and a
-  bird log's `observedAt` from its `createdAt` - only where missing, so it's safe to rerun.
-- **Account deletion is a full cascade**: the user document is removed first (cutting
-  off access), then everything keyed by their id, then their uploaded files - skipping
-  any file another account or a species image still references, since upload URLs aren't
-  owner-tagged.
-  Consent records go too. What remains is a single `account_deletions` audit entry
-  (opaque user id, SELF/ADMIN, requested/completed times, no personal data), and the
-  former account holder gets a confirmation email.
-- **Expired tokens delete themselves**: refresh, password-reset and email-verification
-  tokens have a TTL index on `expiresAt`, so MongoDB removes each one once it can no
-  longer be used, instead of keeping them forever.
-- **Hardening for App Store review** (`docs/appstore/05-backend-tasks.md`):
-  - rate limits and the password rules above;
-  - "password changed" emails after a reset or change;
-  - a strict Content-Security-Policy on the admin panel (no inline scripts or styles);
-  - CORS closed to other origins;
-  - non-upload bodies capped at 1MB;
-  - every admin change logged as `ADMIN_AUDIT admin=<id> <METHOD> <path> -> <status>`;
-  - the species search escapes its input before it reaches `$regex` (it matches the text literally, ignoring only case and accents);
-  - a deployed server (non-localhost `APP_BASE_URL`) refuses to start on the public
-    development `JWT_SECRET`.
-- **Badges recompute on every log change**: create/update/delete a bird log and every
-  badge's progress is recalculated for that user in the same request — no background
-  job, no separate "sync" step.
-- **Species photos and sounds are handled differently on purpose**: sounds are
-  fetched live from Xeno-canto on every request, since any call/song recording for a
-  species is as good as any other. Photos are curated once by an admin (Wikimedia Commons
-  or our own uploads) and stored, since a specific photo needs a human to check it's
-  actually a good, correctly-labeled picture before it goes in the guide.
+[![API status](https://img.shields.io/website?url=https%3A%2F%2Fwingmark-backend.onrender.com%2Factuator%2Fhealth&label=API&up_message=operational&down_message=down)](https://wingmark.betteruptime.com/)
