@@ -54,7 +54,7 @@ class EmailServiceImplTest {
     }
 
     private EmailServiceImpl service(BusinessProperties business, int dailyCap) {
-        MailProperties properties = new MailProperties("no-reply@wingmark.app", dailyCap);
+        MailProperties properties = new MailProperties("no-reply@wingmarkapp.com", dailyCap);
         return new EmailServiceImpl(mailSender, properties, business, new EmailSendCounter(properties));
     }
 
@@ -92,14 +92,14 @@ class EmailServiceImplTest {
     void footerIsEmptyUntilBusinessDetailsAreConfiguredAndEscapedOnceTheyAre() {
         assertThat(service(UNCONFIGURED).footer()).isEmpty();
 
-        String footer = service(new BusinessProperties("Wingmark <Ltd>", "1 Bird St", "hi@wingmark.app")).footer();
-        assertThat(footer).contains("Wingmark &lt;Ltd&gt;", "1 Bird St", "hi@wingmark.app");
+        String footer = service(new BusinessProperties("Wingmark <Ltd>", "1 Bird St", "hi@wingmarkapp.com")).footer();
+        assertThat(footer).contains("Wingmark &lt;Ltd&gt;", "1 Bird St", "hi@wingmarkapp.com");
     }
 
     @Test
     void contactLineNamesTheSupportAddressInsteadOfAskingForAReplyToANoReplySender() {
-        assertThat(service(new BusinessProperties("Wingmark", "", "support.wingmark@gmail.com")).contactSupport())
-                .isEqualTo("contact us at support.wingmark@gmail.com");
+        assertThat(service(new BusinessProperties("Wingmark", "", "support@wingmarkapp.com")).contactSupport())
+                .isEqualTo("contact us at support@wingmarkapp.com");
         assertThat(service(new BusinessProperties("", "", "")).contactSupport())
                 .doesNotContain("reply").contains("support");
     }
@@ -109,8 +109,8 @@ class EmailServiceImplTest {
         MimeMessage message = new MimeMessage(Session.getInstance(new Properties()));
         when(mailSender.createMimeMessage()).thenReturn(message);
 
-        service(new BusinessProperties("", "", "support.wingmark@gmail.com")).sendAccountDeletedEmail("a@b.com");
-        assertThat(message.getReplyTo()[0].toString()).isEqualTo("support.wingmark@gmail.com");
+        service(new BusinessProperties("", "", "support@wingmarkapp.com")).sendAccountDeletedEmail("a@b.com");
+        assertThat(message.getReplyTo()[0].toString()).isEqualTo("support@wingmarkapp.com");
 
         MimeMessage plain = new MimeMessage(Session.getInstance(new Properties()));
         when(mailSender.createMimeMessage()).thenReturn(plain);
@@ -175,12 +175,12 @@ class EmailServiceImplTest {
         MimeMessage message = new MimeMessage(Session.getInstance(new Properties()));
         when(mailSender.createMimeMessage()).thenReturn(message);
 
-        service(new BusinessProperties("", "", "support.wingmark@gmail.com"))
+        service(new BusinessProperties("", "", "support@wingmarkapp.com"))
                 .sendInactivityWarningEmail("quiet@example.com", java.time.LocalDate.of(2026, 10, 12));
 
         assertThat(message.getSubject()).isEqualTo("Your Wingmark account will be deleted soon");
         String body = String.valueOf(message.getContent());
-        assertThat(body).contains("2026-10-12", "support.wingmark@gmail.com");
+        assertThat(body).contains("2026-10-12", "support@wingmarkapp.com");
     }
 
     @Test

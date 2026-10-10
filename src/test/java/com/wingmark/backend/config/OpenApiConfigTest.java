@@ -12,7 +12,7 @@ class OpenApiConfigTest {
     @Test
     void describesTheApiAndNamesTheSupportContact() {
         assertThat(api.getInfo().getTitle()).isEqualTo("Wingmark API");
-        assertThat(api.getInfo().getContact().getEmail()).isEqualTo("support.wingmark@gmail.com");
+        assertThat(api.getInfo().getContact().getEmail()).isEqualTo("support@wingmarkapp.com");
     }
 
     @Test

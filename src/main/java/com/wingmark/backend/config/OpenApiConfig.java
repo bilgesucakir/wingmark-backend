@@ -31,7 +31,7 @@ public class OpenApiConfig {
                                 "Every endpoint is rate limited per IP, and credential and email endpoints also per account: " +
                                 "exceeding a limit returns 429 with a Retry-After header.")
                         .version("v1")
-                        .contact(new Contact().name("Wingmark support").email("support.wingmark@gmail.com")))
+                        .contact(new Contact().name("Wingmark support").email("support@wingmarkapp.com")))
                 .components(new Components().addSecuritySchemes(BEARER_SCHEME,
                         new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)

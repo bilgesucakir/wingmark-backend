@@ -26,9 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /** Terms/privacy acceptance end to end, with both documents "published" via configuration. */
 @SpringBootTest(properties = {
         "wingmark.legal.terms-version=2026-10-01",
-        "wingmark.legal.terms-url=https://wingmark.app/terms",
+        "wingmark.legal.terms-url=https://wingmarkapp.com/terms",
         "wingmark.legal.privacy-version=2026-09-15",
-        "wingmark.legal.privacy-url=https://wingmark.app/privacy"
+        "wingmark.legal.privacy-url=https://wingmarkapp.com/privacy"
 })
 @AutoConfigureMockMvc
 class LegalConsentFlowTest {
@@ -60,7 +60,7 @@ class LegalConsentFlowTest {
         mockMvc.perform(get("/api/legal"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.termsVersion").value("2026-10-01"))
-                .andExpect(jsonPath("$.termsUrl").value("https://wingmark.app/terms"))
+                .andExpect(jsonPath("$.termsUrl").value("https://wingmarkapp.com/terms"))
                 .andExpect(jsonPath("$.privacyVersion").value("2026-09-15"))
                 .andExpect(jsonPath("$.minimumAge").value(13));
     }

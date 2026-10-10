@@ -84,9 +84,13 @@ so it always deploys as a container). To deploy:
      send from.
    - `BUSINESS_LEGAL_NAME` / `BUSINESS_ADDRESS` / `BUSINESS_CONTACT_EMAIL` — your legal
      sender details, shown in every email's footer once `BUSINESS_LEGAL_NAME` is set.
-     Empty by default; nothing is shown until you fill them in.
+     `BUSINESS_CONTACT_EMAIL` defaults to `support@wingmarkapp.com` and is also the
+     reply-to of every email; the other two are empty by default.
    - `TERMS_VERSION` / `TERMS_URL` / `PRIVACY_VERSION` / `PRIVACY_URL` — set these once
-     the documents are published; see [Legal](#legal-apilegal).
+     the documents are published, e.g. `PRIVACY_URL=https://wingmarkapp.com/privacy` (English)
+     and `https://wingmarkapp.com/privacy-tr` (Turkish). The site does not switch language by
+     itself; each page has an EN | TR link. The API serves a single `privacyUrl`: set it to the
+     English one. See [Legal](#legal-apilegal).
    - `LOG_LEVEL` — leave unset (INFO). **Never set `DEBUG` in production**: at DEBUG,
      undelivered verification links and reset codes are logged.
    - `CORS_ALLOWED_ORIGINS` — leave unset. Only needed if a browser app on another origin

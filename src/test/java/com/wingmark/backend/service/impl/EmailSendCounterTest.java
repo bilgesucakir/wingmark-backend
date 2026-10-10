@@ -59,7 +59,7 @@ class EmailSendCounterTest {
     }
 
     private EmailSendCounter counter(int cap) {
-        return new EmailSendCounter(new MailProperties("no-reply@wingmark.app", cap), clock);
+        return new EmailSendCounter(new MailProperties("no-reply@wingmarkapp.com", cap), clock);
     }
 
     @Test
