@@ -497,6 +497,7 @@ No response body.
 | POST   | `/password`  | Change the caller's password (current password required); returns a fresh token pair |
 | GET    | `/consents`  | The caller's legal-document acceptances (type, version, acceptedAt), oldest first |
 | POST   | `/consents`  | Accept the current version of a document: `{"type":"TERMS","version":"2026-10-01"}` → `{"pendingConsents":[...]}`; `400 CONSENT_VERSION_MISMATCH` for any other version |
+| POST   | `/walkthrough-seen` | Record that the caller has seen the in-app walkthrough: sets `walkthroughSeenAt` in the profile once, repeating it changes nothing; `204`, no body |
 | GET    | `/export`    | Download everything Wingmark holds about the caller (profile, settings, every bird log, badge progress, consent history) as `wingmark-data-export.json` |
 | DELETE | ``           | Permanently delete the caller's account and all of its data (password required) |
 
@@ -510,6 +511,10 @@ A `favoriteSpeciesId` that doesn't exist is rejected with `422 INVALID_REFERENCE
 
 Anything else is `400 INVALID_PROFILE_PICTURE`. Re-sending the value already stored is
 always accepted.
+
+`walkthroughSeenAt` is `null` until the app calls `POST /walkthrough-seen`; it is stored per account, so a second device or a
+reinstall knows the walkthrough was seen. Existing accounts are not backfilled (they see it once). It is part of the data export
+and is deleted with the account.
 
 `favoriteSpeciesName` is resolved server-side from `Accept-Language` on every request
 (same mechanism as `speciesCommonName` on bird logs) - it is not stored, only
@@ -534,7 +539,8 @@ No request body.
   "favoriteSpeciesName": "House Sparrow",
   "role": "USER",
   "emailVerified": true,
-  "createdAt": "2026-01-14T10:32:00Z"
+  "createdAt": "2026-01-14T10:32:00Z",
+  "walkthroughSeenAt": null
 }
 ```
 

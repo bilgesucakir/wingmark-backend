@@ -54,6 +54,9 @@ public class User extends BaseEntity {
     /** When the inactivity warning email was sent for the current period of inactivity, or null. */
     private Instant inactivityWarningSentAt;
 
+    /** When the user saw the in-app walkthrough; null = not seen yet. */
+    private Instant walkthroughSeenAt;
+
     /**
      * Token version stamped into access tokens as the {@code tv} claim.
      * Tokens with a lower value are rejected; it is bumped on password change, reset and logout-all.

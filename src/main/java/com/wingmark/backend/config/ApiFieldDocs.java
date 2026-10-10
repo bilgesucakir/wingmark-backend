@@ -37,6 +37,7 @@ final class ApiFieldDocs {
             favoriteSpeciesName|Name of the favorite species in the request locale, or null.|House Sparrow
             profilePicture|Profile picture: a preset avatar key (GET /api/avatars), an /uploads/... URL from POST /api/uploads/photo, or null.|avatar-1
             createdAt|When the record was created (UTC).|2026-10-03T08:15:30Z
+            walkthroughSeenAt|When the user saw the in-app walkthrough (UTC), or null if not yet.|2026-10-03T08:15:30Z
             observedAt|When the bird was seen (UTC). Defaults to now; must not be in the future.|2026-10-03T08:15:30Z
             utcOffsetMinutes|Offset of the local time from UTC in minutes at the sighting (-840 to 840), e.g. 180 for UTC+03:00. Needed for the early-bird badge; on update, omitted keeps the stored value; null on older logs.|180
             id|Unique id (UUID).|%1$s

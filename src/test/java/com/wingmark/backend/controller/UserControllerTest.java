@@ -126,6 +126,39 @@ class UserControllerTest {
     }
 
     @Test
+    void theWalkthroughIsNotSeenForANewAccountAndSeenStaysTheSameWhenRepeated() throws Exception {
+        Registered user = register("walkthrough");
+        String auth = "Bearer " + user.accessToken();
+
+        mockMvc.perform(get("/api/users/" + user.userId()).header("Authorization", auth))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.walkthroughSeenAt").doesNotExist());
+
+        mockMvc.perform(post("/api/users/" + user.userId() + "/walkthrough-seen").header("Authorization", auth))
+                .andExpect(status().isNoContent());
+        String first = objectMapper.readTree(mockMvc.perform(get("/api/users/" + user.userId()).header("Authorization", auth))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.walkthroughSeenAt").exists())
+                .andReturn().getResponse().getContentAsString()).get("walkthroughSeenAt").asText();
+
+        mockMvc.perform(post("/api/users/" + user.userId() + "/walkthrough-seen").header("Authorization", auth))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/users/" + user.userId()).header("Authorization", auth))
+                .andExpect(jsonPath("$.walkthroughSeenAt").value(first));
+        mockMvc.perform(get("/api/users/" + user.userId() + "/export").header("Authorization", auth))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.profile.walkthroughSeenAt").value(first));
+    }
+
+    @Test
+    void markingAnotherUsersWalkthroughIsNotFoundAndNeedsALogin() throws Exception {
+        Registered user = register("walkthroughother");
+
+        mockMvc.perform(post("/api/users/" + UUID.randomUUID() + "/walkthrough-seen")
+                        .header("Authorization", "Bearer " + user.accessToken()))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/users/" + user.userId() + "/walkthrough-seen"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void getSettingsReturnsTheCallersOwnSettings() throws Exception {
         Registered user = register("settings");
 

@@ -34,6 +34,9 @@ public interface UserService {
     /** Admin-only: permanently deletes a user account and all of its data. */
     void deleteUser(UUID userId);
 
+    /** Records that the user has seen the walkthrough; does nothing if it was already recorded. */
+    void markWalkthroughSeen(UUID userId);
+
     /** Deletes the caller's account and data after checking their password. The last admin cannot delete themselves. */
     void deleteOwnAccount(UUID userId, String password);
 }
