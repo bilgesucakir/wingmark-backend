@@ -333,11 +333,11 @@ public class BadgeServiceImpl implements BadgeService {
         return words.length > 1 ? words[0] + " " + words[1] : words[0];
     }
 
-    /** Returns how many non-pet logs were made between 04:00 and 06:00 local time; logs without a UTC offset are not counted. */
+    /** Returns how many logs (pet logs included) were made between 04:00 and 06:00 local time; logs without a UTC offset are not counted. */
     private int computeEarlyBirdLogs(UUID userId) {
         int count = 0;
         for (BirdLog birdLog : birdLogRepository.findByUserId(userId)) {
-            if (!birdLog.isPet() && isEarlyBird(birdLog.getObservedAt(), birdLog.getUtcOffsetMinutes())) {
+            if (isEarlyBird(birdLog.getObservedAt(), birdLog.getUtcOffsetMinutes())) {
                 count++;
             }
         }
@@ -355,14 +355,11 @@ public class BadgeServiceImpl implements BadgeService {
 
     /**
      * Returns how many of the three parts (a male, a female and a baby) the user has logged for the species where it
-     * is furthest. Each part needs its own non-pet log; one log is never used for two parts.
+     * is furthest. Pet logs count. Each part needs its own log; one log is never used for two parts.
      */
     private int computeFamilyPortrait(UUID userId) {
         Map<UUID, int[]> logsBySpeciesAndPart = new HashMap<>();
         for (BirdLog birdLog : birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId)) {
-            if (birdLog.isPet()) {
-                continue;
-            }
             int parts = (birdLog.getGender() == Gender.MALE ? 1 : 0) | (birdLog.getGender() == Gender.FEMALE ? 2 : 0)
                     | (birdLog.getLifeStage() == LifeStage.BABY ? 4 : 0);
             if (parts != 0) {
@@ -408,11 +405,9 @@ public class BadgeServiceImpl implements BadgeService {
         return false;
     }
 
-    /** Returns how many non-pet logs are of species whose conservation status is Endangered or Critically Endangered. */
+    /** Returns how many logs (pet logs included) are of species whose conservation status is Endangered or Critically Endangered. */
     private int computeRareSpeciesLogs(UUID userId) {
-        List<BirdLog> logs = birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId).stream()
-                .filter(birdLog -> !birdLog.isPet())
-                .toList();
+        List<BirdLog> logs = birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId);
         if (logs.isEmpty()) {
             return 0;
         }

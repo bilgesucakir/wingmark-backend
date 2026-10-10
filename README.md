@@ -1013,9 +1013,9 @@ also need extra parameters in `criteriaMetadata`:
 | `FAVORITE_SPECIES_LOGS`  | Logs of the user's favorite species; 0 without one. `/user/{userId}` omits these badges for users who have no favorite species | — |
 | `SAME_GENUS_SPECIES`     | Max distinct species logged within one genus (pet logs count), the first word of the scientific name, case-insensitive; a subspecies such as `Anas platyrhynchos domesticus` counts as its species | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
 | `SAME_GENUS_ANY`         | Same rules as `SAME_GENUS_SPECIES` without a fixed genus: the best genus counts | — |
-| `EARLY_BIRD_LOGS`        | Non-pet logs whose local time is from 04:00 up to (not including) 06:00, from `observedAt` plus the log's `utcOffsetMinutes`; logs without an offset never count | — |
-| `FAMILY_PORTRAIT`        | For the best species: how many of a male, a female and a baby it has, each from a different non-pet log (0-3); the target must be 1 to 3 | — |
-| `RARE_SPECIES_LOGS`      | Non-pet logs of species whose English `conservationStatus` is exactly `Endangered` or `Critically Endangered` (ignoring case and spaces) | — |
+| `EARLY_BIRD_LOGS`        | Logs (pet logs included) whose local time is from 04:00 up to (not including) 06:00, from `observedAt` plus the log's `utcOffsetMinutes`; logs without an offset never count | — |
+| `FAMILY_PORTRAIT`        | For the best species: how many of a male, a female and a baby it has, each from a different log, pet logs included (0-3); the target must be 1 to 3 | — |
+| `RARE_SPECIES_LOGS`      | Logs (pet logs included) of species whose English `conservationStatus` is exactly `Endangered` or `Critically Endangered` (ignoring case and spaces) | — |
 | `ALL_OTHER_BADGES`       | Earned badges among all other badges (secret ones included), calculated last; the target is the number of other badges the user can earn (favorite-species badges only count for users who have a favorite species or earned them), so `targetValue` varies per user; the stored `criteriaValue` is ignored (enter 1) | — |
 
 The admin panel's badge form exposes all of these, including the species picker for

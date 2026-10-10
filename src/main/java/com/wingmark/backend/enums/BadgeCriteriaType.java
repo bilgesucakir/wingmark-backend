@@ -28,7 +28,7 @@ public enum BadgeCriteriaType {
     FAMILY_PORTRAIT,
     /** Distinct species within any single genus; subspecies count as their species. Pet logs count. */
     SAME_GENUS_ANY,
-    /** Logs of species whose conservation status is Endangered or Critically Endangered; pet logs are ignored. */
+    /** Logs of species whose conservation status is Endangered or Critically Endangered. Pet logs count. */
     RARE_SPECIES_LOGS,
     /** Earned badges among all other badges; computed after all others, target = the number of other badges. */
     ALL_OTHER_BADGES

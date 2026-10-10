@@ -126,7 +126,7 @@ class SecretBadgesAndNewCriteriaTest {
     }
 
     @Test
-    void earlyBirdBadgeCountsOnlyNonPetLogsWithAnEarlyLocalTime() {
+    void earlyBirdBadgeCountsPetLogsTooButNotLogsWithoutAnOffsetOrOutsideTheHours() {
         Instant early = Instant.parse("2026-10-09T01:30:00Z");
         List<BirdLog> logs = List.of(
                 BirdLog.builder().observedAt(early).utcOffsetMinutes(180).build(),
@@ -136,7 +136,7 @@ class SecretBadgesAndNewCriteriaTest {
 
         UserBadge saved = evaluateOne(badge(BadgeCriteriaType.EARLY_BIRD_LOGS, 1), logs);
 
-        assertThat(saved.getProgress()).isEqualTo(1);
+        assertThat(saved.getProgress()).isEqualTo(2);
         assertThat(saved.getEarnedAt()).isNotNull();
     }
 
@@ -167,13 +167,13 @@ class SecretBadgesAndNewCriteriaTest {
     }
 
     @Test
-    void familyPortraitBadgeIsEarnedWithAllThreePartsOfOneSpeciesAndIgnoresPetLogs() {
+    void familyPortraitBadgeIsEarnedWithAllThreePartsOfOneSpeciesAndPetLogsCount() {
         Species sparrow = species("Passer domesticus", null);
         Species robin = species("Erithacus rubecula", null);
         List<BirdLog> logs = List.of(
                 log(sparrow, Gender.MALE, LifeStage.ADULT, false),
                 log(sparrow, Gender.FEMALE, LifeStage.ADULT, false),
-                log(sparrow, Gender.UNKNOWN, LifeStage.BABY, false),
+                log(sparrow, Gender.UNKNOWN, LifeStage.BABY, true),
                 log(robin, Gender.MALE, LifeStage.ADULT, false),
                 log(robin, Gender.FEMALE, LifeStage.ADULT, true));
 
@@ -270,7 +270,7 @@ class SecretBadgesAndNewCriteriaTest {
     }
 
     @Test
-    void rareBadgeCountsNonPetLogsOfEndangeredSpecies() {
+    void rareBadgeCountsPetLogsOfEndangeredSpeciesToo() {
         Species kakapo = species("Strigops habroptila", "Critically Endangered");
         Species stork = species("Geronticus eremita", "Endangered");
         Species sparrow = species("Passer domesticus", "Least Concern");
@@ -282,7 +282,7 @@ class SecretBadgesAndNewCriteriaTest {
 
         UserBadge saved = evaluateOne(badge(BadgeCriteriaType.RARE_SPECIES_LOGS, 2), logs, kakapo, stork, sparrow);
 
-        assertThat(saved.getProgress()).isEqualTo(2);
+        assertThat(saved.getProgress()).isEqualTo(3);
         assertThat(saved.getEarnedAt()).isNotNull();
     }
 
