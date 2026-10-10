@@ -22,7 +22,7 @@ public enum BadgeCriteriaType {
     FAVORITE_SPECIES_LOGS,
     /** Log one specific species (criteriaMetadata.speciesId) criteriaValue times. */
     SPECIES_LOGS,
-    /** Logs seen between 04:00 and 06:00 local time; needs the log's {@code utcOffsetMinutes}. */
+    /** Logs seen in a local time window set by {@code criteriaMetadata.from} and {@code to} (HH:mm, required); needs the log's {@code utcOffsetMinutes}. */
     EARLY_BIRD_LOGS,
     /** One species logged as a male, a female and a baby, each in a different log (progress 0-3). */
     FAMILY_PORTRAIT,

@@ -46,8 +46,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BadgeServiceImpl implements BadgeService {
 
-    private static final int EARLY_BIRD_FROM_HOUR = 4;
-    private static final int EARLY_BIRD_TO_HOUR = 6;
     private static final Set<String> RARE_STATUSES = Set.of("endangered", "critically endangered");
 
     private final BadgeRepository badgeRepository;
@@ -289,7 +287,7 @@ public class BadgeServiceImpl implements BadgeService {
             case SIGHTINGS_IN_RADIUS -> computeMaxSightingsInRadius(userId, badge);
             case SPECIES_LOGS -> computeSpeciesLogs(userId, badge);
             case SAME_GENUS_SPECIES, SAME_GENUS_ANY -> computeSameGenusSpecies(userId, badge);
-            case EARLY_BIRD_LOGS -> computeEarlyBirdLogs(userId);
+            case EARLY_BIRD_LOGS -> computeEarlyBirdLogs(userId, badge);
             case FAMILY_PORTRAIT -> computeFamilyPortrait(userId);
             case RARE_SPECIES_LOGS -> computeRareSpeciesLogs(userId);
             case ALL_OTHER_BADGES -> 0;
@@ -333,24 +331,48 @@ public class BadgeServiceImpl implements BadgeService {
         return words.length > 1 ? words[0] + " " + words[1] : words[0];
     }
 
-    /** Returns how many logs (pet logs included) were made between 04:00 and 06:00 local time; logs without a UTC offset are not counted. */
-    private int computeEarlyBirdLogs(UUID userId) {
+    /**
+     * Returns how many logs (pet logs included) were made inside the badge's local time window, set with
+     * {@code criteriaMetadata.from} and {@code criteriaMetadata.to} ("HH:mm"); logs without a UTC offset are not counted.
+     * A badge without a window counts nothing.
+     */
+    private int computeEarlyBirdLogs(UUID userId, Badge badge) {
+        Integer from = timeOfDayMinutes(badge.getCriteriaMetadata(), "from");
+        Integer to = timeOfDayMinutes(badge.getCriteriaMetadata(), "to");
+        if (from == null || to == null) {
+            log.warn("Badge {} is EARLY_BIRD_LOGS but criteriaMetadata.from/to are missing; progress stays 0", badge.getId());
+            return 0;
+        }
         int count = 0;
         for (BirdLog birdLog : birdLogRepository.findByUserId(userId)) {
-            if (isEarlyBird(birdLog.getObservedAt(), birdLog.getUtcOffsetMinutes())) {
+            if (isInTimeWindow(birdLog.getObservedAt(), birdLog.getUtcOffsetMinutes(), from, to)) {
                 count++;
             }
         }
         return count;
     }
 
-    /** Returns whether the local time (UTC time plus the offset) is from 04:00 up to, not including, 06:00. */
-    static boolean isEarlyBird(Instant observedAt, Integer utcOffsetMinutes) {
+    /**
+     * Returns whether the local time of day is from {@code fromMinute} up to, not including, {@code toMinute} (minutes after
+     * midnight). A window with {@code fromMinute} after {@code toMinute} crosses midnight, e.g. 22:00 to 02:00.
+     */
+    static boolean isInTimeWindow(Instant observedAt, Integer utcOffsetMinutes, int fromMinute, int toMinute) {
         if (observedAt == null || utcOffsetMinutes == null) {
             return false;
         }
-        int hour = observedAt.plusSeconds(utcOffsetMinutes * 60L).atZone(java.time.ZoneOffset.UTC).getHour();
-        return hour >= EARLY_BIRD_FROM_HOUR && hour < EARLY_BIRD_TO_HOUR;
+        java.time.LocalTime local = observedAt.plusSeconds(utcOffsetMinutes * 60L).atZone(java.time.ZoneOffset.UTC).toLocalTime();
+        int minute = local.getHour() * 60 + local.getMinute();
+        return fromMinute < toMinute ? minute >= fromMinute && minute < toMinute : minute >= fromMinute || minute < toMinute;
+    }
+
+    /** Reads an "HH:mm" criteriaMetadata value as minutes after midnight, or null when it is not set. */
+    private static Integer timeOfDayMinutes(Map<String, Object> criteriaMetadata, String key) {
+        Object value = criteriaMetadata == null ? null : criteriaMetadata.get(key);
+        if (!(value instanceof String text) || !StringUtils.hasText(text)) {
+            return null;
+        }
+        java.time.LocalTime time = java.time.LocalTime.parse(text.trim());
+        return time.getHour() * 60 + time.getMinute();
     }
 
     /**
@@ -444,6 +466,20 @@ public class BadgeServiceImpl implements BadgeService {
     private static void validateCriteria(BadgeCriteriaType type, Integer criteriaValue, Map<String, Object> criteriaMetadata) {
         if (type == BadgeCriteriaType.FAMILY_PORTRAIT && criteriaValue != null && criteriaValue > 3) {
             throw new IllegalArgumentException("A FAMILY_PORTRAIT badge has three parts, so criteriaValue must be 1 to 3");
+        }
+        if (type == BadgeCriteriaType.EARLY_BIRD_LOGS) {
+            try {
+                Integer from = timeOfDayMinutes(criteriaMetadata, "from");
+                Integer to = timeOfDayMinutes(criteriaMetadata, "to");
+                if (from == null || to == null) {
+                    throw new IllegalArgumentException("An EARLY_BIRD_LOGS badge needs criteriaMetadata.from and to (HH:mm)");
+                }
+                if (from.equals(to)) {
+                    throw new IllegalArgumentException("criteriaMetadata.from and to must differ");
+                }
+            } catch (java.time.format.DateTimeParseException e) {
+                throw new IllegalArgumentException("criteriaMetadata.from and to must be times like 04:00 (HH:mm)");
+            }
         }
         if (type == BadgeCriteriaType.SAME_GENUS_SPECIES && criteriaMetadata != null
                 && criteriaMetadata.containsKey("genus") && !StringUtils.hasText(extractGenus(criteriaMetadata))) {

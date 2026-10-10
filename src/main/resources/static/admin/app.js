@@ -771,6 +771,7 @@ const deleteBadgeBtn = document.getElementById("delete-badge-btn");
 const radiusFieldWrap = document.getElementById("radius-field-wrap");
 const speciesFieldWrap = document.getElementById("species-field-wrap");
 const genusFieldWrap = document.getElementById("genus-field-wrap");
+const timeWindowFieldWrap = document.getElementById("time-window-field-wrap");
 const badgeSpeciesSelect = document.getElementById("badge-speciesId");
 const badgeCriteriaTypeSelect = document.getElementById("badge-criteriaType");
 
@@ -783,6 +784,7 @@ function toggleRadiusField() {
   radiusFieldWrap.classList.toggle("hidden", !RADIUS_CRITERIA_TYPES.includes(badgeCriteriaTypeSelect.value));
   speciesFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "SPECIES_LOGS");
   genusFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "SAME_GENUS_SPECIES");
+  timeWindowFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "EARLY_BIRD_LOGS");
 }
 badgeCriteriaTypeSelect.addEventListener("change", toggleRadiusField);
 
@@ -875,6 +877,8 @@ async function openBadgeForm(badge) {
     (badge.criteriaMetadata && badge.criteriaMetadata.genus) || "";
   await ensureBadgeSpeciesOptionsLoaded();
   badgeSpeciesSelect.value = (badge.criteriaMetadata && badge.criteriaMetadata.speciesId) || "";
+  document.getElementById("badge-timeFrom").value = (badge.criteriaMetadata && badge.criteriaMetadata.from) || "";
+  document.getElementById("badge-timeTo").value = (badge.criteriaMetadata && badge.criteriaMetadata.to) || "";
   toggleRadiusField();
   showBadgeFormView();
 }
@@ -895,6 +899,11 @@ function readBadgeFormPayload() {
   } else if (criteriaType === "SAME_GENUS_SPECIES") {
     const genus = document.getElementById("badge-genus").value.trim();
     if (genus) criteriaMetadata = { genus };
+  } else if (criteriaType === "EARLY_BIRD_LOGS") {
+    const from = document.getElementById("badge-timeFrom").value;
+    const to = document.getElementById("badge-timeTo").value;
+    if (!from || !to) throw new Error("Set both times for the time window.");
+    criteriaMetadata = { from, to };
   }
   return {
     name: readTranslations("badge-name-en", "badge-name-tr"),
