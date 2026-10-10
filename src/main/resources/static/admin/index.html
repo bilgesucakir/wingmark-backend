@@ -464,10 +464,10 @@
                 <option value="SAME_GENUS_SPECIES">Same genus species</option>
                 <option value="FAVORITE_SPECIES_LOGS">Favorite species logs (only shown to users with a favorite species)</option>
                 <option value="EARLY_BIRD_LOGS">Sighting between two times of day (e.g. early bird 04:00-06:00, night owl 22:00-02:00)</option>
-                <option value="FAMILY_PORTRAIT">Family portrait (male + female + baby of one species; target 1-3)</option>
+                <option value="FAMILY_PORTRAIT">Family portrait (chosen parts of one species, e.g. male + female + juvenile)</option>
                 <option value="SAME_GENUS_ANY">Same genus, any genus (species of one genus; subspecies count as their species)</option>
-                <option value="RARE_SPECIES_LOGS">Rare species logs (Endangered or Critically Endangered)</option>
-                <option value="ALL_OTHER_BADGES">All other badges (target is ignored: enter 1)</option>
+                <option value="RARE_SPECIES_LOGS">Rare species logs (logs of Endangered or Critically Endangered species; the target is how many)</option>
+                <option value="ALL_OTHER_BADGES">Unlock all badges (earned when every other badge is earned; this badge is not counted; enter 1 as target)</option>
               </select>
             </div>
             <div class="field">
@@ -488,6 +488,15 @@
           <div class="field" id="genus-field-wrap">
             <label for="badge-genus">Genus (optional, e.g. Passer) — only for "Same genus species"</label>
             <input type="text" id="badge-genus" placeholder="e.g. Passer" />
+          </div>
+          <div class="field hidden" id="family-parts-field-wrap">
+            <label>Parts of one species needed (each from a different log) — only for "Family portrait"</label>
+            <div class="checkbox-row">
+              <label><input type="checkbox" id="badge-part-male" /> Male</label>
+              <label><input type="checkbox" id="badge-part-female" /> Female</label>
+              <label><input type="checkbox" id="badge-part-baby" /> Juvenile</label>
+            </div>
+            <p class="muted">The target above counts how many of the chosen parts are needed (at most the number chosen).</p>
           </div>
           <div class="grid-2 hidden" id="time-window-field-wrap">
             <div class="field">

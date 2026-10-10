@@ -46,6 +46,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BadgeServiceImpl implements BadgeService {
 
+    private static final int PART_MALE = 1;
+    private static final int PART_FEMALE = 2;
+    private static final int PART_BABY = 4;
     private static final Set<String> RARE_STATUSES = Set.of("endangered", "critically endangered");
 
     private final BadgeRepository badgeRepository;
@@ -288,7 +291,7 @@ public class BadgeServiceImpl implements BadgeService {
             case SPECIES_LOGS -> computeSpeciesLogs(userId, badge);
             case SAME_GENUS_SPECIES, SAME_GENUS_ANY -> computeSameGenusSpecies(userId, badge);
             case EARLY_BIRD_LOGS -> computeEarlyBirdLogs(userId, badge);
-            case FAMILY_PORTRAIT -> computeFamilyPortrait(userId);
+            case FAMILY_PORTRAIT -> computeFamilyPortrait(userId, badge);
             case RARE_SPECIES_LOGS -> computeRareSpeciesLogs(userId);
             case ALL_OTHER_BADGES -> 0;
             case FAVORITE_SPECIES_LOGS -> computeFavoriteSpeciesLogs(userId);
@@ -376,33 +379,64 @@ public class BadgeServiceImpl implements BadgeService {
     }
 
     /**
-     * Returns how many of the three parts (a male, a female and a baby) the user has logged for the species where it
-     * is furthest. Pet logs count. Each part needs its own log; one log is never used for two parts.
+     * Returns how many of the badge's chosen parts (male, female, baby: {@code criteriaMetadata.parts}) the user has logged
+     * for the species where it is furthest. Pet logs count. Each part needs its own log; one log is never used for two parts.
+     * A badge without parts counts nothing.
      */
-    private int computeFamilyPortrait(UUID userId) {
+    private int computeFamilyPortrait(UUID userId, Badge badge) {
+        int wantedParts = familyParts(badge.getCriteriaMetadata());
+        if (wantedParts == 0) {
+            log.warn("Badge {} is FAMILY_PORTRAIT but criteriaMetadata.parts is missing; progress stays 0", badge.getId());
+            return 0;
+        }
         Map<UUID, int[]> logsBySpeciesAndPart = new HashMap<>();
         for (BirdLog birdLog : birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(userId)) {
-            int parts = (birdLog.getGender() == Gender.MALE ? 1 : 0) | (birdLog.getGender() == Gender.FEMALE ? 2 : 0)
-                    | (birdLog.getLifeStage() == LifeStage.BABY ? 4 : 0);
-            if (parts != 0) {
+            int parts = (birdLog.getGender() == Gender.MALE ? PART_MALE : 0) | (birdLog.getGender() == Gender.FEMALE ? PART_FEMALE : 0)
+                    | (birdLog.getLifeStage() == LifeStage.BABY ? PART_BABY : 0);
+            if ((parts & wantedParts) != 0) {
                 logsBySpeciesAndPart.computeIfAbsent(birdLog.getSpeciesId(), key -> new int[8])[parts]++;
             }
         }
         int best = 0;
         for (int[] logsByParts : logsBySpeciesAndPart.values()) {
-            best = Math.max(best, coveredParts(logsByParts));
-            if (best == 3) {
+            best = Math.max(best, coveredParts(logsByParts, wantedParts));
+            if (best == Integer.bitCount(wantedParts)) {
                 break;
             }
         }
         return best;
     }
 
-    /** Returns the most parts (bit 1 male, 2 female, 4 baby) that distinct logs can fill, given log counts per part combination. */
+    /** Returns the chosen parts of a family portrait as a bit mask (1 male, 2 female, 4 baby); 0 if none or none valid. */
+    private static int familyParts(Map<String, Object> criteriaMetadata) {
+        Object value = criteriaMetadata == null ? null : criteriaMetadata.get("parts");
+        if (!(value instanceof List<?> names)) {
+            return 0;
+        }
+        int mask = 0;
+        for (Object name : names) {
+            if (name instanceof String text) {
+                mask |= switch (text.trim().toUpperCase(Locale.ROOT)) {
+                    case "MALE" -> PART_MALE;
+                    case "FEMALE" -> PART_FEMALE;
+                    case "BABY" -> PART_BABY;
+                    default -> 0;
+                };
+            }
+        }
+        return mask;
+    }
+
+    /** Returns the most of all three parts (bit 1 male, 2 female, 4 baby) that distinct logs can fill, given log counts per part combination. */
     static int coveredParts(int[] logsByParts) {
-        for (int size = 3; size >= 1; size--) {
+        return coveredParts(logsByParts, PART_MALE | PART_FEMALE | PART_BABY);
+    }
+
+    /** Returns the most of the {@code allowedParts} that distinct logs can fill, given log counts per part combination. */
+    static int coveredParts(int[] logsByParts, int allowedParts) {
+        for (int size = Integer.bitCount(allowedParts); size >= 1; size--) {
             for (int wanted = 1; wanted < 8; wanted++) {
-                if (Integer.bitCount(wanted) == size && canFill(wanted, logsByParts.clone())) {
+                if ((wanted & ~allowedParts) == 0 && Integer.bitCount(wanted) == size && canFill(wanted, logsByParts.clone())) {
                     return size;
                 }
             }
@@ -464,8 +498,14 @@ public class BadgeServiceImpl implements BadgeService {
 
     /** Rejects a {@code SAME_GENUS_SPECIES} badge whose {@code criteriaMetadata.genus}, when given, is not a non-blank string. */
     private static void validateCriteria(BadgeCriteriaType type, Integer criteriaValue, Map<String, Object> criteriaMetadata) {
-        if (type == BadgeCriteriaType.FAMILY_PORTRAIT && criteriaValue != null && criteriaValue > 3) {
-            throw new IllegalArgumentException("A FAMILY_PORTRAIT badge has three parts, so criteriaValue must be 1 to 3");
+        if (type == BadgeCriteriaType.FAMILY_PORTRAIT) {
+            int parts = Integer.bitCount(familyParts(criteriaMetadata));
+            if (parts == 0) {
+                throw new IllegalArgumentException("A FAMILY_PORTRAIT badge needs criteriaMetadata.parts: a list of MALE, FEMALE and/or BABY");
+            }
+            if (criteriaValue != null && criteriaValue > parts) {
+                throw new IllegalArgumentException("criteriaValue cannot be more than the " + parts + " chosen part(s)");
+            }
         }
         if (type == BadgeCriteriaType.EARLY_BIRD_LOGS) {
             try {

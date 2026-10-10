@@ -401,3 +401,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   max-height: 96px;
   border-radius: 8px;
 }
+
+/* ---------- Family portrait parts ---------- */
+.checkbox-row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
+.checkbox-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
