@@ -724,6 +724,23 @@ user never saved a language in their settings.
 
 \* `userId` must be the caller's own id, unless the caller is an admin.
 
+Admin-only views with full data, including secret badges: `GET /api/admin/badges` (all definitions) and
+`GET /api/admin/users/{id}/badges` (one user's badges, nothing masked). The admin panel uses these.
+
+#### Secret badges
+
+A badge with `secret: true` shows nothing to a user who has not earned it, and the public `/catalog` never lists it.
+In `GET /user/{userId}` (and the data export) an unearned secret badge is reduced to
+`{ "badgeId", "secret": true, "earned": false, "tier" }`; `badgeName`, `badgeIcon`, `badgeDescription`, `progress`,
+`targetValue` and `earnedAt` are `null`. Once earned, the same entry (same `badgeId`) carries everything:
+`badgeName` and `badgeDescription` in the request language, `badgeIcon`, `tier`, `progress`, `targetValue`. The
+user list also returns `badgeDescription` and `tier` for normal badges, so the app does not need the catalog for text.
+Tiers are `BRONZE`, `SILVER`, `GOLD` and `DIAMOND`.
+
+When a user earns the `ALL_OTHER_BADGES` badge through a log or profile change, they get a one-time congratulations email (English or
+Turkish by their language setting, from `MAIL_FROM`, replies to the support address). It is never sent when a badge is created, edited
+or deleted, or by the startup recompute, so existing users who get the badge that way are not mailed. A failing send never blocks the badge.
+
 **GET `` and GET `/user/{userId}` both take the same optional query params:**
 
 | Param           | Values                     | Effect                                                    |
@@ -807,6 +824,11 @@ Request:
 doesn't exist is rejected with `422`. `observedAt` is optional - omit it
 and the upload time is used. A time more than 5 minutes in the future is rejected with
 `400 Bad Request`.
+
+`utcOffsetMinutes` is optional: the local time's offset from UTC in minutes at the sighting
+(-840 to 840, e.g. `180` for UTC+03:00, DST included), used for the early-bird badge. The app
+sends it on create and edit; on `PUT` omitting it keeps the stored value. Logs without it never
+count for the early-bird badge. Responses return it (null on older logs).
 
 Response: same shape as one GET entry above.
 
@@ -964,8 +986,8 @@ for photos you uploaded yourself.
 
 | Method | Path              | Auth | Description                                                     |
 |--------|-------------------|:----:|---------------------------------------------------------------------|
-| GET    | `/catalog`        |      | Get every badge definition (name, icon, criteria)                    |
-| GET    | `/user/{userId}`  | 🔒*  | Get every badge with this user's progress/earned status (admins can pass any user's id) |
+| GET    | `/catalog`        |      | Get every public badge definition (name, icon, criteria); secret badges are left out |
+| GET    | `/user/{userId}`  | 🔒*  | Get every badge with this user's progress/earned status (admins can pass any user's id); an unearned secret badge is masked |
 | POST   | ``                | 🛡️  | Create a new badge definition                                        |
 | PUT    | `/{id}`           | 🛡️  | Update an existing badge definition                                  |
 | DELETE | `/{id}`           | 🛡️  | Delete a badge definition                                            |
@@ -989,11 +1011,16 @@ also need extra parameters in `criteriaMetadata`:
 | `SIGHTINGS_IN_RADIUS`    | Max raw sightings (any species) clustered within a radius     | `{ "radiusMeters": <number> }` (default 5000) |
 | `SPECIES_LOGS`           | Logs of one specific species                                 | `{ "speciesId": "<uuid>" }` |
 | `FAVORITE_SPECIES_LOGS`  | Logs of the user's favorite species; 0 without one. `/user/{userId}` omits these badges for users who have no favorite species | — |
-| `SAME_GENUS_SPECIES`     | Max distinct species logged within one genus (pet logs count), the first word of the scientific name, case-insensitive | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
+| `SAME_GENUS_SPECIES`     | Max distinct species logged within one genus (pet logs count), the first word of the scientific name, case-insensitive; a subspecies such as `Anas platyrhynchos domesticus` counts as its species | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
+| `SAME_GENUS_ANY`         | Same rules as `SAME_GENUS_SPECIES` without a fixed genus: the best genus counts | — |
+| `EARLY_BIRD_LOGS`        | Logs (pet logs included) whose local time is from 04:00 up to (not including) 06:00, from `observedAt` plus the log's `utcOffsetMinutes`; logs without an offset never count | — |
+| `FAMILY_PORTRAIT`        | For the best species: how many of a male, a female and a baby it has, each from a different log, pet logs included (0-3); the target must be 1 to 3 | — |
+| `RARE_SPECIES_LOGS`      | Logs (pet logs included) of species whose English `conservationStatus` is exactly `Endangered` or `Critically Endangered` (ignoring case and spaces) | — |
+| `ALL_OTHER_BADGES`       | Earned badges among all other badges (secret ones included), calculated last; the target is the number of other badges the user can earn (favorite-species badges only count for users who have a favorite species or earned them), so `targetValue` varies per user; the stored `criteriaValue` is ignored (enter 1) | — |
 
 The admin panel's badge form exposes all of these, including the species picker for
 `SPECIES_LOGS`, the radius field for the two `*_IN_RADIUS` types and the optional genus
-field for `SAME_GENUS_SPECIES`.
+field for `SAME_GENUS_SPECIES`, the secret checkbox and the tier (`BRONZE` to `DIAMOND`). Creating, editing or deleting a badge re-evaluates every user, and the collection badge is always evaluated after the others.
 
 <details>
 <summary><strong>Examples</strong></summary>
@@ -1022,13 +1049,18 @@ field for `SAME_GENUS_SPECIES`.
 [
   {
     "badgeId": "72cf1811-0625-4933-afc3-b18f4bc18805",
-    "badgeName": "First Flight",
-    "badgeIcon": "first-flight",
+    "secret": false,
     "earned": true,
     "earnedAt": "2026-09-18T06:47:12Z",
+    "badgeName": "First Flight",
+    "badgeIcon": "first-flight",
+    "badgeDescription": "Log your first bird sighting",
+    "tier": "BRONZE",
     "progress": 1,
     "targetValue": 1
-  }
+  },
+  { "badgeId": "0d6f4a52-1c2b-4e8a-9a47-5b1e3c9d7f20", "secret": true, "earned": false, "earnedAt": null,
+    "badgeName": null, "badgeIcon": null, "badgeDescription": null, "tier": "GOLD", "progress": null, "targetValue": null }
 ]
 ```
 
@@ -1044,11 +1076,12 @@ Request:
   "criteriaValue": 1,
   "criteriaMetadata": null,
   "tier": "BRONZE",
-  "displayOrder": 1
+  "displayOrder": 1,
+  "secret": false
 }
 ```
 
-`displayOrder` is optional (0 or more). `/catalog` and `/user/{userId}` list badges by it, lowest first; badges without one come last.
+`secret` is optional (omitted means false). `displayOrder` is optional (0 or more). `/catalog` and `/user/{userId}` list badges by it, lowest first; badges without one come last.
 
 Response: same shape as one `/catalog` entry above.
 

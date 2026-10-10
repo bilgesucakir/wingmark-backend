@@ -86,6 +86,35 @@ class BirdLogServiceImplTest {
     }
 
     @Test
+    void createStoresTheUtcOffsetAndReturnsIt() {
+        when(birdLogRepository.save(any(BirdLog.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CreateBirdLogRequestDto request = new CreateBirdLogRequestDto(
+                null, null, false, null, LifeStage.ADULT, Gender.MALE, null, null, 40.0, 29.0, null, null, 180);
+
+        BirdLogResponseDto response = birdLogService.create(userId, request, Locale.ENGLISH);
+
+        assertThat(response.utcOffsetMinutes()).isEqualTo(180);
+    }
+
+    @Test
+    void updateKeepsTheStoredUtcOffsetWhenOmittedAndReplacesItWhenGiven() {
+        UUID logId = UUID.randomUUID();
+        BirdLog existing = BirdLog.builder().id(logId).userId(userId).lifeStage(LifeStage.ADULT).gender(Gender.UNKNOWN)
+                .latitude(1.0).longitude(1.0).utcOffsetMinutes(180).build();
+        when(birdLogRepository.findByIdAndUserId(logId, userId)).thenReturn(Optional.of(existing));
+        when(birdLogRepository.save(any(BirdLog.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BirdLogResponseDto kept = birdLogService.update(userId, logId, new UpdateBirdLogRequestDto(
+                null, null, false, null, LifeStage.ADULT, Gender.UNKNOWN, null, null, 1.0, 1.0, null, null), Locale.ENGLISH);
+        BirdLogResponseDto replaced = birdLogService.update(userId, logId, new UpdateBirdLogRequestDto(
+                null, null, false, null, LifeStage.ADULT, Gender.UNKNOWN, null, null, 1.0, 1.0, null, null, -300), Locale.ENGLISH);
+
+        assertThat(kept.utcOffsetMinutes()).isEqualTo(180);
+        assertThat(replaced.utcOffsetMinutes()).isEqualTo(-300);
+    }
+
+    @Test
     void createTriggersBadgeEvaluationForTheOwningUser() {
         when(birdLogRepository.save(any(BirdLog.class))).thenAnswer(inv -> inv.getArgument(0));
 

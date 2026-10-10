@@ -12,11 +12,17 @@ import java.util.UUID;
 /** Manages the badge catalog and per-user badge progress/awards. */
 public interface BadgeService {
 
-    /** Returns every badge definition in the catalog. */
+    /** Returns the public badge catalog: every badge definition except secret ones. */
     List<BadgeResponseDto> getAll();
+
+    /** Admin-only: returns every badge definition, secret ones included. */
+    List<BadgeResponseDto> getAllForAdmin();
 
     /** Returns every badge with this user's current progress and earned status, with badgeName resolved to the given locale. */
     List<UserBadgeResponseDto> getByUserId(UUID userId, Locale locale);
+
+    /** Admin-only: like {@link #getByUserId} but with full details for secret badges the user has not earned. */
+    List<UserBadgeResponseDto> getByUserIdForAdmin(UUID userId, Locale locale);
 
     /** Admin-only: adds a new badge definition to the catalog. */
     BadgeResponseDto create(CreateBadgeRequestDto request);

@@ -188,4 +188,131 @@ class BadgeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
+
+    private String createSecretBadge(String adminToken, String name, int target) throws Exception {
+        String body = objectMapper.writeValueAsString(new HashMap<>() {{
+            put("name", Map.of("en", name));
+            put("description", Map.of("en", "Secret description"));
+            put("icon", "secret-icon");
+            put("criteriaType", "TOTAL_LOGS");
+            put("criteriaValue", target);
+            put("tier", "GOLD");
+            put("secret", true);
+        }});
+        String response = mockMvc.perform(post("/api/badges")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.secret").value(true))
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(response).get("id").asText();
+    }
+
+    private JsonNode findById(String arrayJson, String idField, String id) throws Exception {
+        for (JsonNode node : objectMapper.readTree(arrayJson)) {
+            if (id.equals(node.get(idField).asText())) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    @Test
+    void aSecretBadgeIsMissingFromThePublicCatalogButListedForAdmins() throws Exception {
+        String adminToken = registerLoginAsAdmin("secretcatalog");
+        String badgeId = createSecretBadge(adminToken, "Hidden Gem", 1000);
+
+        String publicCatalog = mockMvc.perform(get("/api/badges/catalog")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String adminCatalog = mockMvc.perform(get("/api/admin/badges").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        org.assertj.core.api.Assertions.assertThat(publicCatalog).doesNotContain("Hidden Gem").doesNotContain(badgeId);
+        JsonNode adminEntry = findById(adminCatalog, "id", badgeId);
+        org.assertj.core.api.Assertions.assertThat(adminEntry).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(adminEntry.get("secret").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(adminEntry.get("name").get("en").asText()).isEqualTo("Hidden Gem");
+    }
+
+    @Test
+    void aLockedSecretBadgeIsMaskedForTheUserAndFullyShownToAnAdmin() throws Exception {
+        String adminToken = registerLoginAsAdmin("secretadmin");
+        String badgeId = createSecretBadge(adminToken, "Locked Gem", 1000);
+        String userToken = registerAndGetToken("secretuser");
+        UUID userId = extractUserId(userToken);
+
+        String own = mockMvc.perform(get("/api/badges/user/" + userId).header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        JsonNode masked = findById(own, "badgeId", badgeId);
+        org.assertj.core.api.Assertions.assertThat(masked).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(masked.get("secret").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(masked.get("earned").asBoolean()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(masked.get("tier").asText()).isEqualTo("GOLD");
+        org.assertj.core.api.Assertions.assertThat(own).doesNotContain("Locked Gem").doesNotContain("Secret description").doesNotContain("secret-icon");
+        for (String hidden : new String[] {"badgeName", "badgeIcon", "badgeDescription", "progress", "targetValue"}) {
+            org.assertj.core.api.Assertions.assertThat(masked.get(hidden).isNull()).as(hidden).isTrue();
+        }
+
+        // An admin account asking through the user endpoint is masked too; the admin endpoint shows everything.
+        String viaUserEndpoint = mockMvc.perform(get("/api/badges/user/" + userId).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(viaUserEndpoint).doesNotContain("Locked Gem");
+        String full = mockMvc.perform(get("/api/admin/users/" + userId + "/badges").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        JsonNode revealed = findById(full, "badgeId", badgeId);
+        org.assertj.core.api.Assertions.assertThat(revealed.get("badgeName").asText()).isEqualTo("Locked Gem");
+        org.assertj.core.api.Assertions.assertThat(revealed.get("targetValue").asInt()).isEqualTo(1000);
+    }
+
+    @Test
+    void theAdminBadgeEndpointsRequireAnAdmin() throws Exception {
+        String userToken = registerAndGetToken("notanadmin");
+        UUID userId = extractUserId(userToken);
+
+        mockMvc.perform(get("/api/admin/badges")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/admin/badges").header("Authorization", "Bearer " + userToken)).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/admin/users/" + userId + "/badges").header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void anEarnedSecretBadgeIsShownInFullAndKeepsItsId() throws Exception {
+        String adminToken = registerLoginAsAdmin("secretearn");
+        String badgeId = createSecretBadge(adminToken, "Earned Gem", 1);
+        String userToken = registerAndGetToken("secretearner");
+        UUID userId = extractUserId(userToken);
+
+        String logBody = objectMapper.writeValueAsString(new HashMap<>() {{
+            put("lifeStage", "ADULT");
+            put("gender", "UNKNOWN");
+            put("latitude", 41.0);
+            put("longitude", 29.0);
+        }});
+        mockMvc.perform(post("/api/bird-logs").header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON).content(logBody))
+                .andExpect(status().isCreated());
+
+        String own = mockMvc.perform(get("/api/badges/user/" + userId).header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        JsonNode earned = findById(own, "badgeId", badgeId);
+        org.assertj.core.api.Assertions.assertThat(earned.get("earned").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(earned.get("secret").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(earned.get("badgeName").asText()).isEqualTo("Earned Gem");
+        org.assertj.core.api.Assertions.assertThat(earned.get("badgeDescription").asText()).isEqualTo("Secret description");
+        org.assertj.core.api.Assertions.assertThat(earned.get("badgeIcon").asText()).isEqualTo("secret-icon");
+    }
+
+    @Test
+    void theDataExportDoesNotRevealALockedSecretBadge() throws Exception {
+        String adminToken = registerLoginAsAdmin("secretexport");
+        createSecretBadge(adminToken, "Export Gem", 1000);
+        String userToken = registerAndGetToken("secretexporter");
+        UUID userId = extractUserId(userToken);
+
+        String export = mockMvc.perform(get("/api/users/" + userId + "/export").header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        org.assertj.core.api.Assertions.assertThat(export).doesNotContain("Export Gem").doesNotContain("Secret description");
+    }
 }

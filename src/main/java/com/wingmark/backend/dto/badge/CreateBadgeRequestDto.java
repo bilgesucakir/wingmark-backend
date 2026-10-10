@@ -18,6 +18,14 @@ public record CreateBadgeRequestDto(
         @NotNull @Positive Integer criteriaValue,
         Map<String, Object> criteriaMetadata,
         BadgeTier tier,
-        @PositiveOrZero Integer displayOrder
+        @PositiveOrZero Integer displayOrder,
+        Boolean secret
 ) {
+
+    /** Request without the secret flag (the badge is not secret). */
+    public CreateBadgeRequestDto(Map<String, String> name, Map<String, String> description, String icon,
+            BadgeCriteriaType criteriaType, Integer criteriaValue, Map<String, Object> criteriaMetadata,
+            BadgeTier tier, Integer displayOrder) {
+        this(name, description, icon, criteriaType, criteriaValue, criteriaMetadata, tier, displayOrder, null);
+    }
 }

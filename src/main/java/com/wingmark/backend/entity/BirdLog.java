@@ -59,6 +59,9 @@ public class BirdLog extends BaseEntity {
 
     private Instant observedAt;
 
+    /** Offset of the user's local time from UTC in minutes at the time of the sighting; null for older logs. */
+    private Integer utcOffsetMinutes;
+
     @Builder.Default
     private Visibility visibility = Visibility.PRIVATE;
 

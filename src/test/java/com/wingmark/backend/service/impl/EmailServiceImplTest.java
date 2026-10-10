@@ -8,6 +8,7 @@ import com.wingmark.backend.config.BusinessProperties;
 import com.wingmark.backend.config.MailProperties;
 import jakarta.mail.Session;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeUtility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,6 +103,22 @@ class EmailServiceImplTest {
                 .isEqualTo("contact us at support@wingmarkapp.com");
         assertThat(service(new BusinessProperties("", "", "")).contactSupport())
                 .doesNotContain("reply").contains("support");
+    }
+
+    @Test
+    void theAllBadgesEmailIsInTurkishOnlyForTurkishUsersAndHasNoLinks() throws Exception {
+        MimeMessage english = new MimeMessage(Session.getInstance(new Properties()));
+        when(mailSender.createMimeMessage()).thenReturn(english);
+        service(new BusinessProperties("", "", "support@wingmarkapp.com")).sendAllBadgesEarnedEmail("a@b.com", "en");
+        assertThat(english.getSubject()).isEqualTo("You completed every Wingmark badge");
+        assertThat((String) english.getContent()).contains("Complete All").contains("support@wingmarkapp.com")
+                .doesNotContain("http").doesNotContain("<img");
+
+        MimeMessage turkish = new MimeMessage(Session.getInstance(new Properties()));
+        when(mailSender.createMimeMessage()).thenReturn(turkish);
+        service(new BusinessProperties("", "", "support@wingmarkapp.com")).sendAllBadgesEarnedEmail("a@b.com", "tr");
+        assertThat(MimeUtility.decodeText(turkish.getSubject())).isEqualTo("Tüm Wingmark rozetlerini tamamladınız");
+        assertThat((String) turkish.getContent()).contains("Hepsini Tamamla").doesNotContain("http");
     }
 
     @Test

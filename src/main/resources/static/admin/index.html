@@ -438,8 +438,12 @@
                 <option value="BRONZE">Bronze</option>
                 <option value="SILVER">Silver</option>
                 <option value="GOLD">Gold</option>
+                <option value="DIAMOND">Diamond</option>
               </select>
             </div>
+          </div>
+          <div class="field">
+            <label for="badge-secret"><input type="checkbox" id="badge-secret" /> Secret badge (users who have not earned it see no details, and it is left out of the public catalog)</label>
           </div>
           <div class="field">
             <label for="badge-displayOrder">Display order (optional; lowest first in the app, empty = last)</label>
@@ -459,6 +463,11 @@
                 <option value="SPECIES_LOGS">Specific species logs</option>
                 <option value="SAME_GENUS_SPECIES">Same genus species</option>
                 <option value="FAVORITE_SPECIES_LOGS">Favorite species logs (only shown to users with a favorite species)</option>
+                <option value="EARLY_BIRD_LOGS">Early bird logs (seen 04:00-06:00 local time)</option>
+                <option value="FAMILY_PORTRAIT">Family portrait (male + female + baby of one species; target 1-3)</option>
+                <option value="SAME_GENUS_ANY">Same genus, any genus (species of one genus; subspecies count as their species)</option>
+                <option value="RARE_SPECIES_LOGS">Rare species logs (Endangered or Critically Endangered)</option>
+                <option value="ALL_OTHER_BADGES">All other badges (target is ignored: enter 1)</option>
               </select>
             </div>
             <div class="field">

@@ -107,7 +107,7 @@ async function loadOverview() {
     const [species, users, badges, logs] = await Promise.all([
       Api.request("/api/species?size=1"),
       Api.request("/api/admin/users"),
-      Api.request("/api/badges/catalog"),
+      Api.request("/api/admin/badges"),
       Api.request("/api/bird-logs"),
     ]);
     document.getElementById("stat-species").textContent = species.page.totalElements;
@@ -651,7 +651,7 @@ function renderUserDetailBadges(badges) {
       ? '<span class="badge-tag admin">Earned ' + escapeHtml(formatDate(b.earnedAt)) + "</span>"
       : '<span class="badge-tag">' + b.progress + " / " + b.targetValue + "</span>";
     li.innerHTML =
-      '<div class="species-info"><div class="common">' + escapeHtml(b.badgeName) + "</div></div>" +
+      '<div class="species-info"><div class="common">' + escapeHtml(b.badgeName) + (b.secret ? " · SECRET" : "") + "</div></div>" +
       '<div class="row-actions">' + status + "</div>";
     userDetailBadgesEl.appendChild(li);
   });
@@ -690,7 +690,7 @@ async function openUserDetail(user) {
   try {
     const [logs, badges] = await Promise.all([
       Api.request("/api/bird-logs/user/" + user.id),
-      Api.request("/api/badges/user/" + user.id),
+      Api.request("/api/admin/users/" + user.id + "/badges"),
     ]);
     renderUserDetailLogs(logs);
     renderUserDetailBadges(badges);
@@ -800,7 +800,7 @@ async function loadBadgesList() {
   showMsg(badgesListMsg, "", "");
   badgesListEl.innerHTML = '<li class="muted">Loading…</li>';
   try {
-    const badges = await Api.request("/api/badges/catalog");
+    const badges = await Api.request("/api/admin/badges");
     renderBadgesList(badges);
   } catch (err) {
     badgesListEl.innerHTML = "";
@@ -819,7 +819,7 @@ function renderBadgesList(badges) {
     li.className = "species-row";
     li.innerHTML =
       '<div class="species-info">' +
-      '<div class="common">' + (b.displayOrder === null || b.displayOrder === undefined ? "" : "#" + escapeHtml(String(b.displayOrder)) + " · ") + escapeHtml(badgeName(b)) + (b.tier ? " · " + escapeHtml(b.tier) : "") + "</div>" +
+      '<div class="common">' + (b.displayOrder === null || b.displayOrder === undefined ? "" : "#" + escapeHtml(String(b.displayOrder)) + " · ") + escapeHtml(badgeName(b)) + (b.tier ? " · " + escapeHtml(b.tier) : "") + (b.secret ? " · SECRET" : "") + "</div>" +
       '<div class="scientific">' + escapeHtml(b.criteriaType) + " ≥ " + escapeHtml(String(b.criteriaValue)) + "</div>" +
       "</div>" +
       '<div class="row-actions"><button class="secondary edit-badge-btn">Edit</button></div>';
@@ -864,6 +864,7 @@ async function openBadgeForm(badge) {
   document.getElementById("badge-description-tr").value = (badge.description && badge.description.tr) || "";
   document.getElementById("badge-icon").value = badge.icon || "";
   document.getElementById("badge-tier").value = badge.tier || "";
+  document.getElementById("badge-secret").checked = badge.secret === true;
   document.getElementById("badge-displayOrder").value =
     badge.displayOrder === null || badge.displayOrder === undefined ? "" : badge.displayOrder;
   document.getElementById("badge-criteriaType").value = badge.criteriaType;
@@ -904,6 +905,7 @@ function readBadgeFormPayload() {
     criteriaMetadata,
     tier,
     displayOrder,
+    secret: document.getElementById("badge-secret").checked,
   };
 }
 

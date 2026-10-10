@@ -38,6 +38,7 @@ final class ApiFieldDocs {
             profilePicture|Profile picture: a preset avatar key (GET /api/avatars), an /uploads/... URL from POST /api/uploads/photo, or null.|avatar-1
             createdAt|When the record was created (UTC).|2026-10-03T08:15:30Z
             observedAt|When the bird was seen (UTC). Defaults to now; must not be in the future.|2026-10-03T08:15:30Z
+            utcOffsetMinutes|Offset of the local time from UTC in minutes at the sighting (-840 to 840), e.g. 180 for UTC+03:00. Needed for the early-bird badge; on update, omitted keeps the stored value; null on older logs.|180
             id|Unique id (UUID).|%1$s
             userId|Id of the user (UUID).|%1$s
             key|Preset avatar key; the images ship inside the iOS app.|avatar-1
@@ -45,18 +46,21 @@ final class ApiFieldDocs {
             name|Name by locale code.|
             description|Description by locale code.|
             icon|Emoji or icon identifier shown for the badge.|🐦
-            criteriaType|What the badge counts: TOTAL_LOGS, UNIQUE_SPECIES, BABY_LOGS, UNKNOWN_SPECIES_LOGS, PET_LOGS, SPECIES_IN_RADIUS, SIGHTINGS_IN_RADIUS, SPECIES_LOGS, SAME_GENUS_SPECIES or FAVORITE_SPECIES_LOGS.|TOTAL_LOGS
+            criteriaType|What the badge counts: TOTAL_LOGS, UNIQUE_SPECIES, BABY_LOGS, UNKNOWN_SPECIES_LOGS, PET_LOGS, SPECIES_IN_RADIUS, SIGHTINGS_IN_RADIUS, SPECIES_LOGS, SAME_GENUS_SPECIES, FAVORITE_SPECIES_LOGS, EARLY_BIRD_LOGS, FAMILY_PORTRAIT, SAME_GENUS_ANY, RARE_SPECIES_LOGS or ALL_OTHER_BADGES (the last ignores the target and counts the earned badges among all others; FAMILY_PORTRAIT target is 1 to 3).|TOTAL_LOGS
             criteriaValue|Target the progress must reach to earn the badge (at least 1).|10
             criteriaMetadata|Optional parameters for some types: radiusMeters (*_IN_RADIUS, default 5000), speciesId (SPECIES_LOGS), genus (SAME_GENUS_SPECIES, must be a non-blank string when given).|
-            tier|Badge tier: BRONZE, SILVER or GOLD.|BRONZE
+            tier|Badge tier: BRONZE, SILVER, GOLD or DIAMOND.|BRONZE
+            secret|Whether the badge is secret: a user who has not earned it sees no details, and the public catalog leaves it out. Omitted means false.|false
             displayOrder|Position in the badge lists, lowest first; badges without one come last.|1
             badgeId|Id of the badge (UUID).|%1$s
-            badgeName|Badge name in the request locale.|First Sighting
-            badgeIcon|Badge icon.|🐦
+            secret|Whether this is a secret badge.|false
+            badgeName|Badge name in the request locale; null for a secret badge not yet earned.|First Sighting
+            badgeDescription|Badge description in the request locale; null if none or for a secret badge not yet earned.|Log your first bird.
+            badgeIcon|Badge icon; null for a secret badge not yet earned.|🐦
             earned|Whether the user has earned the badge.|false
             earnedAt|When the badge was earned (UTC), or null.|2026-10-03T08:15:30Z
-            progress|The user's current progress toward the target.|3
-            targetValue|Progress needed to earn the badge.|10
+            progress|The user's current progress toward the target; null for a secret badge not yet earned.|3
+            targetValue|Progress needed to earn the badge (for the collection badge, the number of other badges the user can earn); null for a secret badge not yet earned.|10
             speciesId|Id of the species (UUID), or null if the bird was not identified.|%1$s
             speciesCommonName|Species common name in the request locale, or null.|House Sparrow
             speciesStatus|How sure the user is about the species: GUESS or CONFIDENT.|CONFIDENT
