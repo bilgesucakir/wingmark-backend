@@ -786,6 +786,14 @@ function toggleRadiusField() {
 }
 badgeCriteriaTypeSelect.addEventListener("change", toggleRadiusField);
 
+const badgeSecretInput = document.getElementById("badge-secret");
+const badgeSecretText = document.getElementById("badge-secret-text");
+
+function showSecretText() {
+  badgeSecretText.textContent = badgeSecretInput.checked ? "Secret" : "Not secret";
+}
+badgeSecretInput.addEventListener("change", showSecretText);
+
 async function ensureBadgeSpeciesOptionsLoaded() {
   if (badgeSpeciesOptionsLoaded) return;
   try {
@@ -846,6 +854,7 @@ newBadgeBtn.addEventListener("click", () => {
   deleteBadgeBtn.classList.add("hidden");
   showMsg(badgeFormMsg, "", "");
   badgeForm.reset();
+  showSecretText();
   toggleRadiusField();
   ensureBadgeSpeciesOptionsLoaded();
   showBadgeFormView();
@@ -864,7 +873,8 @@ async function openBadgeForm(badge) {
   document.getElementById("badge-description-tr").value = (badge.description && badge.description.tr) || "";
   document.getElementById("badge-icon").value = badge.icon || "";
   document.getElementById("badge-tier").value = badge.tier || "";
-  document.getElementById("badge-secret").checked = badge.secret === true;
+  badgeSecretInput.checked = badge.secret === true;
+  showSecretText();
   document.getElementById("badge-displayOrder").value =
     badge.displayOrder === null || badge.displayOrder === undefined ? "" : badge.displayOrder;
   document.getElementById("badge-criteriaType").value = badge.criteriaType;
@@ -905,7 +915,7 @@ function readBadgeFormPayload() {
     criteriaMetadata,
     tier,
     displayOrder,
-    secret: document.getElementById("badge-secret").checked,
+    secret: badgeSecretInput.checked,
   };
 }
 

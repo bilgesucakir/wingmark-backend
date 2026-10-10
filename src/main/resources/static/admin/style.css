@@ -401,3 +401,30 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   max-height: 96px;
   border-radius: 8px;
 }
+
+/* ---------- Secret toggle ---------- */
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
+.switch-input { position: absolute; opacity: 0; width: 0; height: 0; }
+.switch-track {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: #c9ceca;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.15s;
+}
+.switch-input:checked + .switch-track { background: var(--primary); }
+.switch-input:checked + .switch-track .switch-thumb { left: 21px; }
+.switch-input:focus-visible + .switch-track { outline: 2px solid var(--primary); outline-offset: 2px; }
+.secret-toggle .muted { margin: 6px 0 0; font-size: 12px; }
