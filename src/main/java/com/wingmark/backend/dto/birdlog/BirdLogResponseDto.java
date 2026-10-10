@@ -26,6 +26,7 @@ public record BirdLogResponseDto(
         Double longitude,
         String locationName,
         Instant observedAt,
+        Integer utcOffsetMinutes,
         Visibility visibility,
         Instant createdAt
 ) {

@@ -17,4 +17,7 @@ public interface EmailService {
 
     /** Warns an inactive account's owner that it will be deleted on the given date unless they sign in. */
     void sendInactivityWarningEmail(String toEmail, java.time.LocalDate deletionDate);
+
+    /** One-time congratulation when a user has earned every badge; {@code language} is "tr" for Turkish, anything else English. */
+    void sendAllBadgesEarnedEmail(String toEmail, String language);
 }

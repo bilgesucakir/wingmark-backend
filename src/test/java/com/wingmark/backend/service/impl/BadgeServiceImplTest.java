@@ -48,6 +48,10 @@ class BadgeServiceImplTest {
     private SpeciesRepository speciesRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private com.wingmark.backend.repository.UserSettingsRepository userSettingsRepository;
+    @Mock
+    private com.wingmark.backend.service.EmailService emailService;
 
     private BadgeServiceImpl badgeService;
 
@@ -55,7 +59,7 @@ class BadgeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        badgeService = new BadgeServiceImpl(badgeRepository, userBadgeRepository, birdLogRepository, speciesRepository, userRepository);
+        badgeService = new BadgeServiceImpl(badgeRepository, userBadgeRepository, birdLogRepository, speciesRepository, userRepository, userSettingsRepository, emailService);
     }
 
     @Test
@@ -382,17 +386,18 @@ class BadgeServiceImplTest {
     }
 
     @Test
-    void sameGenusBadgeIgnoresCaseTrinomialsAndBlankScientificNames() {
+    void sameGenusBadgeIgnoresCaseFoldsSubspeciesAndIgnoresBlankScientificNames() {
         Species house = species("PASSER domesticus");
         Species indian = species("passer  domesticus indicus");
         Species tree = species("Passer montanus");
         Species blank = species("  ");
         Species none = species(null);
 
-        UserBadge saved = evaluateSameGenus(3, null, logsOf(house, indian, tree, blank, none),
+        UserBadge saved = evaluateSameGenus(2, null, logsOf(house, indian, tree, blank, none),
                 house, indian, tree, blank, none);
 
-        assertThat(saved.getProgress()).isEqualTo(3);
+        // The subspecies (trinomial) folds into its species, so only house and tree sparrow count.
+        assertThat(saved.getProgress()).isEqualTo(2);
         assertThat(saved.getEarnedAt()).isNotNull();
     }
 
@@ -572,6 +577,7 @@ class BadgeServiceImplTest {
         UserBadge stuck = UserBadge.builder().userId(userId).badgeId(badgeId).progress(2).build();
         when(badgeRepository.findById(badgeId)).thenReturn(Optional.of(existing));
         when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(badgeRepository.findAll()).thenReturn(List.of(existing));
         when(userRepository.findAll()).thenReturn(List.of(User.builder().id(userId).build()));
         when(birdLogRepository.countByUserId(userId)).thenReturn(2L);
         when(userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)).thenReturn(Optional.of(stuck));
@@ -594,6 +600,7 @@ class BadgeServiceImplTest {
         UserBadge earned = UserBadge.builder().userId(userId).badgeId(badgeId).progress(2).earnedAt(earlier).build();
         when(badgeRepository.findById(badgeId)).thenReturn(Optional.of(existing));
         when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(badgeRepository.findAll()).thenReturn(List.of(existing));
         when(userRepository.findAll()).thenReturn(List.of(User.builder().id(userId).build()));
         when(birdLogRepository.countByUserId(userId)).thenReturn(2L);
         when(userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)).thenReturn(Optional.of(earned));
@@ -609,6 +616,8 @@ class BadgeServiceImplTest {
     @Test
     void creatingABadgeComputesProgressForExistingUsers() {
         when(badgeRepository.save(any(Badge.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(badgeRepository.findAll()).thenAnswer(inv -> List.of(Badge.builder().id(UUID.randomUUID())
+                .criteriaType(BadgeCriteriaType.TOTAL_LOGS).criteriaValue(3).build()));
         when(userRepository.findAll()).thenReturn(List.of(User.builder().id(userId).build()));
         when(birdLogRepository.countByUserId(userId)).thenReturn(4L);
         when(userBadgeRepository.findByUserIdAndBadgeId(any(), any())).thenReturn(Optional.empty());

@@ -21,5 +21,15 @@ public enum BadgeCriteriaType {
     /** Logs of the user's favorite species. Shown only to users who have one. */
     FAVORITE_SPECIES_LOGS,
     /** Log one specific species (criteriaMetadata.speciesId) criteriaValue times. */
-    SPECIES_LOGS
+    SPECIES_LOGS,
+    /** Logs seen between 04:00 and 06:00 local time; needs the log's {@code utcOffsetMinutes}. */
+    EARLY_BIRD_LOGS,
+    /** One species logged as a male, a female and a baby, each in a different log (progress 0-3). */
+    FAMILY_PORTRAIT,
+    /** Distinct species within any single genus; subspecies count as their species. Pet logs are ignored. */
+    SAME_GENUS_ANY,
+    /** Logs of species whose conservation status is Endangered or Critically Endangered; pet logs are ignored. */
+    RARE_SPECIES_LOGS,
+    /** Earned badges among all other badges; computed after all others, target = the number of other badges. */
+    ALL_OTHER_BADGES
 }

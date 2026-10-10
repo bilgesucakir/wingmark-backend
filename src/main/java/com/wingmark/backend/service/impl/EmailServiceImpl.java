@@ -71,6 +71,27 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendAllBadgesEarnedEmail(String toEmail, String language) {
+        boolean turkish = "tr".equalsIgnoreCase(language);
+        String email = businessProperties.contactEmail();
+        String contact = StringUtils.hasText(email) ? HtmlUtils.htmlEscape(email) : null;
+        String html;
+        String subject;
+        if (turkish) {
+            subject = "Tüm Wingmark rozetlerini tamamladınız";
+            html = "<p>Tebrikler! Wingmark'taki tüm rozetleri kazandınız; elmas Hepsini Tamamla rozeti de bunların arasında.</p>"
+                    + "<p>Kuşları bizimle gözlemlediğiniz ve kaydettiğiniz için teşekkür ederiz. Bu, tek seferlik bir mesajdır.</p>"
+                    + (contact != null ? "<p>Soru ve görüşleriniz için " + contact + " adresine yazabilirsiniz.</p>" : "");
+        } else {
+            subject = "You completed every Wingmark badge";
+            html = "<p>Congratulations! You have earned every badge in Wingmark, including the diamond Complete All badge.</p>"
+                    + "<p>Thank you for watching and logging birds with us. This is a one-time message.</p>"
+                    + (contact != null ? "<p>Questions or thoughts? Write to us at " + contact + ".</p>" : "");
+        }
+        send(toEmail, "all-badges-earned", subject, html, null, null);
+    }
+
+    @Override
     public void sendInactivityWarningEmail(String toEmail, java.time.LocalDate deletionDate) {
         String html = """
                 <p>You haven't used your Wingmark account for almost two years.</p>

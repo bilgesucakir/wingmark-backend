@@ -16,6 +16,7 @@ public record BadgeResponseDto(
         Integer criteriaValue,
         Map<String, Object> criteriaMetadata,
         BadgeTier tier,
-        Integer displayOrder
+        Integer displayOrder,
+        boolean secret
 ) {
 }

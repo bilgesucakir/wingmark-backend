@@ -39,4 +39,7 @@ public class Badge extends BaseEntity {
 
     /** Position in the badge lists, lowest first; null sorts last. */
     private Integer displayOrder;
+
+    /** A secret badge shows no details to a user who has not earned it and is left out of the public catalog. */
+    private boolean secret;
 }

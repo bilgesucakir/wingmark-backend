@@ -15,4 +15,6 @@ public interface UserBadgeRepository extends MongoRepository<UserBadge, UUID> {
     Optional<UserBadge> findByUserIdAndBadgeId(UUID userId, UUID badgeId);
 
     void deleteByUserId(UUID userId);
+
+    void deleteByBadgeId(UUID badgeId);
 }

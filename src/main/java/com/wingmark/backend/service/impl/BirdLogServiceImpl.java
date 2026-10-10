@@ -112,6 +112,7 @@ public class BirdLogServiceImpl implements BirdLogService {
                 .longitude(request.longitude())
                 .locationName(request.locationName())
                 .observedAt(request.observedAt() != null ? validateObservedAt(request.observedAt()) : Instant.now())
+                .utcOffsetMinutes(request.utcOffsetMinutes())
                 .build();
 
         log = birdLogRepository.save(log);
@@ -137,6 +138,9 @@ public class BirdLogServiceImpl implements BirdLogService {
         log.setLatitude(request.latitude());
         log.setLongitude(request.longitude());
         log.setLocationName(request.locationName());
+        if (request.utcOffsetMinutes() != null) {
+            log.setUtcOffsetMinutes(request.utcOffsetMinutes());
+        }
         // Omitted on update means "leave as is" - resetting it to now would silently
         // re-date an old sighting every time it's edited.
         if (request.observedAt() != null) {
@@ -217,6 +221,7 @@ public class BirdLogServiceImpl implements BirdLogService {
                 // Legacy logs saved before observedAt existed are backfilled on startup
                 // (LegacyTimestampBackfill); this keeps the API from ever sending null meanwhile.
                 log.getObservedAt() != null ? log.getObservedAt() : log.getCreatedAt(),
+                log.getUtcOffsetMinutes(),
                 log.getVisibility(),
                 log.getCreatedAt()
         );
