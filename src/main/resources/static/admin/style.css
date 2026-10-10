@@ -402,6 +402,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   border-radius: 8px;
 }
 
+/* ---------- Family portrait parts ---------- */
+.checkbox-row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
+.checkbox-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
 /* ---------- Secret toggle ---------- */
 .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
 .switch-input { position: absolute; opacity: 0; width: 0; height: 0; }

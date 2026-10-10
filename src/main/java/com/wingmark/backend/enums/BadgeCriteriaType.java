@@ -24,7 +24,7 @@ public enum BadgeCriteriaType {
     SPECIES_LOGS,
     /** Logs seen in a local time window set by {@code criteriaMetadata.from} and {@code to} (HH:mm, required); needs the log's {@code utcOffsetMinutes}. */
     EARLY_BIRD_LOGS,
-    /** One species logged as a male, a female and a baby, each in a different log (progress 0-3). */
+    /** Chosen parts (male, female, baby: {@code criteriaMetadata.parts}) of one species, each from a different log; progress counts the parts found. */
     FAMILY_PORTRAIT,
     /** Distinct species within any single genus; subspecies count as their species. Pet logs count. */
     SAME_GENUS_ANY,

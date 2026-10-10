@@ -1020,13 +1020,13 @@ also need extra parameters in `criteriaMetadata`:
 | `SAME_GENUS_SPECIES`     | Max distinct species logged within one genus (pet logs count), the first word of the scientific name, case-insensitive; a subspecies such as `Anas platyrhynchos domesticus` counts as its species | optional `{ "genus": "Passer" }`: only that genus counts; a blank or non-text value is rejected with 400 |
 | `SAME_GENUS_ANY`         | Same rules as `SAME_GENUS_SPECIES` without a fixed genus: the best genus counts | — |
 | `EARLY_BIRD_LOGS`        | "Sighting between two times of day": logs (pet logs included) whose local time is inside the window, from `observedAt` plus the log's `utcOffsetMinutes`; logs without an offset never count | required `{ "from": "04:00", "to": "06:00" }` (local time of day, `to` not included; `from` after `to` crosses midnight, e.g. 22:00 to 02:00); missing, not `HH:mm`, or `from` equal to `to` is rejected with 400 |
-| `FAMILY_PORTRAIT`        | For the best species: how many of a male, a female and a baby it has, each from a different log, pet logs included (0-3); the target must be 1 to 3 | — |
+| `FAMILY_PORTRAIT`        | For the best species: how many of the chosen parts it has, each from a different log, pet logs included; the target is 1 up to the number of parts chosen | required `{ "parts": ["MALE", "FEMALE", "BABY"] }` (any of the three, at least one); missing, empty, or a target above the number chosen is rejected with 400 |
 | `RARE_SPECIES_LOGS`      | Logs (pet logs included) of species whose English `conservationStatus` is exactly `Endangered` or `Critically Endangered` (ignoring case and spaces) | — |
-| `ALL_OTHER_BADGES`       | Earned badges among all other badges (secret ones included), calculated last; the target is the number of other badges the user can earn (favorite-species badges only count for users who have a favorite species or earned them), so `targetValue` varies per user; the stored `criteriaValue` is ignored (enter 1) | — |
+| `ALL_OTHER_BADGES`       | "Unlock all badges": earned badges among all other badges (never counting itself) (secret ones included), calculated last; the target is the number of other badges the user can earn (favorite-species badges only count for users who have a favorite species or earned them), so `targetValue` varies per user; the stored `criteriaValue` is ignored (enter 1) | — |
 
 The admin panel's badge form exposes all of these, including the species picker for
 `SPECIES_LOGS`, the radius field for the two `*_IN_RADIUS` types and the optional genus
-field for `SAME_GENUS_SPECIES`, the from/until time fields for `EARLY_BIRD_LOGS`, the secret checkbox and the tier (`BRONZE` to `DIAMOND`). Creating, editing or deleting a badge re-evaluates every user, and the collection badge is always evaluated after the others.
+field for `SAME_GENUS_SPECIES`, the from/until time fields for `EARLY_BIRD_LOGS`, the male/female/juvenile checkboxes for `FAMILY_PORTRAIT`, the secret checkbox and the tier (`BRONZE` to `DIAMOND`). Creating, editing or deleting a badge re-evaluates every user, and the collection badge is always evaluated after the others.
 
 <details>
 <summary><strong>Examples</strong></summary>

@@ -190,6 +190,12 @@ class SecretBadgesAndNewCriteriaTest {
 
     // ---- family portrait ----
 
+    private static Badge familyBadge(int target, String... parts) {
+        Badge badge = badge(BadgeCriteriaType.FAMILY_PORTRAIT, target);
+        badge.setCriteriaMetadata(Map.of("parts", List.of(parts)));
+        return badge;
+    }
+
     @Test
     void familyPortraitNeedsAMaleAFemaleAndABabyInThreeDifferentLogs() {
         int[] separate = new int[8];
@@ -225,7 +231,7 @@ class SecretBadgesAndNewCriteriaTest {
                 log(robin, Gender.MALE, LifeStage.ADULT, false),
                 log(robin, Gender.FEMALE, LifeStage.ADULT, true));
 
-        UserBadge saved = evaluateOne(badge(BadgeCriteriaType.FAMILY_PORTRAIT, 3), logs, sparrow, robin);
+        UserBadge saved = evaluateOne(familyBadge(3, "MALE", "FEMALE", "BABY"), logs, sparrow, robin);
 
         assertThat(saved.getProgress()).isEqualTo(3);
         assertThat(saved.getEarnedAt()).isNotNull();
@@ -239,18 +245,69 @@ class SecretBadgesAndNewCriteriaTest {
                 log(sparrow, Gender.MALE, LifeStage.ADULT, false),
                 log(robin, Gender.FEMALE, LifeStage.ADULT, false));
 
-        UserBadge saved = evaluateOne(badge(BadgeCriteriaType.FAMILY_PORTRAIT, 3), logs, sparrow, robin);
+        UserBadge saved = evaluateOne(familyBadge(3, "MALE", "FEMALE", "BABY"), logs, sparrow, robin);
 
         assertThat(saved.getProgress()).isEqualTo(1);
         assertThat(saved.getEarnedAt()).isNull();
     }
 
     @Test
-    void aFamilyPortraitTargetAboveThreeIsRejected() {
-        CreateBadgeRequestDto request = new CreateBadgeRequestDto(Map.of("en", "F"), null, null,
-                BadgeCriteriaType.FAMILY_PORTRAIT, 4, null, BadgeTier.GOLD, null, true);
+    void aFamilyPortraitCanAskForJustAMaleAndAFemaleOrOnlyTheChosenParts() {
+        Species sparrow = species("Passer domesticus", null);
+        List<BirdLog> logs = List.of(
+                log(sparrow, Gender.MALE, LifeStage.ADULT, false),
+                log(sparrow, Gender.UNKNOWN, LifeStage.BABY, false));
 
-        assertThatThrownBy(() -> badgeService.create(request)).isInstanceOf(IllegalArgumentException.class);
+        // A baby is not asked for here, so only the male counts: 1 of 2.
+        UserBadge saved = evaluateOne(familyBadge(2, "MALE", "FEMALE"), logs, sparrow);
+
+        assertThat(saved.getProgress()).isEqualTo(1);
+        assertThat(saved.getEarnedAt()).isNull();
+    }
+
+    @Test
+    void aFamilyPortraitOfMaleAndFemaleIsEarnedByThem() {
+        Species sparrow = species("Passer domesticus", null);
+        List<BirdLog> logs = List.of(
+                log(sparrow, Gender.MALE, LifeStage.ADULT, false),
+                log(sparrow, Gender.FEMALE, LifeStage.ADULT, true));
+
+        UserBadge saved = evaluateOne(familyBadge(2, "male", "FEMALE"), logs, sparrow);
+
+        assertThat(saved.getProgress()).isEqualTo(2);
+        assertThat(saved.getEarnedAt()).isNotNull();
+    }
+
+    @Test
+    void aFamilyPortraitBadgeWithoutPartsCountsNothing() {
+        Species sparrow = species("Passer domesticus", null);
+        List<BirdLog> logs = List.of(log(sparrow, Gender.MALE, LifeStage.ADULT, false));
+
+        assertThat(evaluateOne(badge(BadgeCriteriaType.FAMILY_PORTRAIT, 1), logs, sparrow).getProgress()).isZero();
+    }
+
+    @Test
+    void coveredPartsOnlyLooksAtTheAllowedParts() {
+        int[] logs = new int[8];
+        logs[1] = 1; // male
+        logs[4] = 1; // baby
+        assertThat(BadgeServiceImpl.coveredParts(logs, 1 | 4)).isEqualTo(2);
+        assertThat(BadgeServiceImpl.coveredParts(logs, 2)).isZero();
+        assertThat(BadgeServiceImpl.coveredParts(logs, 1 | 2)).isEqualTo(1);
+    }
+
+    @Test
+    void aFamilyPortraitNeedsPartsAndATargetNotAboveTheirNumber() {
+        java.util.Map<String, Object> noParts = new java.util.HashMap<>();
+        for (Map<String, Object> metadata : java.util.Arrays.<Map<String, Object>>asList(
+                null, Map.of(), Map.of("parts", List.of()), Map.of("parts", List.of("DOG")), Map.of("parts", "MALE"))) {
+            CreateBadgeRequestDto request = new CreateBadgeRequestDto(Map.of("en", "F"), null, null,
+                    BadgeCriteriaType.FAMILY_PORTRAIT, 1, metadata, BadgeTier.GOLD, null, true);
+            assertThatThrownBy(() -> badgeService.create(request)).isInstanceOf(IllegalArgumentException.class);
+        }
+        CreateBadgeRequestDto tooHigh = new CreateBadgeRequestDto(Map.of("en", "F"), null, null,
+                BadgeCriteriaType.FAMILY_PORTRAIT, 3, Map.of("parts", List.of("MALE", "FEMALE")), BadgeTier.GOLD, null, true);
+        assertThatThrownBy(() -> badgeService.create(tooHigh)).isInstanceOf(IllegalArgumentException.class);
     }
 
     // ---- genus (any) ----

@@ -772,6 +772,7 @@ const radiusFieldWrap = document.getElementById("radius-field-wrap");
 const speciesFieldWrap = document.getElementById("species-field-wrap");
 const genusFieldWrap = document.getElementById("genus-field-wrap");
 const timeWindowFieldWrap = document.getElementById("time-window-field-wrap");
+const familyPartsFieldWrap = document.getElementById("family-parts-field-wrap");
 const badgeSpeciesSelect = document.getElementById("badge-speciesId");
 const badgeCriteriaTypeSelect = document.getElementById("badge-criteriaType");
 
@@ -785,6 +786,7 @@ function toggleRadiusField() {
   speciesFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "SPECIES_LOGS");
   genusFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "SAME_GENUS_SPECIES");
   timeWindowFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "EARLY_BIRD_LOGS");
+  familyPartsFieldWrap.classList.toggle("hidden", badgeCriteriaTypeSelect.value !== "FAMILY_PORTRAIT");
 }
 badgeCriteriaTypeSelect.addEventListener("change", toggleRadiusField);
 
@@ -887,6 +889,10 @@ async function openBadgeForm(badge) {
     (badge.criteriaMetadata && badge.criteriaMetadata.genus) || "";
   await ensureBadgeSpeciesOptionsLoaded();
   badgeSpeciesSelect.value = (badge.criteriaMetadata && badge.criteriaMetadata.speciesId) || "";
+  const savedParts = (badge.criteriaMetadata && badge.criteriaMetadata.parts) || [];
+  document.getElementById("badge-part-male").checked = savedParts.includes("MALE");
+  document.getElementById("badge-part-female").checked = savedParts.includes("FEMALE");
+  document.getElementById("badge-part-baby").checked = savedParts.includes("BABY");
   document.getElementById("badge-timeFrom").value = (badge.criteriaMetadata && badge.criteriaMetadata.from) || "";
   document.getElementById("badge-timeTo").value = (badge.criteriaMetadata && badge.criteriaMetadata.to) || "";
   toggleRadiusField();
@@ -909,6 +915,12 @@ function readBadgeFormPayload() {
   } else if (criteriaType === "SAME_GENUS_SPECIES") {
     const genus = document.getElementById("badge-genus").value.trim();
     if (genus) criteriaMetadata = { genus };
+  } else if (criteriaType === "FAMILY_PORTRAIT") {
+    const parts = [["badge-part-male", "MALE"], ["badge-part-female", "FEMALE"], ["badge-part-baby", "BABY"]]
+      .filter(([id]) => document.getElementById(id).checked)
+      .map(([, name]) => name);
+    if (!parts.length) throw new Error("Choose at least one part (male, female, juvenile).");
+    criteriaMetadata = { parts };
   } else if (criteriaType === "EARLY_BIRD_LOGS") {
     const from = document.getElementById("badge-timeFrom").value;
     const to = document.getElementById("badge-timeTo").value;
