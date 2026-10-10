@@ -84,7 +84,8 @@ so it always deploys as a container). To deploy:
      send from.
    - `BUSINESS_LEGAL_NAME` / `BUSINESS_ADDRESS` / `BUSINESS_CONTACT_EMAIL` — your legal
      sender details, shown in every email's footer once `BUSINESS_LEGAL_NAME` is set.
-     Empty by default; nothing is shown until you fill them in.
+     `BUSINESS_CONTACT_EMAIL` defaults to `support@wingmarkapp.com` and is also the
+     reply-to of every email; the other two are empty by default.
    - `TERMS_VERSION` / `TERMS_URL` / `PRIVACY_VERSION` / `PRIVACY_URL` — set these once
      the documents are published, e.g. `PRIVACY_URL=https://wingmarkapp.com/privacy` (Turkish:
      `/privacy-tr`); see [Legal](#legal-apilegal).

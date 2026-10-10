@@ -135,7 +135,7 @@ wingmark:
   business:
     legal-name: ${BUSINESS_LEGAL_NAME:}
     address: ${BUSINESS_ADDRESS:}
-    contact-email: ${BUSINESS_CONTACT_EMAIL:}
+    contact-email: ${BUSINESS_CONTACT_EMAIL:support@wingmarkapp.com}
   # Current Terms of Service / Privacy Policy versions. Blank = not published yet, so
   # acceptance isn't enforced; set a version (e.g. 2026-10-01) to require it at signup
   # and to ask existing users to accept it on their next login.
