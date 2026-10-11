@@ -191,6 +191,19 @@ function readTranslations(enFieldId, trFieldId) {
 let currentSpeciesId = null;
 let debounceTimer = null;
 
+let loadedSpecies = [];
+const speciesSortSelect = document.getElementById("species-sort");
+
+/** Returns a copy of the list in the order chosen in the sort menu (scientific name, common name, or as loaded). */
+function sortedSpecies(species) {
+  const by = speciesSortSelect.value;
+  if (by === "default") return species;
+  const key = (s) => (by === "scientific" ? s.scientificName : commonName(s)) || "";
+  return [...species].sort((a, b) => key(a).localeCompare(key(b), undefined, { sensitivity: "base" }));
+}
+
+speciesSortSelect.addEventListener("change", () => renderSpeciesList(sortedSpecies(loadedSpecies)));
+
 async function loadSpeciesList(search) {
   showMsg(speciesListMsg, "", "");
   speciesListEl.innerHTML = '<li class="muted">Loading…</li>';
@@ -199,7 +212,8 @@ async function loadSpeciesList(search) {
     // unlike the app's own species-guide endpoint.
     const query = "?size=500" + (search ? "&search=" + encodeURIComponent(search) : "");
     const page = await Api.request("/api/species" + query);
-    renderSpeciesList(page.content);
+    loadedSpecies = page.content;
+    renderSpeciesList(sortedSpecies(loadedSpecies));
   } catch (err) {
     speciesListEl.innerHTML = "";
     showMsg(speciesListMsg, err.message, "error");

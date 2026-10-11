@@ -92,6 +92,11 @@
         </div>
         <div class="search-bar">
           <input type="text" id="search-input" placeholder="Filter by common name…" />
+          <select id="species-sort" aria-label="Sort species">
+            <option value="default">Sort: default order</option>
+            <option value="scientific">Sort: scientific name (A-Z)</option>
+            <option value="common">Sort: common name (A-Z)</option>
+          </select>
         </div>
         <div id="species-list-msg"></div>
         <ul class="species-list" id="species-list"></ul>
