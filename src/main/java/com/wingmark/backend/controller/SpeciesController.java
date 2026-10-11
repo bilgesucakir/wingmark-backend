@@ -74,7 +74,7 @@ public class SpeciesController {
     /** Returns the orders and families of the guide with species counts for the filter menus. Public; the seen filter needs a signed-in user. */
     @Operation(summary = "Get species filter options", description = "Returns the orders and families in the guide with how many species match, " +
             "for the guide's filter menus: {orders: [{value, name, count}], families: [{value, order, name, count}]}. value is the Latin name to send back as ?order= or ?family=; " +
-            "name is in the request language (Accept-Language), falling back to the Latin name. Takes the same ?search=, ?order=, ?family= and ?seen= filters as GET /api/species; " +
+            "name is the real taxonomic name: the Latin name, or for a family the well-known Turkish -giller name when Accept-Language is Turkish and one is listed. A selected value with no species under the other filters is still returned with count 0. Takes the same ?search=, ?order=, ?family= and ?seen= filters as GET /api/species; " +
             "each menu is counted under all filters except its own. Public endpoint, except for the seen filter (401 UNAUTHENTICATED without a token). " +
             "Answers without a seen filter are cached for five minutes.")
     @GetMapping("/facets")

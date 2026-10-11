@@ -325,11 +325,12 @@ class SpeciesControllerTest {
 
         var passeriformes = root.get("orders").get(0);
         org.assertj.core.api.Assertions.assertThat(passeriformes.get("value").asText()).isEqualTo("Passeriformes");
-        org.assertj.core.api.Assertions.assertThat(passeriformes.get("name").asText()).isEqualTo("Ötücü Kuşlar");
+        org.assertj.core.api.Assertions.assertThat(passeriformes.get("name").asText()).isEqualTo("Passeriformes");
         org.assertj.core.api.Assertions.assertThat(passeriformes.get("count").asInt()).isEqualTo(3);
         org.assertj.core.api.Assertions.assertThat(root.get("orders")).hasSize(2);
         var corvidae = root.get("families").get(0);
         org.assertj.core.api.Assertions.assertThat(corvidae.get("value").asText()).isEqualTo("Corvidae");
+        org.assertj.core.api.Assertions.assertThat(corvidae.get("name").asText()).isEqualTo("Kargagiller");
         org.assertj.core.api.Assertions.assertThat(corvidae.get("order").asText()).isEqualTo("Passeriformes");
         org.assertj.core.api.Assertions.assertThat(corvidae.get("count").asInt()).isEqualTo(2);
 
@@ -352,5 +353,90 @@ class SpeciesControllerTest {
 
         org.assertj.core.api.Assertions.assertThat(objectMapper.readTree(body).get("orders").get(0).get("name").asText()).isEqualTo("Mysteriformes" + marker.toLowerCase());
         mockMvc.perform(get("/api/species").param("size", "1")).andExpect(status().isOk());
+    }
+
+    @Test
+    void severalOrdersAndFamiliesGiveTheUnionWithinAFilterAndTheIntersectionAcrossFilters() throws Exception {
+        String marker = "V" + shortId();
+        String orderA = "Aformes" + marker.toLowerCase();
+        String orderB = "Bformes" + marker.toLowerCase();
+        String orderC = "Cformes" + marker.toLowerCase();
+        var a1 = saveSpecies(marker, "Multi A1", orderA, "Afamone" + marker.toLowerCase());
+        var a2 = saveSpecies(marker, "Multi A2", orderA, "Afamtwo" + marker.toLowerCase());
+        var b1 = saveSpecies(marker, "Multi B1", orderB, "Bfamone" + marker.toLowerCase());
+        var c1 = saveSpecies(marker, "Multi C1", orderC, "Cfamone" + marker.toLowerCase());
+
+        // Union within the order filter (repeated parameter), page totals follow.
+        String twoOrders = mockMvc.perform(get("/api/species").param("order", orderA, orderB).param("size", "2"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(objectMapper.readTree(twoOrders).get("page").get("totalElements").asInt()).isEqualTo(3);
+        org.assertj.core.api.Assertions.assertThat(objectMapper.readTree(twoOrders).get("page").get("totalPages").asInt()).isEqualTo(2);
+        org.assertj.core.api.Assertions.assertThat(idsOf(twoOrders)).hasSize(2);
+        String twoOrdersAll = mockMvc.perform(get("/api/species").param("order", orderA + "," + orderB).param("size", "50"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(idsOf(twoOrdersAll)).containsExactlyInAnyOrder(
+                a1.getId().toString(), a2.getId().toString(), b1.getId().toString());
+
+        // Intersection across filters: any of the orders AND any of the families.
+        String both = mockMvc.perform(get("/api/species").param("order", orderA, orderB)
+                        .param("family", "afamone" + marker.toLowerCase(), "bfamone" + marker.toLowerCase(), "cfamone" + marker.toLowerCase()).param("size", "50"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(idsOf(both)).containsExactlyInAnyOrder(a1.getId().toString(), b1.getId().toString());
+        org.assertj.core.api.Assertions.assertThat(idsOf(both)).doesNotContain(c1.getId().toString(), a2.getId().toString());
+    }
+
+    @Test
+    void facetsWithSeveralSelectionsCountEachMenuUnderTheOtherFilterAndKeepSelectedValuesWithZero() throws Exception {
+        String marker = "U" + shortId();
+        String m = marker.toLowerCase();
+        saveSpecies(marker, "Facet A1", "Aformes" + m, "Afamone" + m);
+        saveSpecies(marker, "Facet A2", "Aformes" + m, "Afamtwo" + m);
+        saveSpecies(marker, "Facet B1", "Bformes" + m, "Bfamone" + m);
+        saveSpecies(marker, "Facet C1", "Cformes" + m, "Cfamone" + m);
+
+        // Two orders selected: families of BOTH orders are listed with their counts; the order menu still lists all three.
+        String twoOrders = mockMvc.perform(get("/api/species/facets").param("search", marker)
+                        .param("order", "Aformes" + m, "Bformes" + m))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var root = objectMapper.readTree(twoOrders);
+        org.assertj.core.api.Assertions.assertThat(root.get("orders")).hasSize(3);
+        org.assertj.core.api.Assertions.assertThat(root.get("families")).hasSize(3);
+        root.get("families").forEach(f -> org.assertj.core.api.Assertions.assertThat(f.get("count").asInt()).isEqualTo(1));
+
+        // Two families selected: the order menu counts only under the family filter, the family menu keeps all families of the search.
+        String twoFamilies = mockMvc.perform(get("/api/species/facets").param("search", marker)
+                        .param("family", "Afamone" + m, "Cfamone" + m))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var byFamily = objectMapper.readTree(twoFamilies);
+        org.assertj.core.api.Assertions.assertThat(byFamily.get("orders")).hasSize(2);
+        org.assertj.core.api.Assertions.assertThat(byFamily.get("families")).hasSize(4);
+
+        // A selected order with no species under the other filter stays in the list with count 0.
+        String zero = mockMvc.perform(get("/api/species/facets").param("search", marker)
+                        .param("order", "Bformes" + m).param("family", "Afamone" + m))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var zeroRoot = objectMapper.readTree(zero);
+        com.fasterxml.jackson.databind.JsonNode bOrder = null;
+        for (var order : zeroRoot.get("orders")) {
+            if (order.get("value").asText().equalsIgnoreCase("Bformes" + m)) {
+                bOrder = order;
+            }
+        }
+        org.assertj.core.api.Assertions.assertThat(bOrder).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(bOrder.get("count").asInt()).isZero();
+
+        // A selected family whose species are filtered out by the order selection also stays with count 0 and its order.
+        String zeroFamily = mockMvc.perform(get("/api/species/facets").param("search", marker)
+                        .param("order", "Aformes" + m).param("family", "Cfamone" + m))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        com.fasterxml.jackson.databind.JsonNode cFamily = null;
+        for (var family : objectMapper.readTree(zeroFamily).get("families")) {
+            if (family.get("value").asText().equalsIgnoreCase("Cfamone" + m)) {
+                cFamily = family;
+            }
+        }
+        org.assertj.core.api.Assertions.assertThat(cFamily).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(cFamily.get("count").asInt()).isZero();
+        org.assertj.core.api.Assertions.assertThat(cFamily.get("order").asText()).isEqualToIgnoringCase("Cformes" + m);
     }
 }
