@@ -343,7 +343,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .muted { color: var(--muted); font-size: 13px; }
 
-.search-bar { margin-bottom: 14px; }
+.search-bar { margin-bottom: 14px; display: flex; gap: 10px; align-items: center; }
+.search-bar input { flex: 1; }
+.search-bar select { width: auto; flex-shrink: 0; }
 
 .upload-row {
   display: flex;
