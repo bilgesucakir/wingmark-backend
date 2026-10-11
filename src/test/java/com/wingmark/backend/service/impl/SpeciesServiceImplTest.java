@@ -50,12 +50,15 @@ class SpeciesServiceImplTest {
     private UploadedFileCleaner uploadedFileCleaner;
     @Mock
     private CommonsService commonsService;
+    @Mock
+    private com.wingmark.backend.repository.BirdLogRepository birdLogRepository;
+    private final com.wingmark.backend.util.TaxonNames taxonNames = new com.wingmark.backend.util.TaxonNames(new com.fasterxml.jackson.databind.ObjectMapper());
 
     private SpeciesServiceImpl speciesService;
 
     @BeforeEach
     void setUp() {
-        speciesService = new SpeciesServiceImpl(speciesRepository, speciesImageRepository, commonsService, fileStorageService, uploadedFileCleaner);
+        speciesService = new SpeciesServiceImpl(speciesRepository, speciesImageRepository, commonsService, fileStorageService, uploadedFileCleaner, birdLogRepository, taxonNames);
     }
 
     @Test
@@ -65,7 +68,7 @@ class SpeciesServiceImplTest {
         when(speciesRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(species)));
         when(speciesImageRepository.findBySpeciesId(species.getId())).thenReturn(List.of());
 
-        Page<SpeciesResponseDto> result = speciesService.getAll(null, pageable);
+        Page<SpeciesResponseDto> result = speciesService.getAll((String) null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).commonName()).containsEntry("en", "House Sparrow");

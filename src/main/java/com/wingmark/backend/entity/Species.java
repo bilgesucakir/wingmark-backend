@@ -25,8 +25,10 @@ public class Species extends BaseEntity {
     @Indexed(unique = true)
     private String scientificName;
 
+    @Indexed
     private String family;
 
+    @Indexed
     private String order;
 
     /** Translations keyed by locale code. */

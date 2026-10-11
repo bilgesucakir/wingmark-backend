@@ -62,6 +62,15 @@ final class ApiFieldDocs {
             earnedAt|When the badge was earned (UTC), or null.|2026-10-03T08:15:30Z
             progress|The user's current progress toward the target; null for a secret badge not yet earned.|3
             targetValue|Progress needed to earn the badge (for the collection badge, the number of other badges the user can earn); null for a secret badge not yet earned.|10
+            SpeciesFacetsResponseDto.orders|Orders with the number of matching species.|
+            SpeciesFacetsResponseDto.families|Families, each with its order, with the number of matching species.|
+            OrderFacet.value|Latin name of the order; send it back as the order parameter.|Passeriformes
+            OrderFacet.name|Name of the order in the request language, or its Latin name.|Perching Birds
+            FamilyFacet.name|Name of the family in the request language, or its Latin name.|Crows & Jays
+            FamilyFacet.order|Latin name of the family's order.|Passeriformes
+            OrderFacet.count|Number of matching species.|265
+            FamilyFacet.value|Latin name of the family; send it back as the family parameter.|Corvidae
+            FamilyFacet.count|Number of matching species.|8
             speciesId|Id of the species (UUID), or null if the bird was not identified.|%1$s
             speciesCommonName|Species common name in the request locale, or null.|House Sparrow
             speciesStatus|How sure the user is about the species: GUESS or CONFIDENT.|CONFIDENT

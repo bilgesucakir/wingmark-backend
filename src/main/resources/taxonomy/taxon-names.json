@@ -1,0 +1,479 @@
+{
+  "_comment": "Display names for the order and family filters of the species guide: Latin value -> en/tr. A missing entry shows the Latin name. Draft: the Turkish names need the owner's check.",
+  "orders": {
+    "Accipitriformes": {
+      "en": "Hawks, Eagles & Vultures",
+      "tr": "Kartal, Atmaca ve Akbabalar"
+    },
+    "Anseriformes": {
+      "en": "Waterfowl",
+      "tr": "Ördekler, Kazlar ve Kuğular"
+    },
+    "Apodiformes": {
+      "en": "Swifts & Hummingbirds",
+      "tr": "Ebabiller ve Sinekkuşları"
+    },
+    "Bucerotiformes": {
+      "en": "Hoopoes & Hornbills",
+      "tr": "İbibikler ve Boynuzgagalar"
+    },
+    "Caprimulgiformes": {
+      "en": "Nightjars",
+      "tr": "Çobanaldatanlar"
+    },
+    "Casuariiformes": {
+      "en": "Cassowaries & Emus",
+      "tr": "Kazuarlar ve Emular"
+    },
+    "Charadriiformes": {
+      "en": "Waders, Gulls & Auks",
+      "tr": "Sahil Kuşları, Martılar ve Alkalar"
+    },
+    "Ciconiiformes": {
+      "en": "Storks",
+      "tr": "Leylekler"
+    },
+    "Columbiformes": {
+      "en": "Pigeons & Doves",
+      "tr": "Güvercinler ve Kumrular"
+    },
+    "Coraciiformes": {
+      "en": "Kingfishers, Bee-eaters & Rollers",
+      "tr": "Yalıçapkınları, Arıkuşları ve Gökkargaları"
+    },
+    "Cuculiformes": {
+      "en": "Cuckoos",
+      "tr": "Guguklar"
+    },
+    "Falconiformes": {
+      "en": "Falcons",
+      "tr": "Doğanlar ve Şahinler"
+    },
+    "Galliformes": {
+      "en": "Gamebirds",
+      "tr": "Tavuksular"
+    },
+    "Gaviiformes": {
+      "en": "Loons",
+      "tr": "Kuzey Dalgıçları"
+    },
+    "Gruiformes": {
+      "en": "Cranes & Rails",
+      "tr": "Turnalar ve Su Tavukları"
+    },
+    "Otidiformes": {
+      "en": "Bustards",
+      "tr": "Toylar"
+    },
+    "Passeriformes": {
+      "en": "Perching Birds",
+      "tr": "Ötücü Kuşlar"
+    },
+    "Pelecaniformes": {
+      "en": "Pelicans, Herons & Ibises",
+      "tr": "Pelikanlar, Balıkçıllar ve Aynakuşları"
+    },
+    "Phoenicopteriformes": {
+      "en": "Flamingos",
+      "tr": "Flamingolar"
+    },
+    "Piciformes": {
+      "en": "Woodpeckers & Toucans",
+      "tr": "Ağaçkakanlar ve Tukanlar"
+    },
+    "Podicipediformes": {
+      "en": "Grebes",
+      "tr": "Batağanlar"
+    },
+    "Procellariiformes": {
+      "en": "Petrels, Shearwaters & Albatrosses",
+      "tr": "Fırtınakuşları, Yelkovanlar ve Albatroslar"
+    },
+    "Psittaciformes": {
+      "en": "Parrots",
+      "tr": "Papağanlar"
+    },
+    "Pterocliformes": {
+      "en": "Sandgrouse",
+      "tr": "Çöl Tavukları"
+    },
+    "Sphenisciformes": {
+      "en": "Penguins",
+      "tr": "Penguenler"
+    },
+    "Strigiformes": {
+      "en": "Owls",
+      "tr": "Baykuşlar"
+    },
+    "Struthioniformes": {
+      "en": "Ostriches",
+      "tr": "Devekuşları"
+    },
+    "Suliformes": {
+      "en": "Cormorants, Gannets & Darters",
+      "tr": "Karabataklar, Sümsükler ve Yılankuşları"
+    }
+  },
+  "families": {
+    "Accipitridae": {
+      "en": "Hawks, Eagles & Kites",
+      "tr": "Kartal, Atmaca ve Çaylaklar"
+    },
+    "Acrocephalidae": {
+      "en": "Reed Warblers",
+      "tr": "Kamış Ötleğenleri"
+    },
+    "Aegithalidae": {
+      "en": "Long-tailed Tits",
+      "tr": "Uzun Kuyruklu Baştankaralar"
+    },
+    "Alaudidae": {
+      "en": "Larks",
+      "tr": "Toygarlar"
+    },
+    "Alcedinidae": {
+      "en": "Kingfishers",
+      "tr": "Yalıçapkınları"
+    },
+    "Alcidae": {
+      "en": "Auks",
+      "tr": "Alkalar"
+    },
+    "Anatidae": {
+      "en": "Ducks, Geese & Swans",
+      "tr": "Ördek, Kaz ve Kuğular"
+    },
+    "Anhingidae": {
+      "en": "Darters",
+      "tr": "Yılankuşları"
+    },
+    "Apodidae": {
+      "en": "Swifts",
+      "tr": "Ebabiller"
+    },
+    "Ardeidae": {
+      "en": "Herons & Bitterns",
+      "tr": "Balıkçıllar"
+    },
+    "Balaenicipitidae": {
+      "en": "Shoebill",
+      "tr": "Pabuçgagalılar"
+    },
+    "Bombycillidae": {
+      "en": "Waxwings",
+      "tr": "İpekkuyruklar"
+    },
+    "Burhinidae": {
+      "en": "Stone-curlews",
+      "tr": "Kocagözler"
+    },
+    "Cacatuidae": {
+      "en": "Cockatoos",
+      "tr": "Kakadular"
+    },
+    "Calcariidae": {
+      "en": "Longspurs & Snow Buntings",
+      "tr": "Mahmuzlu ve Kar Kirazkuşları"
+    },
+    "Caprimulgidae": {
+      "en": "Nightjars",
+      "tr": "Çobanaldatanlar"
+    },
+    "Cardinalidae": {
+      "en": "Cardinals & Grosbeaks",
+      "tr": "Kardinaller"
+    },
+    "Casuariidae": {
+      "en": "Cassowaries & Emus",
+      "tr": "Kazuar ve Emular"
+    },
+    "Certhiidae": {
+      "en": "Treecreepers",
+      "tr": "Tırmaşıkkuşları"
+    },
+    "Cettiidae": {
+      "en": "Bush Warblers",
+      "tr": "Çalı Ötleğenleri"
+    },
+    "Charadriidae": {
+      "en": "Plovers & Lapwings",
+      "tr": "Yağmurkuşları ve Kızkuşları"
+    },
+    "Ciconiidae": {
+      "en": "Storks",
+      "tr": "Leylekler"
+    },
+    "Cinclidae": {
+      "en": "Dippers",
+      "tr": "Su Serçeleri"
+    },
+    "Cisticolidae": {
+      "en": "Cisticolas",
+      "tr": "Cisticolalar"
+    },
+    "Columbidae": {
+      "en": "Pigeons & Doves",
+      "tr": "Güvercin ve Kumrular"
+    },
+    "Coraciidae": {
+      "en": "Rollers",
+      "tr": "Gökkargaları"
+    },
+    "Corvidae": {
+      "en": "Crows & Jays",
+      "tr": "Karga ve Alakargalar"
+    },
+    "Cuculidae": {
+      "en": "Cuckoos",
+      "tr": "Guguklar"
+    },
+    "Diomedeidae": {
+      "en": "Albatrosses",
+      "tr": "Albatroslar"
+    },
+    "Dromadidae": {
+      "en": "Crab-plover",
+      "tr": "Yengeçyiyenler"
+    },
+    "Emberizidae": {
+      "en": "Buntings",
+      "tr": "Kirazkuşları"
+    },
+    "Estrildidae": {
+      "en": "Waxbills & Allies",
+      "tr": "Mumgagalı İspinozlar"
+    },
+    "Falconidae": {
+      "en": "Falcons",
+      "tr": "Doğan ve Şahinler"
+    },
+    "Fringillidae": {
+      "en": "Finches",
+      "tr": "İspinozlar"
+    },
+    "Gaviidae": {
+      "en": "Loons",
+      "tr": "Kuzey Dalgıçları"
+    },
+    "Glareolidae": {
+      "en": "Pratincoles & Coursers",
+      "tr": "Bataklık Kırlangıçları ve Koşarkuşlar"
+    },
+    "Gruidae": {
+      "en": "Cranes",
+      "tr": "Turnalar"
+    },
+    "Haematopodidae": {
+      "en": "Oystercatchers",
+      "tr": "İstiridyekapanlar"
+    },
+    "Hirundinidae": {
+      "en": "Swallows & Martins",
+      "tr": "Kırlangıçlar"
+    },
+    "Hydrobatidae": {
+      "en": "Storm-petrels",
+      "tr": "Fırtınakuşları"
+    },
+    "Hypocoliidae": {
+      "en": "Hypocolius",
+      "tr": "Hipokoliuslar"
+    },
+    "Laniidae": {
+      "en": "Shrikes",
+      "tr": "Örümcekkuşları"
+    },
+    "Laridae": {
+      "en": "Gulls & Terns",
+      "tr": "Martı ve Sumrular"
+    },
+    "Leiothrichidae": {
+      "en": "Laughingthrushes & Babblers",
+      "tr": "Geveze Kuşlar"
+    },
+    "Locustellidae": {
+      "en": "Grasshopper Warblers",
+      "tr": "Çekirge Ötleğenleri"
+    },
+    "Meropidae": {
+      "en": "Bee-eaters",
+      "tr": "Arıkuşları"
+    },
+    "Motacillidae": {
+      "en": "Wagtails & Pipits",
+      "tr": "Kuyruksallayanlar ve İncirkuşları"
+    },
+    "Muscicapidae": {
+      "en": "Chats & Flycatchers",
+      "tr": "Sinekkapanlar ve Taşkuşları"
+    },
+    "Nectariniidae": {
+      "en": "Sunbirds",
+      "tr": "Güneşkuşları"
+    },
+    "Oriolidae": {
+      "en": "Orioles",
+      "tr": "Sarıasmalar"
+    },
+    "Otididae": {
+      "en": "Bustards",
+      "tr": "Toylar"
+    },
+    "Pandionidae": {
+      "en": "Osprey",
+      "tr": "Balıkkartalları"
+    },
+    "Panuridae": {
+      "en": "Bearded Reedling",
+      "tr": "Bıyıklı Kamışçılar"
+    },
+    "Paridae": {
+      "en": "Tits",
+      "tr": "Baştankaralar"
+    },
+    "Passeridae": {
+      "en": "Sparrows",
+      "tr": "Serçeler"
+    },
+    "Pelecanidae": {
+      "en": "Pelicans",
+      "tr": "Pelikanlar"
+    },
+    "Phalacrocoracidae": {
+      "en": "Cormorants",
+      "tr": "Karabataklar"
+    },
+    "Phasianidae": {
+      "en": "Pheasants, Partridges & Quail",
+      "tr": "Sülün, Keklik ve Bıldırcınlar"
+    },
+    "Phoenicopteridae": {
+      "en": "Flamingos",
+      "tr": "Flamingolar"
+    },
+    "Phylloscopidae": {
+      "en": "Leaf Warblers",
+      "tr": "Yaprak Ötleğenleri"
+    },
+    "Picidae": {
+      "en": "Woodpeckers",
+      "tr": "Ağaçkakanlar"
+    },
+    "Podicipedidae": {
+      "en": "Grebes",
+      "tr": "Batağanlar"
+    },
+    "Procellariidae": {
+      "en": "Petrels & Shearwaters",
+      "tr": "Fırtınakuşları ve Yelkovanlar"
+    },
+    "Prunellidae": {
+      "en": "Accentors",
+      "tr": "Dağ Bülbülleri"
+    },
+    "Psittacidae": {
+      "en": "New World & African Parrots",
+      "tr": "Papağanlar"
+    },
+    "Psittaculidae": {
+      "en": "Old World Parrots",
+      "tr": "Eski Dünya Papağanları"
+    },
+    "Pteroclidae": {
+      "en": "Sandgrouse",
+      "tr": "Çöl Tavukları"
+    },
+    "Pycnonotidae": {
+      "en": "Bulbuls",
+      "tr": "Bülbüller"
+    },
+    "Rallidae": {
+      "en": "Rails, Coots & Moorhens",
+      "tr": "Su Tavukları ve Benzerleri"
+    },
+    "Ramphastidae": {
+      "en": "Toucans",
+      "tr": "Tukanlar"
+    },
+    "Recurvirostridae": {
+      "en": "Stilts & Avocets",
+      "tr": "Uzunbacaklar ve Kılıçgagalar"
+    },
+    "Regulidae": {
+      "en": "Kinglets",
+      "tr": "Çalıkuşları"
+    },
+    "Remizidae": {
+      "en": "Penduline Tits",
+      "tr": "Çulhakuşları"
+    },
+    "Scolopacidae": {
+      "en": "Sandpipers & Snipes",
+      "tr": "Çulluklar ve Kumkuşları"
+    },
+    "Sittidae": {
+      "en": "Nuthatches",
+      "tr": "Sıvacılar"
+    },
+    "Spheniscidae": {
+      "en": "Penguins",
+      "tr": "Penguenler"
+    },
+    "Stercorariidae": {
+      "en": "Skuas",
+      "tr": "Korsanmartılar"
+    },
+    "Strigidae": {
+      "en": "Owls",
+      "tr": "Baykuşlar"
+    },
+    "Strigopidae": {
+      "en": "New Zealand Parrots",
+      "tr": "Yeni Zelanda Papağanları"
+    },
+    "Struthionidae": {
+      "en": "Ostriches",
+      "tr": "Devekuşları"
+    },
+    "Sturnidae": {
+      "en": "Starlings",
+      "tr": "Sığırcıklar"
+    },
+    "Sulidae": {
+      "en": "Gannets & Boobies",
+      "tr": "Sümsükkuşları"
+    },
+    "Sylviidae": {
+      "en": "Sylviid Warblers",
+      "tr": "Ötleğenler"
+    },
+    "Threskiornithidae": {
+      "en": "Ibises & Spoonbills",
+      "tr": "Aynakuşları ve Kaşıkçılar"
+    },
+    "Tichodromidae": {
+      "en": "Wallcreeper",
+      "tr": "Duvar Tırmaşıkkuşları"
+    },
+    "Trochilidae": {
+      "en": "Hummingbirds",
+      "tr": "Sinekkuşları"
+    },
+    "Troglodytidae": {
+      "en": "Wrens",
+      "tr": "Çitkuşları"
+    },
+    "Turdidae": {
+      "en": "Thrushes",
+      "tr": "Ardıçlar"
+    },
+    "Tytonidae": {
+      "en": "Barn Owls",
+      "tr": "Peçeli Baykuşlar"
+    },
+    "Upupidae": {
+      "en": "Hoopoes",
+      "tr": "İbibikler"
+    }
+  }
+}

@@ -2,6 +2,7 @@ package com.wingmark.backend.service;
 
 import com.wingmark.backend.dto.species.CreateSpeciesImageRequestDto;
 import com.wingmark.backend.dto.species.CreateSpeciesRequestDto;
+import com.wingmark.backend.dto.species.SpeciesFacetsResponseDto;
 import com.wingmark.backend.dto.species.SpeciesImageResponseDto;
 import com.wingmark.backend.dto.species.SpeciesResponseDto;
 import com.wingmark.backend.dto.species.UpdateSpeciesRequestDto;
@@ -15,6 +16,15 @@ public interface SpeciesService {
 
     /** Returns a page of species in the guide, optionally filtered by a common-name substring. */
     Page<SpeciesResponseDto> getAll(String search, Pageable pageable);
+
+    /**
+     * Returns a page of species under the combined filters: name search, orders, families and seen/unseen by the user.
+     * Throws 401 when a seen filter is given without a user.
+     */
+    Page<SpeciesResponseDto> getAll(SpeciesFilter filter, Pageable pageable);
+
+    /** Returns the orders and families with species counts under the filters (each menu ignores its own filter). */
+    SpeciesFacetsResponseDto getFacets(SpeciesFilter filter, java.util.Locale locale);
 
     /** Returns one species by id, including its reference images. */
     SpeciesResponseDto getById(UUID id);
