@@ -68,7 +68,7 @@ class SpeciesServiceImplTest {
         when(speciesRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(species)));
         when(speciesImageRepository.findBySpeciesId(species.getId())).thenReturn(List.of());
 
-        Page<SpeciesResponseDto> result = speciesService.getAll(null, pageable);
+        Page<SpeciesResponseDto> result = speciesService.getAll((String) null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).commonName()).containsEntry("en", "House Sparrow");
