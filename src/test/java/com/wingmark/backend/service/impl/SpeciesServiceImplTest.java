@@ -50,12 +50,15 @@ class SpeciesServiceImplTest {
     private UploadedFileCleaner uploadedFileCleaner;
     @Mock
     private CommonsService commonsService;
+    @Mock
+    private com.wingmark.backend.repository.BirdLogRepository birdLogRepository;
+    private final com.wingmark.backend.util.TaxonNames taxonNames = new com.wingmark.backend.util.TaxonNames(new com.fasterxml.jackson.databind.ObjectMapper());
 
     private SpeciesServiceImpl speciesService;
 
     @BeforeEach
     void setUp() {
-        speciesService = new SpeciesServiceImpl(speciesRepository, speciesImageRepository, commonsService, fileStorageService, uploadedFileCleaner);
+        speciesService = new SpeciesServiceImpl(speciesRepository, speciesImageRepository, commonsService, fileStorageService, uploadedFileCleaner, birdLogRepository, taxonNames);
     }
 
     @Test

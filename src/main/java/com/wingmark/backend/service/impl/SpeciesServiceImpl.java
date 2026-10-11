@@ -13,7 +13,16 @@ import com.wingmark.backend.repository.SpeciesImageRepository;
 import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.service.FileStorageService;
 import com.wingmark.backend.service.CommonsService;
+import com.wingmark.backend.repository.BirdLogRepository;
+import com.wingmark.backend.repository.SpeciesSearchRepository;
+import com.wingmark.backend.service.SeenFilter;
+import com.wingmark.backend.service.SpeciesFilter;
 import com.wingmark.backend.service.SpeciesService;
+import com.wingmark.backend.util.TaxonNames;
+import com.wingmark.backend.dto.species.SpeciesFacetsResponseDto;
+import com.wingmark.backend.exception.ApiException;
+import com.wingmark.backend.exception.ErrorCode;
+import org.springframework.http.HttpStatus;
 import com.wingmark.backend.util.SearchPattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,8 +30,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /** Species guide entries and images. */
@@ -35,15 +50,105 @@ public class SpeciesServiceImpl implements SpeciesService {
     private final CommonsService commonsService;
     private final FileStorageService fileStorageService;
     private final UploadedFileCleaner uploadedFileCleaner;
+    private final BirdLogRepository birdLogRepository;
+    private final TaxonNames taxonNames;
 
     @Override
     public Page<SpeciesResponseDto> getAll(String search, Pageable pageable) {
+        return getAll(SpeciesFilter.searching(search), pageable);
+    }
+
+    @Override
+    public Page<SpeciesResponseDto> getAll(SpeciesFilter filter, Pageable pageable) {
+        if (filter.hasTaxonomyOrSeen()) {
+            Set<UUID> seenIds = seenIds(filter);
+            return speciesRepository.search(nameRegex(filter.search()), filter.orders(), filter.families(),
+                    seenIds, seenFlag(filter), pageable).map(this::toResponse);
+        }
+        String search = filter.search();
         // The repository query feeds this into $regex, so it is escaped by SearchPattern: a public search box
         // must match the text literally (apart from accent folding), never run a caller-supplied pattern.
         Page<Species> species = StringUtils.hasText(search)
                 ? speciesRepository.findByNameMatching(SearchPattern.accentInsensitive(search.trim()), pageable)
                 : speciesRepository.findAll(pageable);
         return species.map(this::toResponse);
+    }
+
+    @Override
+    public SpeciesFacetsResponseDto getFacets(SpeciesFilter filter, Locale locale) {
+        String regex = nameRegex(filter.search());
+        Set<UUID> seenIds = seenIds(filter);
+        Boolean seen = seenFlag(filter);
+        // Each menu counts under every filter except its own, so the choices a user can still make show their numbers.
+        List<SpeciesSearchRepository.FacetRow> forOrders = speciesRepository.facetRows(regex, null, filter.families(), seenIds, seen);
+        List<SpeciesSearchRepository.FacetRow> forFamilies = speciesRepository.facetRows(regex, filter.orders(), null, seenIds, seen);
+
+        Map<String, long[]> orderCounts = new LinkedHashMap<>();
+        Map<String, String> orderValues = new HashMap<>();
+        for (SpeciesSearchRepository.FacetRow row : forOrders) {
+            if (StringUtils.hasText(row.order())) {
+                String key = key(row.order());
+                orderValues.putIfAbsent(key, tidy(row.order()));
+                orderCounts.computeIfAbsent(key, k -> new long[1])[0] += row.count();
+            }
+        }
+        Map<String, long[]> familyCounts = new LinkedHashMap<>();
+        Map<String, String[]> familyValues = new HashMap<>();
+        for (SpeciesSearchRepository.FacetRow row : forFamilies) {
+            if (StringUtils.hasText(row.family()) && StringUtils.hasText(row.order())) {
+                String key = key(row.order()) + "|" + key(row.family());
+                familyValues.putIfAbsent(key, new String[] {tidy(row.family()), tidy(row.order())});
+                familyCounts.computeIfAbsent(key, k -> new long[1])[0] += row.count();
+            }
+        }
+
+        List<SpeciesFacetsResponseDto.OrderFacet> orders = orderCounts.entrySet().stream()
+                .map(entry -> new SpeciesFacetsResponseDto.OrderFacet(orderValues.get(entry.getKey()),
+                        taxonNames.order(orderValues.get(entry.getKey()), locale), entry.getValue()[0]))
+                .sorted(Comparator.comparingLong(SpeciesFacetsResponseDto.OrderFacet::count).reversed()
+                        .thenComparing(SpeciesFacetsResponseDto.OrderFacet::name))
+                .toList();
+        List<SpeciesFacetsResponseDto.FamilyFacet> families = familyCounts.entrySet().stream()
+                .map(entry -> {
+                    String[] value = familyValues.get(entry.getKey());
+                    return new SpeciesFacetsResponseDto.FamilyFacet(value[0], value[1], taxonNames.family(value[0], locale), entry.getValue()[0]);
+                })
+                .sorted(Comparator.comparingLong(SpeciesFacetsResponseDto.FamilyFacet::count).reversed()
+                        .thenComparing(SpeciesFacetsResponseDto.FamilyFacet::name))
+                .toList();
+        return new SpeciesFacetsResponseDto(orders, families);
+    }
+
+    private static String nameRegex(String search) {
+        return StringUtils.hasText(search) ? SearchPattern.accentInsensitive(search.trim()) : null;
+    }
+
+    private static Boolean seenFlag(SpeciesFilter filter) {
+        return filter.seen() == null ? null : filter.seen() == SeenFilter.SEEN;
+    }
+
+    /** Returns the ids of the species the user has logged (pet logs included), or null when no seen filter is set. */
+    private Set<UUID> seenIds(SpeciesFilter filter) {
+        if (filter.seen() == null) {
+            return null;
+        }
+        if (filter.userId() == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHENTICATED, "Sign in to filter by seen or unseen species");
+        }
+        Set<UUID> ids = new HashSet<>();
+        birdLogRepository.findByUserIdAndSpeciesIdIsNotNull(filter.userId()).forEach(birdLog -> ids.add(birdLog.getSpeciesId()));
+        return ids;
+    }
+
+    /** Folds case and spaces so "Passeriformes" and "passeriformes " count as one. */
+    private static String key(String value) {
+        return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /** Returns the name trimmed and written as a Latin taxon name: first letter upper case, the rest lower case. */
+    private static String tidy(String value) {
+        String trimmed = value.trim();
+        return trimmed.substring(0, 1).toUpperCase(Locale.ROOT) + trimmed.substring(1).toLowerCase(Locale.ROOT);
     }
 
     @Override

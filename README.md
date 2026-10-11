@@ -854,6 +854,7 @@ same shape as GET.
 | Method | Path                      | Auth | Description                                                                 |
 |--------|---------------------------|:----:|-------------------------------------------------------------------------------|
 | GET    | ``                        |      | Paginated species list (`?page=`/`?size=`), optional `?search=` by common name (English or Turkish) or scientific name, ignoring case and accents (`serce` finds `Serçe`); returns `{content: [...], page: {size, number, totalElements, totalPages}}` |
+| GET    | `/facets`                 |      | Filter menus: orders and families with species counts and names (`{orders: [{value, name, count}], families: [{value, order, name, count}]}`); takes the same `search`, `order`, `family`, `seen` filters |
 | GET    | `/{id}`                   |      | Get one species by id, with its reference images                               |
 | GET    | `/{id}/sound`             |      | Live-fetch call/song recordings from Xeno-canto, capped at 5 per species        |
 | POST   | ``                        | 🛡️  | Create a species                                                               |
@@ -861,6 +862,20 @@ same shape as GET.
 | DELETE | `/{id}`                   | 🛡️  | Delete a species (and its images)                                              |
 | POST   | `/{id}/images`            | 🛡️  | Attach a curated reference image (life stage + gender)                         |
 | DELETE | `/{id}/images/{imageId}`  | 🛡️  | Remove a reference image                                                       |
+
+**Filtering** the list: `?order=Passeriformes`, `?family=Corvidae,Paridae` (Latin names, ignoring case; repeat the parameter or
+separate with commas; several values of one parameter mean "any of these") and `?seen=seen|unseen` (species the signed-in user has
+logged or not, pet logs included). They combine with each other, with `?search=`, sorting and paging, and `totalElements` /
+`totalPages` follow them. `seen` needs a token: without one the answer is `401 UNAUTHENTICATED` (the other filters are public); any value
+other than `seen` or `unseen` is `400`.
+
+**`GET /facets`** lists the orders and families that exist, for the guide's filter menus. `value` is the Latin name to send back as
+`order` / `family`; `name` is the English or Turkish name chosen by `Accept-Language` (file `src/main/resources/taxonomy/taxon-names.json`,
+a draft that the owner checks; a name that is not in the file shows its Latin name). Each family carries its `order`, so choosing an order
+narrows the families without another request. Counts follow `search`, `seen` and the other menu's filter: the order menu is counted
+under the family filter and the family menu under the order filter, so the choices still open show their numbers. Answers without `seen`
+are cached for five minutes (`Cache-Control: public, max-age=300`); with `seen` they are not cached. Values are matched ignoring case and
+spaces, so `Passeriformes` and `passeriformes ` count as one.
 
 **Sorting** the list uses the standard `?sort=<field>,<asc|desc>` param:
 

@@ -6,6 +6,12 @@ import com.wingmark.backend.dto.species.SpeciesImageResponseDto;
 import com.wingmark.backend.dto.species.SpeciesRecordingResponseDto;
 import com.wingmark.backend.dto.species.SpeciesResponseDto;
 import com.wingmark.backend.dto.species.UpdateSpeciesRequestDto;
+import com.wingmark.backend.dto.species.SpeciesFacetsResponseDto;
+import com.wingmark.backend.exception.BadRequestException;
+import com.wingmark.backend.exception.ErrorCode;
+import com.wingmark.backend.security.UserPrincipal;
+import com.wingmark.backend.service.SeenFilter;
+import com.wingmark.backend.service.SpeciesFilter;
 import com.wingmark.backend.service.SpeciesService;
 import com.wingmark.backend.service.XenoCantoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,9 +21,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,7 +37,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -47,11 +58,47 @@ public class SpeciesController {
     /** Returns a page of species, optionally filtered by a name substring and sortable. Public. */
     @Operation(summary = "Get all species", description = "Returns a page of species in the guide, optionally filtered by a substring (?search=) of the common name (English or Turkish) or the scientific name, case- and accent-insensitive (serce finds Serçe), " +
             "paginated via the standard ?page=/?size= params. Sortable via ?sort=<field>,<asc|desc>, e.g. " +
-            "?sort=commonName.en,asc, ?sort=commonName.tr,desc, or ?sort=scientificName,asc. Public endpoint.")
+            "?sort=commonName.en,asc, ?sort=commonName.tr,desc, or ?sort=scientificName,asc. Also filterable by order and family (Latin names, ignoring case; several values allowed, " +
+            "e.g. ?order=Passeriformes&family=Corvidae,Paridae) and by seen=seen|unseen (species the signed-in user has or has not logged, pet logs included; " +
+            "401 UNAUTHENTICATED without a token). All filters combine with the search; totals and pages follow them. Public endpoint, except for the seen filter.")
     @GetMapping
     public ResponseEntity<Page<SpeciesResponseDto>> getAll(@RequestParam(required = false) String search,
+                                                            @RequestParam(required = false) List<String> order,
+                                                            @RequestParam(required = false) List<String> family,
+                                                            @RequestParam(required = false) String seen,
+                                                            @AuthenticationPrincipal UserPrincipal principal,
                                                             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(speciesService.getAll(search, pageable));
+        return ResponseEntity.ok(speciesService.getAll(filter(search, order, family, seen, principal), pageable));
+    }
+
+    /** Returns the orders and families of the guide with species counts for the filter menus. Public; the seen filter needs a signed-in user. */
+    @Operation(summary = "Get species filter options", description = "Returns the orders and families in the guide with how many species match, " +
+            "for the guide's filter menus: {orders: [{value, name, count}], families: [{value, order, name, count}]}. value is the Latin name to send back as ?order= or ?family=; " +
+            "name is in the request language (Accept-Language), falling back to the Latin name. Takes the same ?search=, ?order=, ?family= and ?seen= filters as GET /api/species; " +
+            "each menu is counted under all filters except its own. Public endpoint, except for the seen filter (401 UNAUTHENTICATED without a token). " +
+            "Answers without a seen filter are cached for five minutes.")
+    @GetMapping("/facets")
+    public ResponseEntity<SpeciesFacetsResponseDto> getFacets(@RequestParam(required = false) String search,
+                                                              @RequestParam(required = false) List<String> order,
+                                                              @RequestParam(required = false) List<String> family,
+                                                              @RequestParam(required = false) String seen,
+                                                              @AuthenticationPrincipal UserPrincipal principal,
+                                                              Locale locale) {
+        SpeciesFacetsResponseDto facets = speciesService.getFacets(filter(search, order, family, seen, principal), locale);
+        CacheControl cache = seen == null ? CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic() : CacheControl.noStore();
+        return ResponseEntity.ok().cacheControl(cache).header(HttpHeaders.VARY, HttpHeaders.ACCEPT_LANGUAGE).body(facets);
+    }
+
+    private static SpeciesFilter filter(String search, List<String> order, List<String> family, String seen, UserPrincipal principal) {
+        SeenFilter seenFilter = null;
+        if (seen != null && !seen.isBlank()) {
+            seenFilter = switch (seen.trim().toLowerCase(Locale.ROOT)) {
+                case "seen" -> SeenFilter.SEEN;
+                case "unseen" -> SeenFilter.UNSEEN;
+                default -> throw new BadRequestException(ErrorCode.INVALID_PARAMETER, "seen must be seen or unseen");
+            };
+        }
+        return new SpeciesFilter(search, order, family, seenFilter, principal == null ? null : principal.getId());
     }
 
     /** Returns one species by id, including its reference images. Public. */

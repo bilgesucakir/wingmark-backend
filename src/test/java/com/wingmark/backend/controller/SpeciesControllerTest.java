@@ -229,4 +229,128 @@ class SpeciesControllerTest {
         mockMvc.perform(get("/api/species").param("search", ".*" + marker))
                 .andExpect(jsonPath("$.content.length()").value(0));
     }
+
+    // ---- order / family / seen filters and the facets endpoint ----
+
+    private com.wingmark.backend.entity.Species saveSpecies(String marker, String name, String order, String family) {
+        return speciesRepository.save(com.wingmark.backend.entity.Species.builder()
+                .commonName(java.util.Map.of("en", name + " " + marker, "tr", "Tür " + marker))
+                .scientificName("Genus" + marker + " " + name.toLowerCase().replace(' ', '_'))
+                .order(order).family(family).build());
+    }
+
+    private java.util.List<String> idsOf(String json) throws Exception {
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        objectMapper.readTree(json).get("content").forEach(node -> ids.add(node.get("id").asText()));
+        return ids;
+    }
+
+    @Autowired
+    private com.wingmark.backend.repository.BirdLogRepository birdLogRepository;
+
+    @Test
+    void filtersByOrderAndFamilyIgnoringCaseAndCombinesThemWithSearch() throws Exception {
+        String marker = "Z" + shortId();
+        String order = "Testiformes" + marker;
+        var crow = saveSpecies(marker, "Test Crow", order, "Corvidae" + marker);
+        var jay = saveSpecies(marker, "Test Jay", order.toUpperCase(), "Corvidae" + marker);
+        var tit = saveSpecies(marker, "Test Tit", order, "Paridae" + marker);
+        var other = saveSpecies(marker, "Other Duck", "Anseriformes" + marker, "Anatidae" + marker);
+
+        String byOrder = mockMvc.perform(get("/api/species").param("order", order.toLowerCase()).param("size", "50"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(idsOf(byOrder)).containsExactlyInAnyOrder(
+                crow.getId().toString(), jay.getId().toString(), tit.getId().toString());
+        org.assertj.core.api.Assertions.assertThat(objectMapper.readTree(byOrder).get("page").get("totalElements").asInt()).isEqualTo(3);
+
+        String byFamilies = mockMvc.perform(get("/api/species").param("family", "corvidae" + marker + ",PARIDAE" + marker).param("size", "50"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(idsOf(byFamilies)).containsExactlyInAnyOrder(
+                crow.getId().toString(), jay.getId().toString(), tit.getId().toString());
+
+        String combined = mockMvc.perform(get("/api/species").param("order", order).param("family", "Corvidae" + marker)
+                        .param("search", "jay " + marker).param("size", "50"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(idsOf(combined)).containsExactly(jay.getId().toString());
+        org.assertj.core.api.Assertions.assertThat(idsOf(combined)).doesNotContain(other.getId().toString());
+    }
+
+    @Test
+    void seenAndUnseenFollowTheSignedInUsersLogsAndPetLogsCount() throws Exception {
+        String marker = "Y" + shortId();
+        String order = "Seenformes" + marker;
+        var seenByLog = saveSpecies(marker, "Seen Wren", order, "Troglodytidae" + marker);
+        var seenByPet = saveSpecies(marker, "Seen Parrot", order, "Psittacidae" + marker);
+        var unseen = saveSpecies(marker, "Unseen Owl", order, "Strigidae" + marker);
+        String token = registerAndGetToken("seenuser");
+        java.util.UUID userId = java.util.UUID.fromString(objectMapper.readTree(java.util.Base64.getUrlDecoder()
+                .decode(token.split("\\.")[1])).get("sub").asText());
+        birdLogRepository.save(com.wingmark.backend.entity.BirdLog.builder().userId(userId).speciesId(seenByLog.getId()).build());
+        birdLogRepository.save(com.wingmark.backend.entity.BirdLog.builder().userId(userId).speciesId(seenByPet.getId()).pet(true).build());
+
+        String seen = mockMvc.perform(get("/api/species").param("order", order).param("seen", "seen").param("size", "50")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(idsOf(seen)).containsExactlyInAnyOrder(seenByLog.getId().toString(), seenByPet.getId().toString());
+
+        String unseenJson = mockMvc.perform(get("/api/species").param("order", order).param("seen", "UNSEEN").param("size", "50")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(idsOf(unseenJson)).containsExactly(unseen.getId().toString());
+        org.assertj.core.api.Assertions.assertThat(objectMapper.readTree(unseenJson).get("page").get("totalElements").asInt()).isEqualTo(1);
+    }
+
+    @Test
+    void theSeenFilterNeedsASignedInUserAndOnlyAcceptsSeenOrUnseen() throws Exception {
+        mockMvc.perform(get("/api/species").param("seen", "seen")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/species/facets").param("seen", "unseen")).andExpect(status().isUnauthorized());
+        String token = registerAndGetToken("seenbad");
+        mockMvc.perform(get("/api/species").param("seen", "maybe").header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void facetsListOrdersAndFamiliesWithCountsNamesAndTheirOrder() throws Exception {
+        String marker = "X" + shortId();
+        saveSpecies(marker, "Facet A", "Passeriformes", "Corvidae");
+        saveSpecies(marker, "Facet B", "passeriformes ", "Corvidae");
+        saveSpecies(marker, "Facet C", "Passeriformes", "Paridae");
+        saveSpecies(marker, "Facet D", "Strigiformes", "Strigidae");
+
+        String body = mockMvc.perform(get("/api/species/facets").param("search", marker).header("Accept-Language", "tr"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Cache-Control", org.hamcrest.Matchers.containsString("max-age=300")))
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        var root = objectMapper.readTree(body);
+
+        var passeriformes = root.get("orders").get(0);
+        org.assertj.core.api.Assertions.assertThat(passeriformes.get("value").asText()).isEqualTo("Passeriformes");
+        org.assertj.core.api.Assertions.assertThat(passeriformes.get("name").asText()).isEqualTo("Ötücü Kuşlar");
+        org.assertj.core.api.Assertions.assertThat(passeriformes.get("count").asInt()).isEqualTo(3);
+        org.assertj.core.api.Assertions.assertThat(root.get("orders")).hasSize(2);
+        var corvidae = root.get("families").get(0);
+        org.assertj.core.api.Assertions.assertThat(corvidae.get("value").asText()).isEqualTo("Corvidae");
+        org.assertj.core.api.Assertions.assertThat(corvidae.get("order").asText()).isEqualTo("Passeriformes");
+        org.assertj.core.api.Assertions.assertThat(corvidae.get("count").asInt()).isEqualTo(2);
+
+        // Picking an order narrows the families but not the order menu itself.
+        String narrowed = mockMvc.perform(get("/api/species/facets").param("search", marker).param("order", "Strigiformes"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        var narrowedRoot = objectMapper.readTree(narrowed);
+        org.assertj.core.api.Assertions.assertThat(narrowedRoot.get("orders")).hasSize(2);
+        org.assertj.core.api.Assertions.assertThat(narrowedRoot.get("families")).hasSize(1);
+        org.assertj.core.api.Assertions.assertThat(narrowedRoot.get("families").get(0).get("value").asText()).isEqualTo("Strigidae");
+    }
+
+    @Test
+    void anUnknownOrderShowsItsLatinNameAndNoFilterReturnsEverything() throws Exception {
+        String marker = "W" + shortId();
+        saveSpecies(marker, "Unknown Bird", "Mysteriformes" + marker, "Mysteriidae" + marker);
+
+        String body = mockMvc.perform(get("/api/species/facets").param("search", marker).header("Accept-Language", "tr"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        org.assertj.core.api.Assertions.assertThat(objectMapper.readTree(body).get("orders").get(0).get("name").asText()).isEqualTo("Mysteriformes" + marker.toLowerCase());
+        mockMvc.perform(get("/api/species").param("size", "1")).andExpect(status().isOk());
+    }
 }

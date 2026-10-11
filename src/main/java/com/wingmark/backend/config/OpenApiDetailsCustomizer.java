@@ -81,7 +81,9 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
             Map.entry("POST /api/species", List.of(409)),
             Map.entry("PUT /api/species/{id}", List.of(409)),
             Map.entry("POST /api/uploads/photo", List.of(403, 413, 415)),
-            Map.entry("GET /api/species/{id}/sound", List.of(502)));
+            Map.entry("GET /api/species/{id}/sound", List.of(502)),
+            Map.entry("GET /api/species", List.of(401)),
+            Map.entry("GET /api/species/facets", List.of(401)));
 
     private static final Map<String, String> PARAMETERS = Map.ofEntries(
             Map.entry("userId", "Id of the user. Must be the caller's own id; any other id gives 404, except for admins."),
@@ -97,6 +99,9 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
             Map.entry("minLng", "Western edge of the visible map area, in degrees. May be greater than maxLng when the area crosses the antimeridian."),
             Map.entry("maxLng", "Eastern edge of the visible map area, in degrees."),
             Map.entry("limit", "Maximum number of logs to return; X-Result-Truncated says if more matched."),
+            Map.entry("order", "Only species of these orders (Latin names such as Passeriformes, ignoring case); repeat the parameter or separate with commas. Omitted: all."),
+            Map.entry("family", "Only species of these families (Latin names such as Corvidae, ignoring case); repeat the parameter or separate with commas. Omitted: all."),
+            Map.entry("seen", "seen: only species the signed-in user has logged (pet logs included); unseen: only the others. Omitted: all. 401 UNAUTHENTICATED without a token."),
             Map.entry("search", "Text matched literally, ignoring case and accents, against the common name (English or Turkish) or the scientific name."),
             Map.entry("pageable", "Paging and sorting: page (from 0), size, and sort=<field>,<asc|desc> on commonName.en, commonName.tr or scientificName."));
 

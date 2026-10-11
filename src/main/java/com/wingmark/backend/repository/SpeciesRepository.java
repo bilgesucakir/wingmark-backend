@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /** Species guide entries. */
-public interface SpeciesRepository extends MongoRepository<Species, UUID> {
+public interface SpeciesRepository extends MongoRepository<Species, UUID>, SpeciesSearchRepository {
 
     Optional<Species> findByScientificNameIgnoreCase(String scientificName);
 
