@@ -65,8 +65,8 @@ final class ApiFieldDocs {
             SpeciesFacetsResponseDto.orders|Orders with the number of matching species.|
             SpeciesFacetsResponseDto.families|Families, each with its order, with the number of matching species.|
             OrderFacet.value|Latin name of the order; send it back as the order parameter.|Passeriformes
-            OrderFacet.name|Name of the order in the request language, or its Latin name.|Perching Birds
-            FamilyFacet.name|Name of the family in the request language, or its Latin name.|Crows & Jays
+            OrderFacet.name|Name of the order: its Latin taxon name.|Passeriformes
+            FamilyFacet.name|Name of the family: its Latin taxon name; in Turkish "Turkish name (Latin name)" for the families in the book Türkiye'nin Kuşları.|Kargagiller (Corvidae)
             FamilyFacet.order|Latin name of the family's order.|Passeriformes
             OrderFacet.count|Number of matching species.|265
             FamilyFacet.value|Latin name of the family; send it back as the family parameter.|Corvidae

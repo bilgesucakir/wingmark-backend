@@ -102,6 +102,8 @@ public class SpeciesServiceImpl implements SpeciesService {
             }
         }
 
+        addSelectedWithoutSpecies(filter, orderCounts, orderValues, familyCounts, familyValues);
+
         List<SpeciesFacetsResponseDto.OrderFacet> orders = orderCounts.entrySet().stream()
                 .map(entry -> new SpeciesFacetsResponseDto.OrderFacet(orderValues.get(entry.getKey()),
                         taxonNames.order(orderValues.get(entry.getKey()), locale), entry.getValue()[0]))
@@ -117,6 +119,45 @@ public class SpeciesServiceImpl implements SpeciesService {
                         .thenComparing(SpeciesFacetsResponseDto.FamilyFacet::name))
                 .toList();
         return new SpeciesFacetsResponseDto(orders, families);
+    }
+
+    /**
+     * A selected order or family that has no species under the other filters is still listed, with count 0, so a menu never
+     * drops a choice the user made. A selected family's order is looked up among all species; an unknown family is skipped.
+     */
+    private void addSelectedWithoutSpecies(SpeciesFilter filter, Map<String, long[]> orderCounts, Map<String, String> orderValues,
+                                           Map<String, long[]> familyCounts, Map<String, String[]> familyValues) {
+        if (filter.orders() != null) {
+            for (String selected : filter.orders()) {
+                if (StringUtils.hasText(selected) && !orderCounts.containsKey(key(selected))) {
+                    orderValues.put(key(selected), tidy(selected));
+                    orderCounts.put(key(selected), new long[1]);
+                }
+            }
+        }
+        if (filter.families() == null) {
+            return;
+        }
+        Map<String, String[]> known = null;
+        for (String selected : filter.families()) {
+            if (!StringUtils.hasText(selected) || familyCounts.keySet().stream().anyMatch(k -> k.endsWith("|" + key(selected)))) {
+                continue;
+            }
+            if (known == null) {
+                known = new HashMap<>();
+                for (SpeciesSearchRepository.FacetRow row : speciesRepository.facetRows(null, null, null, null, null)) {
+                    if (StringUtils.hasText(row.family()) && StringUtils.hasText(row.order())) {
+                        known.putIfAbsent(key(row.family()), new String[] {tidy(row.family()), tidy(row.order())});
+                    }
+                }
+            }
+            String[] value = known.get(key(selected));
+            if (value != null) {
+                String familyKey = key(value[1]) + "|" + key(value[0]);
+                familyValues.putIfAbsent(familyKey, value);
+                familyCounts.putIfAbsent(familyKey, new long[1]);
+            }
+        }
     }
 
     private static String nameRegex(String search) {
