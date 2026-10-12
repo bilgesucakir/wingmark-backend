@@ -330,7 +330,7 @@ class SpeciesControllerTest {
         org.assertj.core.api.Assertions.assertThat(root.get("orders")).hasSize(2);
         var corvidae = root.get("families").get(0);
         org.assertj.core.api.Assertions.assertThat(corvidae.get("value").asText()).isEqualTo("Corvidae");
-        org.assertj.core.api.Assertions.assertThat(corvidae.get("name").asText()).isEqualTo("Kargagiller");
+        org.assertj.core.api.Assertions.assertThat(corvidae.get("name").asText()).isEqualTo("Kargagiller (Corvidae)");
         org.assertj.core.api.Assertions.assertThat(corvidae.get("order").asText()).isEqualTo("Passeriformes");
         org.assertj.core.api.Assertions.assertThat(corvidae.get("count").asInt()).isEqualTo(2);
 

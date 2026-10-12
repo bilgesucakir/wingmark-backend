@@ -1,5 +1,5 @@
 {
-  "_comment": "Display names of the order and family filters of the species guide. The English name is the Latin taxon name; the Turkish name is the Latin name too, except for the well-known Turkish family names (the -giller form) listed here. A taxon that is not in the file shows its Latin name. The Turkish family names need the owner's check.",
+  "_comment": "Display names of the order and family filters of the species guide. English is the Latin taxon name. Turkish is 'Turkish name (Latin name)' for the families listed in the book Turkiye'nin Kuslari (Aileler), and the Latin name for orders and for families the book does not list. A taxon that is not in this file shows its Latin name.",
   "orders": {
     "Accipitriformes": {
       "en": "Accipitriformes",
@@ -117,23 +117,23 @@
   "families": {
     "Accipitridae": {
       "en": "Accipitridae",
-      "tr": "Accipitridae"
+      "tr": "Atmacagiller (Accipitridae)"
     },
     "Acrocephalidae": {
       "en": "Acrocephalidae",
-      "tr": "Acrocephalidae"
+      "tr": "Sazkamışçınıgiller (Acrocephalidae)"
     },
     "Aegithalidae": {
       "en": "Aegithalidae",
-      "tr": "Aegithalidae"
+      "tr": "Uzunkuyruklubaştankaragiller (Aegithalidae)"
     },
     "Alaudidae": {
       "en": "Alaudidae",
-      "tr": "Toygargiller"
+      "tr": "Toygargiller (Alaudidae)"
     },
     "Alcedinidae": {
       "en": "Alcedinidae",
-      "tr": "Yalıçapkınıgiller"
+      "tr": "Yalıçapkınıgiller (Alcedinidae)"
     },
     "Alcidae": {
       "en": "Alcidae",
@@ -141,19 +141,19 @@
     },
     "Anatidae": {
       "en": "Anatidae",
-      "tr": "Ördekgiller"
+      "tr": "Ördekgiller (Anatidae)"
     },
     "Anhingidae": {
       "en": "Anhingidae",
-      "tr": "Anhingidae"
+      "tr": "Yılanboyungiller (Anhingidae)"
     },
     "Apodidae": {
       "en": "Apodidae",
-      "tr": "Ebabilgiller"
+      "tr": "Ebabilgiller (Apodidae)"
     },
     "Ardeidae": {
       "en": "Ardeidae",
-      "tr": "Balıkçılgiller"
+      "tr": "Balıkçılgiller (Ardeidae)"
     },
     "Balaenicipitidae": {
       "en": "Balaenicipitidae",
@@ -161,11 +161,11 @@
     },
     "Bombycillidae": {
       "en": "Bombycillidae",
-      "tr": "Bombycillidae"
+      "tr": "İpekkuyrukgiller (Bombycillidae)"
     },
     "Burhinidae": {
       "en": "Burhinidae",
-      "tr": "Burhinidae"
+      "tr": "Kocagözgiller (Burhinidae)"
     },
     "Cacatuidae": {
       "en": "Cacatuidae",
@@ -173,11 +173,11 @@
     },
     "Calcariidae": {
       "en": "Calcariidae",
-      "tr": "Calcariidae"
+      "tr": "Mahmuzlukirazkuşugiller (Calcariidae)"
     },
     "Caprimulgidae": {
       "en": "Caprimulgidae",
-      "tr": "Caprimulgidae"
+      "tr": "Çobanaldatangiller (Caprimulgidae)"
     },
     "Cardinalidae": {
       "en": "Cardinalidae",
@@ -189,43 +189,43 @@
     },
     "Certhiidae": {
       "en": "Certhiidae",
-      "tr": "Certhiidae"
+      "tr": "Tırmaşıkkuşugiller (Certhiidae)"
     },
     "Cettiidae": {
       "en": "Cettiidae",
-      "tr": "Cettiidae"
+      "tr": "Kamışbülbülügiller (Cettiidae)"
     },
     "Charadriidae": {
       "en": "Charadriidae",
-      "tr": "Charadriidae"
+      "tr": "Cılıbıtgiller (Charadriidae)"
     },
     "Ciconiidae": {
       "en": "Ciconiidae",
-      "tr": "Leylekgiller"
+      "tr": "Leylekgiller (Ciconiidae)"
     },
     "Cinclidae": {
       "en": "Cinclidae",
-      "tr": "Cinclidae"
+      "tr": "Derekuşugiller (Cinclidae)"
     },
     "Cisticolidae": {
       "en": "Cisticolidae",
-      "tr": "Cisticolidae"
+      "tr": "Yelpazekuyrukgiller (Cisticolidae)"
     },
     "Columbidae": {
       "en": "Columbidae",
-      "tr": "Güvercingiller"
+      "tr": "Güvercingiller (Columbidae)"
     },
     "Coraciidae": {
       "en": "Coraciidae",
-      "tr": "Coraciidae"
+      "tr": "Gökkuzgungiller (Coraciidae)"
     },
     "Corvidae": {
       "en": "Corvidae",
-      "tr": "Kargagiller"
+      "tr": "Kargagiller (Corvidae)"
     },
     "Cuculidae": {
       "en": "Cuculidae",
-      "tr": "Gugukgiller"
+      "tr": "Gugukgiller (Cuculidae)"
     },
     "Diomedeidae": {
       "en": "Diomedeidae",
@@ -233,11 +233,11 @@
     },
     "Dromadidae": {
       "en": "Dromadidae",
-      "tr": "Dromadidae"
+      "tr": "Yengeçyağmurcunugiller (Dromadidae)"
     },
     "Emberizidae": {
       "en": "Emberizidae",
-      "tr": "Emberizidae"
+      "tr": "Kirazkuşugiller (Emberizidae)"
     },
     "Estrildidae": {
       "en": "Estrildidae",
@@ -245,151 +245,151 @@
     },
     "Falconidae": {
       "en": "Falconidae",
-      "tr": "Falconidae"
+      "tr": "Doğangiller (Falconidae)"
     },
     "Fringillidae": {
       "en": "Fringillidae",
-      "tr": "İspinozgiller"
+      "tr": "İspinozgiller (Fringillidae)"
     },
     "Gaviidae": {
       "en": "Gaviidae",
-      "tr": "Gaviidae"
+      "tr": "Dalgıçgiller (Gaviidae)"
     },
     "Glareolidae": {
       "en": "Glareolidae",
-      "tr": "Glareolidae"
+      "tr": "Bataklıkkırlangıcıgiller (Glareolidae)"
     },
     "Gruidae": {
       "en": "Gruidae",
-      "tr": "Turnagiller"
+      "tr": "Turnagiller (Gruidae)"
     },
     "Haematopodidae": {
       "en": "Haematopodidae",
-      "tr": "Haematopodidae"
+      "tr": "Poyrazkuşugiller (Haematopodidae)"
     },
     "Hirundinidae": {
       "en": "Hirundinidae",
-      "tr": "Kırlangıçgiller"
+      "tr": "Kırlangıçgiller (Hirundinidae)"
     },
     "Hydrobatidae": {
       "en": "Hydrobatidae",
-      "tr": "Hydrobatidae"
+      "tr": "Fırtınakırlangıcıgiller (Hydrobatidae)"
     },
     "Hypocoliidae": {
       "en": "Hypocoliidae",
-      "tr": "Hypocoliidae"
+      "tr": "Hurmayiyengiller (Hypocoliidae)"
     },
     "Laniidae": {
       "en": "Laniidae",
-      "tr": "Örümcekkuşugiller"
+      "tr": "Örümcekkuşugiller (Laniidae)"
     },
     "Laridae": {
       "en": "Laridae",
-      "tr": "Martıgiller"
+      "tr": "Martıgiller (Laridae)"
     },
     "Leiothrichidae": {
       "en": "Leiothrichidae",
-      "tr": "Leiothrichidae"
+      "tr": "Yedikardeşgiller (Leiothrichidae)"
     },
     "Locustellidae": {
       "en": "Locustellidae",
-      "tr": "Locustellidae"
+      "tr": "Çekirgekamışçınıgiller (Locustellidae)"
     },
     "Meropidae": {
       "en": "Meropidae",
-      "tr": "Arıkuşugiller"
+      "tr": "Arıkuşugiller (Meropidae)"
     },
     "Motacillidae": {
       "en": "Motacillidae",
-      "tr": "Kuyruksallayangiller"
+      "tr": "Kuyruksallayangiller (Motacillidae)"
     },
     "Muscicapidae": {
       "en": "Muscicapidae",
-      "tr": "Sinekkapangiller"
+      "tr": "Sinekkapangiller (Muscicapidae)"
     },
     "Nectariniidae": {
       "en": "Nectariniidae",
-      "tr": "Nectariniidae"
+      "tr": "Nektarkuşugiller (Nectariniidae)"
     },
     "Oriolidae": {
       "en": "Oriolidae",
-      "tr": "Sarıasmagiller"
+      "tr": "Sarıasmagiller (Oriolidae)"
     },
     "Otididae": {
       "en": "Otididae",
-      "tr": "Otididae"
+      "tr": "Toygiller (Otididae)"
     },
     "Pandionidae": {
       "en": "Pandionidae",
-      "tr": "Pandionidae"
+      "tr": "Balıkkartalıgiller (Pandionidae)"
     },
     "Panuridae": {
       "en": "Panuridae",
-      "tr": "Panuridae"
+      "tr": "Bıyıklıbaştankaragiller (Panuridae)"
     },
     "Paridae": {
       "en": "Paridae",
-      "tr": "Baştankaragiller"
+      "tr": "Baştankaragiller (Paridae)"
     },
     "Passeridae": {
       "en": "Passeridae",
-      "tr": "Serçegiller"
+      "tr": "Serçegiller (Passeridae)"
     },
     "Pelecanidae": {
       "en": "Pelecanidae",
-      "tr": "Pelikangiller"
+      "tr": "Pelikangiller (Pelecanidae)"
     },
     "Phalacrocoracidae": {
       "en": "Phalacrocoracidae",
-      "tr": "Karabatakgiller"
+      "tr": "Karabatakgiller (Phalacrocoracidae)"
     },
     "Phasianidae": {
       "en": "Phasianidae",
-      "tr": "Phasianidae"
+      "tr": "Sülüngiller (Phasianidae)"
     },
     "Phoenicopteridae": {
       "en": "Phoenicopteridae",
-      "tr": "Flamingogiller"
+      "tr": "Flamingogiller (Phoenicopteridae)"
     },
     "Phylloscopidae": {
       "en": "Phylloscopidae",
-      "tr": "Phylloscopidae"
+      "tr": "Çıvgıngiller (Phylloscopidae)"
     },
     "Picidae": {
       "en": "Picidae",
-      "tr": "Ağaçkakangiller"
+      "tr": "Ağaçkakangiller (Picidae)"
     },
     "Podicipedidae": {
       "en": "Podicipedidae",
-      "tr": "Batağangiller"
+      "tr": "Batağangiller (Podicipedidae)"
     },
     "Procellariidae": {
       "en": "Procellariidae",
-      "tr": "Procellariidae"
+      "tr": "Yelkovangiller (Procellariidae)"
     },
     "Prunellidae": {
       "en": "Prunellidae",
-      "tr": "Prunellidae"
+      "tr": "Dağbülbülügiller (Prunellidae)"
     },
     "Psittacidae": {
       "en": "Psittacidae",
-      "tr": "Papağangiller"
+      "tr": "Psittacidae"
     },
     "Psittaculidae": {
       "en": "Psittaculidae",
-      "tr": "Psittaculidae"
+      "tr": "Eskidünya Papağangilleri (Psittaculidae)"
     },
     "Pteroclidae": {
       "en": "Pteroclidae",
-      "tr": "Pteroclidae"
+      "tr": "Bağırtlakgiller (Pteroclidae)"
     },
     "Pycnonotidae": {
       "en": "Pycnonotidae",
-      "tr": "Pycnonotidae"
+      "tr": "Arapbülbülügiller (Pycnonotidae)"
     },
     "Rallidae": {
       "en": "Rallidae",
-      "tr": "Rallidae"
+      "tr": "Yelvegiller (Rallidae)"
     },
     "Ramphastidae": {
       "en": "Ramphastidae",
@@ -397,35 +397,35 @@
     },
     "Recurvirostridae": {
       "en": "Recurvirostridae",
-      "tr": "Recurvirostridae"
+      "tr": "Kılıçgagagiller (Recurvirostridae)"
     },
     "Regulidae": {
       "en": "Regulidae",
-      "tr": "Regulidae"
+      "tr": "Çalıkuşugiller (Regulidae)"
     },
     "Remizidae": {
       "en": "Remizidae",
-      "tr": "Remizidae"
+      "tr": "Çulhakuşugiller (Remizidae)"
     },
     "Scolopacidae": {
       "en": "Scolopacidae",
-      "tr": "Scolopacidae"
+      "tr": "Çullukgiller (Scolopacidae)"
     },
     "Sittidae": {
       "en": "Sittidae",
-      "tr": "Sittidae"
+      "tr": "Sıvacıgiller (Sittidae)"
     },
     "Spheniscidae": {
       "en": "Spheniscidae",
-      "tr": "Penguengiller"
+      "tr": "Spheniscidae"
     },
     "Stercorariidae": {
       "en": "Stercorariidae",
-      "tr": "Stercorariidae"
+      "tr": "Korsanmartıgiller (Stercorariidae)"
     },
     "Strigidae": {
       "en": "Strigidae",
-      "tr": "Baykuşgiller"
+      "tr": "Baykuşgiller (Strigidae)"
     },
     "Strigopidae": {
       "en": "Strigopidae",
@@ -433,47 +433,47 @@
     },
     "Struthionidae": {
       "en": "Struthionidae",
-      "tr": "Devekuşugiller"
+      "tr": "Struthionidae"
     },
     "Sturnidae": {
       "en": "Sturnidae",
-      "tr": "Sığırcıkgiller"
+      "tr": "Sığırcıkgiller (Sturnidae)"
     },
     "Sulidae": {
       "en": "Sulidae",
-      "tr": "Sulidae"
+      "tr": "Sümsükgiller (Sulidae)"
     },
     "Sylviidae": {
       "en": "Sylviidae",
-      "tr": "Ötleğengiller"
+      "tr": "Ötleğengiller (Sylviidae)"
     },
     "Threskiornithidae": {
       "en": "Threskiornithidae",
-      "tr": "Threskiornithidae"
+      "tr": "Aynakgiller (Threskiornithidae)"
     },
     "Tichodromidae": {
       "en": "Tichodromidae",
-      "tr": "Tichodromidae"
+      "tr": "Duvartırmaşıkkuşugiller (Tichodromidae)"
     },
     "Trochilidae": {
       "en": "Trochilidae",
-      "tr": "Sinekkuşugiller"
+      "tr": "Trochilidae"
     },
     "Troglodytidae": {
       "en": "Troglodytidae",
-      "tr": "Çitkuşugiller"
+      "tr": "Çıtkuşugiller (Troglodytidae)"
     },
     "Turdidae": {
       "en": "Turdidae",
-      "tr": "Ardıçgiller"
+      "tr": "Ardıçkuşugiller (Turdidae)"
     },
     "Tytonidae": {
       "en": "Tytonidae",
-      "tr": "Tytonidae"
+      "tr": "Peçelibaykuşgiller (Tytonidae)"
     },
     "Upupidae": {
       "en": "Upupidae",
-      "tr": "İbibikgiller"
+      "tr": "İbibikgiller (Upupidae)"
     }
   }
 }

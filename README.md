@@ -870,9 +870,9 @@ logged or not, pet logs included). They combine with each other, with `?search=`
 other than `seen` or `unseen` is `400`.
 
 **`GET /facets`** lists the orders and families that exist, for the guide's filter menus. `value` is the Latin name to send back as
-`order` / `family`; `name` is the real taxonomic name: the Latin order or family name, except that a family shows its well-known Turkish `-giller` name when
-`Accept-Language` is Turkish and one is listed (file `src/main/resources/taxonomy/taxon-names.json`, which the owner checks; anything not
-in the file shows its Latin name). Several values of `order` or `family` are "any of these", so a menu can be multi-select; a selected value
+`order` / `family`; `name` is the real taxonomic name: the Latin order or family name. When `Accept-Language` is Turkish, a family listed in the book
+*Türkiye'nin Kuşları* (77 families) shows "Turkish name (Latin name)", e.g. `Ördekgiller (Anatidae)`; other families and all orders keep the Latin
+name (file `src/main/resources/taxonomy/taxon-names.json`; anything not in the file shows its Latin name). Several values of `order` or `family` are "any of these", so a menu can be multi-select; a selected value
 with no species under the other filters is still returned with `count: 0`. Each family carries its `order`, so choosing an order
 narrows the families without another request. Counts follow `search`, `seen` and the other menu's filter: the order menu is counted
 under the family filter and the family menu under the order filter, so the choices still open show their numbers. Answers without `seen`
