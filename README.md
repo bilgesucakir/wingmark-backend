@@ -2,7 +2,7 @@
 
 [![API status](https://img.shields.io/website?url=https%3A%2F%2Fwingmark-backend.onrender.com%2Factuator%2Fhealth&label=API&up_message=operational&down_message=down)](https://wingmark.betteruptime.com/)
 
-Backend API for **<a href="https://github.com/bilgesucakir/wingmark">Wingmark</a>**, a personal bird-logging iOS app
+Backend API for **<a href="https://github.com/bilgesucakir/wingmark-ios">Wingmark</a>**, a personal bird-logging iOS app
 ([iOS app: wingmark-ios](https://github.com/bilgesucakir/wingmark-ios), [website: wingmark-site](https://github.com/bilgesucakir/wingmark-site)). Log a bird sighting
 (photo, species, life stage, gender, location, notes), browse it on a map, look it up
 in a species guide (with photos and live call/song recordings), and earn badges as you
@@ -14,6 +14,7 @@ go. Personal-only for now: every user sees just their own logs, never anyone els
 - Spring Web MVC + Spring Security (JWT, stateless)
 - Spring Data MongoDB
 - MongoDB (local instance by default, or point it at MongoDB Atlas) — see [Database](#database)
+- Photos in MongoDB (GridFS) or, optionally, a private Cloudflare R2 bucket — see [Photo storage in Cloudflare R2](#photo-storage-in-cloudflare-r2-optional)
 - springdoc-openapi (Swagger UI)
 - Lombok
 - Xeno-canto API v3 (bird sound recordings) and the Wikimedia Commons API (photo license and credit)
@@ -320,7 +321,7 @@ The same limits apply whether or not the email exists:
 | Endpoint | Limit |
 |---|---|
 | `POST /api/auth/login` | 10 per account and 50 per IP / 15 min |
-| `POST /api/auth/register` | 10 per IP / hour |
+| `POST /api/auth/register` | 5 per IP / hour and 20 per IP / day |
 | `POST /api/auth/forgot-password`, `/resend-verification-email` | 3 per email and 20 per IP / hour (each) |
 | `POST /api/auth/reset-password` | 10 per account and 30 per IP / 15 min (plus the 5-wrong-guesses limit per code) |
 | `POST /api/auth/refresh` | 120 per IP / 15 min |
