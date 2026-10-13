@@ -52,6 +52,23 @@ SendGrid/Mailgun/SES's SMTP relay, etc). Also set `APP_BASE_URL` to wherever thi
 backend is actually reachable (defaults to `http://localhost:8080`) - it's baked into
 the verification link.
 
+#### Other settings
+
+All optional; the defaults work for local development. The settings of the cleanup jobs, photo limits, R2 and statistics have
+their own sections below.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `MAIL_FROM` | `no-reply@wingmarkapp.com` | Sender address of every email; your SMTP provider must be allowed to send from it |
+| `MAIL_DAILY_CAP` | `200` | Most emails sent per UTC day; more are skipped with a warning (0 = no cap) |
+| `MINIMUM_AGE` | `13` | Minimum age to sign up; the signup checkbox and the `AGE` consent follow it |
+| `BADGE_RECOMPUTE_ON_STARTUP` | `true` | Recompute every user's badge progress at startup (never sends the Complete All email); `false` skips it |
+| `JWT_ACCESS_EXPIRATION_MS` | `900000` (15 minutes) | Lifetime of an access token |
+| `JWT_REFRESH_EXPIRATION_MS` | `2592000000` (30 days) | Lifetime of a refresh token |
+| `XENO_CANTO_BASE_URL` | `https://xeno-canto.org/api/3` | Xeno-canto API address (only changed in tests) |
+| `R2_MIGRATION_CRON` | `0 20 * * * *` (hourly at :20) | When the R2 migration job runs, if it is enabled |
+| `SERVER_PORT` | `8080` | Port for local runs (Render sets `PORT`, which wins) |
+
 ### Run it
 
 ```bash
