@@ -3,6 +3,7 @@ package com.wingmark.backend.service;
 import com.wingmark.backend.dto.appicon.AdminAppIconResponseDto;
 import com.wingmark.backend.dto.appicon.AppIconResponseDto;
 import com.wingmark.backend.dto.appicon.CreateAppIconRequestDto;
+import com.wingmark.backend.dto.appicon.UpdateAppIconRequestDto;
 
 import java.util.List;
 
@@ -17,6 +18,9 @@ public interface AppIconService {
 
     /** Adds an icon; throws a conflict if the iconId is already in the list. */
     AdminAppIconResponseDto add(CreateAppIconRequestDto request);
+
+    /** Changes the display names of an icon; throws not-found if it is not in the list. */
+    AdminAppIconResponseDto update(String iconId, UpdateAppIconRequestDto request);
 
     /** Removes an icon from the list, hiding it from users; throws not-found if it is not there. */
     void delete(String iconId);

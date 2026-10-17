@@ -2,6 +2,7 @@ package com.wingmark.backend.controller;
 
 import com.wingmark.backend.dto.appicon.AdminAppIconResponseDto;
 import com.wingmark.backend.dto.appicon.CreateAppIconRequestDto;
+import com.wingmark.backend.dto.appicon.UpdateAppIconRequestDto;
 import com.wingmark.backend.service.AppIconService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +45,14 @@ public class AdminAppIconController {
     @PostMapping
     public ResponseEntity<AdminAppIconResponseDto> add(@Valid @RequestBody CreateAppIconRequestDto request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(appIconService.add(request));
+    }
+
+    /** Admin-only: changes an icon's display names. */
+    @Operation(summary = "Edit an app icon", description = "Admin-only. Changes the English and Turkish display names. The iconId cannot be changed " +
+            "(delete and add again for that). 404 if the icon is not in the list.")
+    @PutMapping("/{iconId}")
+    public ResponseEntity<AdminAppIconResponseDto> update(@PathVariable String iconId, @Valid @RequestBody UpdateAppIconRequestDto request) {
+        return ResponseEntity.ok(appIconService.update(iconId, request));
     }
 
     /** Admin-only: hides an icon from users. */

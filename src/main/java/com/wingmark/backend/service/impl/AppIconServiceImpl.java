@@ -3,6 +3,7 @@ package com.wingmark.backend.service.impl;
 import com.wingmark.backend.dto.appicon.AdminAppIconResponseDto;
 import com.wingmark.backend.dto.appicon.AppIconResponseDto;
 import com.wingmark.backend.dto.appicon.CreateAppIconRequestDto;
+import com.wingmark.backend.dto.appicon.UpdateAppIconRequestDto;
 import com.wingmark.backend.entity.AppIcon;
 import com.wingmark.backend.exception.DuplicateResourceException;
 import com.wingmark.backend.exception.ResourceNotFoundException;
@@ -48,6 +49,15 @@ public class AppIconServiceImpl implements AppIconService {
             // Two admins adding the same id at once: the unique index decides.
             throw taken(iconId);
         }
+    }
+
+    @Override
+    public AdminAppIconResponseDto update(String iconId, UpdateAppIconRequestDto request) {
+        AppIcon icon = appIconRepository.findByIconId(iconId)
+                .orElseThrow(() -> new ResourceNotFoundException("App icon not found: " + iconId));
+        icon.setNameEn(request.nameEn().trim());
+        icon.setNameTr(request.nameTr().trim());
+        return toAdminDto(appIconRepository.save(icon));
     }
 
     @Override

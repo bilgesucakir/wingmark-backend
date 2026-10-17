@@ -1221,6 +1221,7 @@ to users, deleting it hides it.
 | GET    | `/api/app-icons` | 🔒 | The available icons: `iconId`, `nameEn`, `nameTr`. Any signed-in user, no personal data, cacheable for 5 minutes |
 | GET    | `/api/admin/app-icons` | 🛡️ | The list with `createdAt` |
 | POST   | `/api/admin/app-icons` | 🛡️ | Add an icon: `iconId`, `nameEn`, `nameTr`. `409` if the `iconId` already exists |
+| PUT    | `/api/admin/app-icons/{iconId}` | 🛡️ | Change the display names (`nameEn`, `nameTr`); the `iconId` cannot change. `404` if not in the list |
 | DELETE | `/api/admin/app-icons/{iconId}` | 🛡️ | Remove an icon (`204`, or `404` if it is not in the list) |
 
 `iconId` must match the icon name built into the iOS app (lowercase letters, digits, `-` or `_`,
