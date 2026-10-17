@@ -70,6 +70,7 @@ const sections = {
   species: document.getElementById("section-species"),
   users: document.getElementById("section-users"),
   badges: document.getElementById("section-badges"),
+  icons: document.getElementById("section-icons"),
   logs: document.getElementById("section-logs"),
   metrics: document.getElementById("section-metrics"),
   usage: document.getElementById("section-usage"),
@@ -83,6 +84,7 @@ function goToSection(name) {
   if (name === "species") loadSpeciesList(document.getElementById("search-input").value.trim());
   if (name === "users") loadUsersList();
   if (name === "badges") loadBadgesList();
+  if (name === "icons") loadIcons();
   if (name === "logs") loadLogsList();
   if (name === "metrics") loadMetrics();
   if (name === "usage") loadUsage();
@@ -1077,6 +1079,85 @@ async function deleteLog(log, user) {
 logsSearchInput.addEventListener("input", () => {
   clearTimeout(logsDebounceTimer);
   logsDebounceTimer = setTimeout(() => renderLogsList(logsSearchInput.value.trim()), 200);
+});
+
+/* =====================================================================
+ * App icons
+ * ===================================================================== */
+
+const iconsMsg = document.getElementById("icons-msg");
+const iconsListEl = document.getElementById("icons-list");
+const iconForm = document.getElementById("icon-form");
+
+async function loadIcons() {
+  iconsListEl.innerHTML = '<li class="muted">Loading…</li>';
+  try {
+    renderIcons(await Api.request("/api/admin/app-icons"));
+  } catch (err) {
+    iconsListEl.innerHTML = "";
+    showMsg(iconsMsg, err.message, "error");
+  }
+}
+
+function renderIcons(icons) {
+  if (!icons.length) {
+    iconsListEl.innerHTML = '<li class="muted">No icons yet: users see none.</li>';
+    return;
+  }
+  iconsListEl.innerHTML = "";
+  icons.forEach((icon) => {
+    const li = document.createElement("li");
+    li.className = "species-row";
+    li.innerHTML =
+      '<div class="species-info">' +
+      '<div class="common">' + escapeHtml(icon.nameEn) + " / " + escapeHtml(icon.nameTr) + "</div>" +
+      '<div class="scientific">' + escapeHtml(icon.iconId) + "</div>" +
+      "</div>" +
+      '<div class="row-actions"><button class="danger delete-icon-btn">Delete</button></div>';
+    li.querySelector(".delete-icon-btn").addEventListener("click", () => deleteIcon(icon));
+    iconsListEl.appendChild(li);
+  });
+}
+
+async function deleteIcon(icon) {
+  if (!confirm("Delete the icon '" + icon.iconId + "'? Users will no longer see it.")) return;
+  try {
+    await Api.request("/api/admin/app-icons/" + encodeURIComponent(icon.iconId), { method: "DELETE" });
+    showMsg(iconsMsg, "Icon deleted.", "success");
+    loadIcons();
+  } catch (err) {
+    showMsg(iconsMsg, err.message, "error");
+  }
+}
+
+document.getElementById("new-icon-btn").addEventListener("click", () => {
+  iconForm.reset();
+  showMsg(iconsMsg, "", "");
+  iconForm.classList.remove("hidden");
+});
+document.getElementById("cancel-icon-btn").addEventListener("click", () => iconForm.classList.add("hidden"));
+
+iconForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const saveBtn = document.getElementById("save-icon-btn");
+  saveBtn.disabled = true;
+  try {
+    await Api.request("/api/admin/app-icons", {
+      method: "POST",
+      body: JSON.stringify({
+        iconId: document.getElementById("icon-id").value.trim(),
+        nameEn: document.getElementById("icon-name-en").value.trim(),
+        nameTr: document.getElementById("icon-name-tr").value.trim(),
+      }),
+    });
+    iconForm.classList.add("hidden");
+    showMsg(iconsMsg, "Icon added.", "success");
+    loadIcons();
+  } catch (err) {
+    showMsg(iconsMsg, err.message, "error");
+  } finally {
+    saveBtn.disabled = false;
+  }
 });
 
 /* =====================================================================

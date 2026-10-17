@@ -1210,6 +1210,23 @@ only ever appended; an existing key is never renamed or removed.
 
 </details>
 
+### App icons (`/api/app-icons`, `/api/admin/app-icons`)
+
+The alternate app icons (Halloween, Valentine's, ...) are a list the admin manages on the
+admin screen (**App icons** tab). No config files or flags: an icon in the list is visible
+to users, deleting it hides it.
+
+| Method | Path | Auth | Description |
+|--------|------|:----:|-------------|
+| GET    | `/api/app-icons` | 🔒 | The available icons: `iconId`, `nameEn`, `nameTr`. Any signed-in user, no personal data, cacheable for 5 minutes |
+| GET    | `/api/admin/app-icons` | 🛡️ | The list with `createdAt` |
+| POST   | `/api/admin/app-icons` | 🛡️ | Add an icon: `iconId`, `nameEn`, `nameTr`. `409` if the `iconId` already exists |
+| DELETE | `/api/admin/app-icons/{iconId}` | 🛡️ | Remove an icon (`204`, or `404` if it is not in the list) |
+
+`iconId` must match the icon name built into the iOS app (lowercase letters, digits, `-` or `_`,
+up to 40 characters). The app shows an icon only if its id is in the list **and** matches a
+bundled icon; unknown ids are ignored, so older builds keep working.
+
 ## Health
 
 [![API status](https://img.shields.io/website?url=https%3A%2F%2Fwingmark-backend.onrender.com%2Factuator%2Fhealth&label=API&up_message=operational&down_message=down)](https://wingmark.betteruptime.com/)
