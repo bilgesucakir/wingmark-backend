@@ -79,6 +79,7 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
             Map.entry("POST /api/bird-logs", List.of(422)),
             Map.entry("PUT /api/bird-logs/{id}", List.of(422)),
             Map.entry("POST /api/species", List.of(409)),
+            Map.entry("POST /api/admin/app-icons", List.of(409)),
             Map.entry("PUT /api/species/{id}", List.of(409)),
             Map.entry("POST /api/uploads/photo", List.of(403, 413, 415)),
             Map.entry("GET /api/species/{id}/sound", List.of(502)),
@@ -87,6 +88,7 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
 
     private static final Map<String, String> PARAMETERS = Map.ofEntries(
             Map.entry("userId", "Id of the user. Must be the caller's own id; any other id gives 404, except for admins."),
+            Map.entry("iconId", "Id of the app icon, as in the list (for example halloween)."),
             Map.entry("imageId", "Id of the species reference image."),
             Map.entry("token", "Verification token from the link in the verification email."),
             Map.entry("filename", "Stored upload filename, as in the /uploads/ URL returned on upload."),

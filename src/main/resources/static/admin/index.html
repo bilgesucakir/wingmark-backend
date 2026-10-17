@@ -21,6 +21,7 @@
     <button class="tab-btn" data-section="species">Species</button>
     <button class="tab-btn" data-section="users">Users</button>
     <button class="tab-btn" data-section="badges">Badges</button>
+    <button class="tab-btn" data-section="icons">App icons</button>
     <button class="tab-btn" data-section="logs">Logs</button>
     <button class="tab-btn" data-section="metrics">Metrics</button>
     <button class="tab-btn" data-section="usage">Usage</button>
@@ -523,6 +524,39 @@
             <button type="button" class="danger hidden" id="delete-badge-btn">Delete badge</button>
           </div>
         </form>
+      </div>
+    </section>
+
+    <!-- ============ App icons ============ -->
+    <section id="section-icons" class="section hidden">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>App icons</h2>
+          <button class="primary" id="new-icon-btn">+ Add icon</button>
+        </div>
+        <p class="muted">An icon in this list is visible to users; deleting it hides it. The icon id must match the icon name built into the iOS app.</p>
+        <div id="icons-msg"></div>
+        <form id="icon-form" class="hidden">
+          <div class="grid-2">
+            <div class="field">
+              <label for="icon-id">Icon id *</label>
+              <input type="text" id="icon-id" required maxlength="40" pattern="[a-z0-9][a-z0-9_\-]{0,39}" placeholder="halloween" />
+            </div>
+            <div class="field">
+              <label for="icon-name-en">Name (EN) *</label>
+              <input type="text" id="icon-name-en" required maxlength="60" />
+            </div>
+            <div class="field">
+              <label for="icon-name-tr">Name (TR) *</label>
+              <input type="text" id="icon-name-tr" required maxlength="60" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="primary" id="save-icon-btn">Add</button>
+            <button type="button" class="secondary" id="cancel-icon-btn">Cancel</button>
+          </div>
+        </form>
+        <ul class="species-list" id="icons-list"></ul>
       </div>
     </section>
 

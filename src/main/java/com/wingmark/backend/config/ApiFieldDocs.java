@@ -43,6 +43,9 @@ final class ApiFieldDocs {
             id|Unique id (UUID).|%1$s
             userId|Id of the user (UUID).|%1$s
             key|Preset avatar key; the images ship inside the iOS app.|avatar-1
+            iconId|Id of the alternate app icon; matches the icon name built into the iOS app. Lowercase letters, digits, - or _, up to 40 characters, unique.|halloween
+            nameEn|English display name of the icon.|Halloween
+            nameTr|Turkish display name of the icon.|Cadılar Bayramı
             message|Human-readable message.|
             name|Name by locale code.|
             description|Description by locale code.|
