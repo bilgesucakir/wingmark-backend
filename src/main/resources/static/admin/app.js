@@ -1088,6 +1088,20 @@ logsSearchInput.addEventListener("input", () => {
 const iconsMsg = document.getElementById("icons-msg");
 const iconsListEl = document.getElementById("icons-list");
 const iconForm = document.getElementById("icon-form");
+const iconIdInput = document.getElementById("icon-id");
+let editingIconId = null;
+
+function openIconForm(icon) {
+  iconForm.reset();
+  showMsg(iconsMsg, "", "");
+  editingIconId = icon ? icon.iconId : null;
+  iconIdInput.value = icon ? icon.iconId : "";
+  iconIdInput.disabled = !!icon; // the id names the icon built into the app, so it cannot change
+  document.getElementById("icon-name-en").value = icon ? icon.nameEn : "";
+  document.getElementById("icon-name-tr").value = icon ? icon.nameTr : "";
+  document.getElementById("save-icon-btn").textContent = icon ? "Save" : "Add";
+  iconForm.classList.remove("hidden");
+}
 
 async function loadIcons() {
   iconsListEl.innerHTML = '<li class="muted">Loading…</li>';
@@ -1113,7 +1127,8 @@ function renderIcons(icons) {
       '<div class="common">' + escapeHtml(icon.nameEn) + " / " + escapeHtml(icon.nameTr) + "</div>" +
       '<div class="scientific">' + escapeHtml(icon.iconId) + "</div>" +
       "</div>" +
-      '<div class="row-actions"><button class="danger delete-icon-btn">Delete</button></div>';
+      '<div class="row-actions"><button class="secondary edit-icon-btn">Edit</button> <button class="danger delete-icon-btn">Delete</button></div>';
+    li.querySelector(".edit-icon-btn").addEventListener("click", () => openIconForm(icon));
     li.querySelector(".delete-icon-btn").addEventListener("click", () => deleteIcon(icon));
     iconsListEl.appendChild(li);
   });
@@ -1130,11 +1145,7 @@ async function deleteIcon(icon) {
   }
 }
 
-document.getElementById("new-icon-btn").addEventListener("click", () => {
-  iconForm.reset();
-  showMsg(iconsMsg, "", "");
-  iconForm.classList.remove("hidden");
-});
+document.getElementById("new-icon-btn").addEventListener("click", () => openIconForm(null));
 document.getElementById("cancel-icon-btn").addEventListener("click", () => iconForm.classList.add("hidden"));
 
 iconForm.addEventListener("submit", async (e) => {
@@ -1142,16 +1153,23 @@ iconForm.addEventListener("submit", async (e) => {
   const saveBtn = document.getElementById("save-icon-btn");
   saveBtn.disabled = true;
   try {
-    await Api.request("/api/admin/app-icons", {
-      method: "POST",
-      body: JSON.stringify({
-        iconId: document.getElementById("icon-id").value.trim(),
-        nameEn: document.getElementById("icon-name-en").value.trim(),
-        nameTr: document.getElementById("icon-name-tr").value.trim(),
-      }),
-    });
+    const names = {
+      nameEn: document.getElementById("icon-name-en").value.trim(),
+      nameTr: document.getElementById("icon-name-tr").value.trim(),
+    };
+    if (editingIconId) {
+      await Api.request("/api/admin/app-icons/" + encodeURIComponent(editingIconId), {
+        method: "PUT",
+        body: JSON.stringify(names),
+      });
+    } else {
+      await Api.request("/api/admin/app-icons", {
+        method: "POST",
+        body: JSON.stringify(Object.assign({ iconId: iconIdInput.value.trim() }, names)),
+      });
+    }
     iconForm.classList.add("hidden");
-    showMsg(iconsMsg, "Icon added.", "success");
+    showMsg(iconsMsg, editingIconId ? "Icon saved." : "Icon added.", "success");
     loadIcons();
   } catch (err) {
     showMsg(iconsMsg, err.message, "error");

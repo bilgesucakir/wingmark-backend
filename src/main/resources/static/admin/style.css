@@ -433,3 +433,5 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .switch-input:checked + .switch-track .switch-thumb { left: 21px; }
 .switch-input:focus-visible + .switch-track { outline: 2px solid var(--primary); outline-offset: 2px; }
 .secret-toggle .muted { margin: 6px 0 0; font-size: 12px; }
+
+#icon-form { margin-bottom: 16px; }

@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -129,5 +130,32 @@ class AppIconControllerTest {
         mockMvc.perform(add("christmas", user)).andExpect(status().isForbidden());
         mockMvc.perform(delete("/api/admin/app-icons/christmas").header("Authorization", "Bearer " + user)).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/app-icons").header("Authorization", "Bearer " + user)).andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void anAdminEditsTheNamesButNotTheIdAndAnUnknownIconIsNotFound() throws Exception {
+        String admin = token(Role.ADMIN);
+        mockMvc.perform(add("christmas", admin)).andExpect(status().isCreated());
+
+        String body = objectMapper.writeValueAsString(Map.of("nameEn", "Xmas", "nameTr", "Yılbaşı", "iconId", "other"));
+        mockMvc.perform(put("/api/admin/app-icons/christmas").header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.iconId").value("christmas"))
+                .andExpect(jsonPath("$.nameEn").value("Xmas"))
+                .andExpect(jsonPath("$.nameTr").value("Yılbaşı"));
+        mockMvc.perform(get("/api/app-icons").header("Authorization", "Bearer " + admin))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].nameEn").value("Xmas"));
+
+        mockMvc.perform(put("/api/admin/app-icons/nope").header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/admin/app-icons/christmas").header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nameEn\":\"\",\"nameTr\":\"x\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(put("/api/admin/app-icons/christmas").header("Authorization", "Bearer " + token(Role.USER))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isForbidden());
     }
 }
