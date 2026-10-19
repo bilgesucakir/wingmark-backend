@@ -322,6 +322,10 @@ Enforced by the server on register, reset-password and change-password; the app 
 mirror them for instant feedback, but the server's check is the one that counts:
 - 10-72 characters, with at least one letter and one digit (`400 VALIDATION_FAILED`).
   72 is bcrypt's limit, since it ignores anything longer.
+- Input size limits, so a huge value is rejected before it reaches the database or bcrypt
+  (`400 VALIDATION_FAILED`): an email is at most 254 characters on every endpoint that takes
+  one, and so is every password field, including the ones that are only checked (login,
+  `currentPassword` in change-password, the password confirming account deletion): at most 72.
 - Must not contain the email's name part or the username (`400 WEAK_PASSWORD`).
 - Must not be a well-known password like `Password123` (`400 WEAK_PASSWORD`).
 - Must not appear in a known data breach (`400 PASSWORD_BREACHED`). This is checked with Have I

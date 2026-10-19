@@ -16,15 +16,16 @@ final class ApiFieldDocs {
     private static final String SAMPLE_ID = "3f6c0a34-8d1e-4b7a-9c2f-5a1d6e7b8c90";
 
     private static final String TABLE = """
-            email|Account email address.|amelia@example.com
+            email|Account email address, at most 254 characters.|amelia@example.com
             password|Account password: 10-72 characters with at least one letter and one number.|
-            currentPassword|The account's current password.|
+            currentPassword|The account's current password, at most 72 characters.|
             newPassword|New password: 10-72 characters with at least one letter and one number, different from the current one.|
             username|Username, 3-30 characters.|amelia_birds
             firstName|Given name (optional).|Amelia
             lastName|Family name (optional).|Birdwell
             acceptedTermsVersion|Terms of Service version the user accepted. Required once a terms version is published (see GET /api/legal).|2026-10-03
             acceptedPrivacyVersion|Privacy Policy version the user accepted. Required once a privacy version is published (see GET /api/legal).|2026-10-03
+            LoginRequestDto.password|The account password; at most 72 characters, the same as signup. Longer values are rejected with 400 VALIDATION_FAILED.|
             accessToken|Short-lived JWT (15 minutes) for the Authorization: Bearer header.|
             refreshToken|Long-lived rotating token used to get a new token pair; each one works once.|
             expiresInMs|Lifetime of the access token in milliseconds.|900000
@@ -149,7 +150,7 @@ final class ApiFieldDocs {
             RegisterResponseDto.emailVerified|Always false until the email link is opened.|false
             RegisterResponseDto.message|Next-step message for the user.|Account created. Check your inbox for a verification link, then log in.
             ResetPasswordRequestDto.code|The 6-digit code from the reset email.|482913
-            DeleteAccountRequestDto.password|The account's current password, to confirm the deletion.|
+            DeleteAccountRequestDto.password|The account's current password, to confirm the deletion; at most 72 characters.|
             AdminUpdateUserRequestDto.role|New role: USER or ADMIN. Admins cannot change their own.|USER
             AdminUpdateUserRequestDto.emailVerified|Whether the email counts as verified. Admins cannot change their own.|true
             BadgeResponseDto.id|Badge id (UUID).|%1$s
