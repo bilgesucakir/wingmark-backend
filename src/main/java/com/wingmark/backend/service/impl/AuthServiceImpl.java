@@ -30,10 +30,12 @@ import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.security.JwtTokenProvider;
 import com.wingmark.backend.security.PasswordPolicy;
 import com.wingmark.backend.service.AuthService;
+import com.wingmark.backend.service.BackgroundTasks;
 import com.wingmark.backend.service.ConsentService;
 import com.wingmark.backend.service.EmailService;
 import com.wingmark.backend.util.RandomTokenGenerator;
 import com.wingmark.backend.util.TokenHasher;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -65,6 +67,15 @@ public class AuthServiceImpl implements AuthService {
     private final AppProperties appProperties;
     private final ConsentService consentService;
     private final PasswordPolicy passwordPolicy;
+    private final BackgroundTasks backgroundTasks;
+
+    /** A hash nobody knows the password of, so an unknown email costs the same bcrypt check as a known one. */
+    private String dummyPasswordHash;
+
+    @PostConstruct
+    void initDummyPasswordHash() {
+        dummyPasswordHash = passwordEncoder.encode(RandomTokenGenerator.generate());
+    }
 
     @Override
     public RegisterResponseDto register(RegisterRequestDto request) {
@@ -103,8 +114,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponseDto login(LoginRequestDto request) {
-        User user = userRepository.findByEmailIgnoreCase(request.email())
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
+        User user = userRepository.findByEmailIgnoreCase(request.email()).orElse(null);
+        if (user == null) {
+            // Same bcrypt work as a wrong password, so the response time does not reveal which emails exist.
+            passwordEncoder.matches(request.password(), dummyPasswordHash);
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new InvalidCredentialsException("Invalid email or password");
@@ -170,32 +185,35 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void forgotPassword(ForgotPasswordRequestDto request) {
-        userRepository.findByEmailIgnoreCase(request.email()).ifPresent(user -> {
-            boolean recentlyIssued = passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())
-                    .map(PasswordResetToken::getCreatedAt)
-                    .filter(createdAt -> createdAt.isAfter(Instant.now().minus(RESET_CODE_RESEND_COOLDOWN)))
-                    .isPresent();
-            if (recentlyIssued) {
-                // Throttled silently - same 202 either way, so this doesn't leak anything,
-                // and it stops the endpoint being used to spam someone's inbox.
-                return;
-            }
+        // Only the lookup happens before the answer; everything else (including the email) runs in the
+        // background, so a known and an unknown address take the same time and always give the same 202.
+        userRepository.findByEmailIgnoreCase(request.email())
+                .ifPresent(user -> backgroundTasks.run(() -> issueResetCode(user)));
+    }
 
-            // Only the newest code is ever valid.
-            passwordResetTokenRepository.deleteByUserId(user.getId());
+    private void issueResetCode(User user) {
+        boolean recentlyIssued = passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())
+                .map(PasswordResetToken::getCreatedAt)
+                .filter(createdAt -> createdAt.isAfter(Instant.now().minus(RESET_CODE_RESEND_COOLDOWN)))
+                .isPresent();
+        if (recentlyIssued) {
+            // Throttled silently - same 202 either way, so this doesn't leak anything,
+            // and it stops the endpoint being used to spam someone's inbox.
+            return;
+        }
 
-            String code = RandomTokenGenerator.numericCode(6);
-            passwordResetTokenRepository.save(PasswordResetToken.builder()
-                    .userId(user.getId())
-                    .tokenHash(resetCodeHash(user.getId(), code))
-                    .expiresAt(Instant.now().plus(RESET_CODE_TTL))
-                    .failedAttempts(0)
-                    .build());
+        // Only the newest code is ever valid.
+        passwordResetTokenRepository.deleteByUserId(user.getId());
 
-            emailService.sendPasswordResetCode(user.getEmail(), code, (int) RESET_CODE_TTL.toMinutes());
-        });
-        // Always return silently regardless of whether the email exists, to avoid
-        // leaking which addresses have accounts.
+        String code = RandomTokenGenerator.numericCode(6);
+        passwordResetTokenRepository.save(PasswordResetToken.builder()
+                .userId(user.getId())
+                .tokenHash(resetCodeHash(user.getId(), code))
+                .expiresAt(Instant.now().plus(RESET_CODE_TTL))
+                .failedAttempts(0)
+                .build());
+
+        emailService.sendPasswordResetCode(user.getEmail(), code, (int) RESET_CODE_TTL.toMinutes());
     }
 
     @Override
@@ -287,11 +305,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void resendVerificationEmail(ResendVerificationEmailRequestDto request) {
         userRepository.findByEmailIgnoreCase(request.email())
-                .filter(user -> !user.isEmailVerified())
-                .filter(user -> !verificationSentRecently(user))
-                .ifPresent(this::issueVerificationEmail);
-        // Always return silently regardless of whether the email exists or is already
-        // verified, to avoid leaking which addresses have accounts (same as forgotPassword).
+                .ifPresent(user -> backgroundTasks.run(() -> {
+                    if (!user.isEmailVerified() && !verificationSentRecently(user)) {
+                        issueVerificationEmail(user);
+                    }
+                }));
+        // Always return silently regardless of whether the email exists or is already verified, to avoid
+        // leaking which addresses have accounts; the work runs in the background like forgotPassword.
     }
 
     /** True if a verification link was created for the user within the cooldown; the repeat request is silently ignored. */

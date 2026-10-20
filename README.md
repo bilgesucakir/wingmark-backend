@@ -475,7 +475,10 @@ Request:
 No response body. If the account exists, a **6-digit code** is emailed (valid 15 minutes,
 single use). Requesting again replaces the previous code; a request within 60 seconds of
 the last code sends nothing. The response is `202` in every case, so it never reveals
-whether the email is registered.
+whether the email is registered. The response time doesn't either: only the lookup happens
+before the answer, and the rest (including sending the email) runs in the background.
+`/resend-verification-email` works the same way, and `/login` runs a dummy bcrypt check for
+an unknown email, so it answers as slowly as a wrong password.
 
 **POST `/reset-password`** → `204 No Content`
 
