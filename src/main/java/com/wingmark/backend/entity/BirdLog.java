@@ -25,6 +25,9 @@ import java.util.UUID;
 @Document(collection = "bird_logs")
 @CompoundIndex(name = "user_location", def = "{'userId': 1, 'latitude': 1, 'longitude': 1}")
 @CompoundIndex(name = "user_observed_at", def = "{'userId': 1, 'observedAt': -1}")
+// Partial, not sparse: userId is always set, so a sparse compound index would still index logs without a key.
+@CompoundIndex(name = "user_idempotency_key", def = "{'userId': 1, 'idempotencyKey': 1}", unique = true,
+        partialFilter = "{'idempotencyKey': {$type: 'string'}}")
 public class BirdLog extends BaseEntity {
 
     private UUID userId;
@@ -58,6 +61,9 @@ public class BirdLog extends BaseEntity {
     private String locationName;
 
     private Instant observedAt;
+
+    /** Client-chosen key of the create call (Idempotency-Key header); null for logs made without one. Unique per user. */
+    private String idempotencyKey;
 
     /** Offset of the user's local time from UTC in minutes at the time of the sighting; null for older logs. */
     private Integer utcOffsetMinutes;

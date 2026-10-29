@@ -16,8 +16,10 @@ import com.wingmark.backend.repository.SpeciesRepository;
 import com.wingmark.backend.service.BadgeService;
 import com.wingmark.backend.service.FileStorageService;
 import com.wingmark.backend.service.BirdLogService;
+import com.wingmark.backend.service.CreatedBirdLog;
 import com.wingmark.backend.util.LocalizedTextResolver;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Bird log queries and changes scoped to the owner. */
@@ -96,6 +99,17 @@ public class BirdLogServiceImpl implements BirdLogService {
 
     @Override
     public BirdLogResponseDto create(UUID userId, CreateBirdLogRequestDto request, Locale locale) {
+        return create(userId, request, null, locale).log();
+    }
+
+    @Override
+    public CreatedBirdLog create(UUID userId, CreateBirdLogRequestDto request, String idempotencyKey, Locale locale) {
+        if (idempotencyKey != null) {
+            Optional<BirdLog> existing = birdLogRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey);
+            if (existing.isPresent()) {
+                return new CreatedBirdLog(toResponse(existing.get(), locale), true);
+            }
+        }
         validateSpecies(request.speciesId());
 
         BirdLog log = BirdLog.builder()
@@ -113,12 +127,19 @@ public class BirdLogServiceImpl implements BirdLogService {
                 .locationName(request.locationName())
                 .observedAt(request.observedAt() != null ? validateObservedAt(request.observedAt()) : Instant.now())
                 .utcOffsetMinutes(request.utcOffsetMinutes())
+                .idempotencyKey(idempotencyKey)
                 .build();
 
-        log = birdLogRepository.save(log);
+        try {
+            log = birdLogRepository.save(log);
+        } catch (DuplicateKeyException e) {
+            // A parallel call with the same key won the race; the unique index decided, so answer with its log.
+            BirdLog winner = birdLogRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey).orElseThrow(() -> e);
+            return new CreatedBirdLog(toResponse(winner, locale), true);
+        }
         badgeService.evaluateForUser(userId);
 
-        return toResponse(log, locale);
+        return new CreatedBirdLog(toResponse(log, locale), false);
     }
 
     @Override

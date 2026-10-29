@@ -8,6 +8,8 @@ Backend API for **<a href="https://github.com/bilgesucakir/wingmark-ios">Wingmar
 in a species guide (with photos and live call/song recordings), and earn badges as you
 go. Personal-only for now: every user sees just their own logs, never anyone else's.
 
+<a href="https://apps.apple.com/us/app/wingmark-birdwatching-diary/id6820532421"><img src="assets/app-store-badge.png" width="160" alt="Download on the App Store"></a>
+
 ## Tech stack
 
 - Java 21, Spring Boot 3.3.4
@@ -216,6 +218,15 @@ plain UUID references between them (e.g. `BirdLog.userId`, `BirdLog.speciesId`) 
 than joins — the same shape the JPA entities had, so no relation modeling was needed for
 the switch.
 
+**Indexes are created by the app at startup**, no manual step on Atlas: `auto-index-creation` is on
+(`application.yml`), so every `@Indexed` / `@CompoundIndex` on the entities is created when the app
+boots, and the Atlas user needs the permission to create indexes (it already does for the existing
+unique indexes). The newest one is `bird_logs.user_idempotency_key`, a **partial unique** index on
+`(userId, idempotencyKey)` that only covers logs which have a key. It is partial rather than sparse
+because `userId` is always set, so a sparse compound index would also index old logs without a key and
+reject them as duplicates. Old logs are not touched and need no backfill, and because none of them
+has a key the index starts empty, so building it on existing logs takes no noticeable time.
+
 ### Becoming an admin
 
 There's no self-service "become admin" flow by design — admin-only endpoints (species
@@ -322,6 +333,10 @@ Enforced by the server on register, reset-password and change-password; the app 
 mirror them for instant feedback, but the server's check is the one that counts:
 - 10-72 characters, with at least one letter and one digit (`400 VALIDATION_FAILED`).
   72 is bcrypt's limit, since it ignores anything longer.
+- Input size limits, so a huge value is rejected before it reaches the database or bcrypt
+  (`400 VALIDATION_FAILED`): an email is at most 254 characters on every endpoint that takes
+  one, and so is every password field, including the ones that are only checked (login,
+  `currentPassword` in change-password, the password confirming account deletion): at most 72.
 - Must not contain the email's name part or the username (`400 WEAK_PASSWORD`).
 - Must not be a well-known password like `Password123` (`400 WEAK_PASSWORD`).
 - Must not appear in a known data breach (`400 PASSWORD_BREACHED`). This is checked with Have I
@@ -344,10 +359,56 @@ The same limits apply whether or not the email exists:
 | `POST /api/auth/refresh` | 120 per IP / 15 min |
 | `POST /api/users/{id}/password`, `DELETE /api/users/{id}` | 10 per user / 15 min |
 | Everything under `/api/` | 600 per IP / minute |
+| Password checks in `POST /api/auth/login` | at most 4 running at once (see below) |
 
 Over the limit → `429 RATE_LIMITED` with `Retry-After`. Counters are in memory, which is
 right for one instance; more instances would need a shared store (e.g. Redis). All limits
 are configurable under `wingmark.rate-limit.*`.
+
+**Load cap on login.** Checking a password (bcrypt) is deliberately slow and uses a lot of CPU, so
+a burst of logins from many addresses could starve the rest of the API. At most
+`BCRYPT_MAX_CONCURRENT` (default 4; 0 = no cap) checks run at the same time. A login waits up to
+`BCRYPT_WAIT_MILLIS` (default 500) for a free slot; if none frees up it gets
+`429 RATE_LIMITED` with `Retry-After: BCRYPT_RETRY_AFTER_SECONDS` (default 2). It is a 429, not a
+503, because the iOS app already handles that and locks the login button. This applies to wrong
+and unknown-email attempts too, since they cost the same.
+
+**Which address is the "IP".** Only one source is trusted, set with `wingmark.client-ip.source`
+(env `CLIENT_IP_SOURCE`), because a header is only as trustworthy as the proxy that sets it:
+
+| `CLIENT_IP_SOURCE` | Uses | When |
+|---|---|---|
+| `CLOUDFLARE` (default) | the `CF-Connecting-IP` header; if it is missing or not an IP, the socket address | Render. Its edge is Cloudflare, which sets this header and rejects a request that brings its own |
+| `FORWARDED_FOR` | the `X-Forwarded-For` entry added by your last trusted proxy, `CLIENT_IP_TRUSTED_PROXY_HOPS` places from the right (default 1) | behind your own proxy or load balancer |
+| `REMOTE_ADDR` | the socket address only | the app is reached directly |
+
+Entries to the left of the trusted ones are written by the caller and never used, so sending
+a forged `X-Forwarded-For` or `CF-Connecting-IP` does not change the key. A value that is not
+an IP address is ignored. Never choose a source the caller can set: it would let them pick
+a fresh rate-limit bucket on every request.
+
+**What the default relies on.** The `CLOUDFLARE` default depends on Render's own Cloudflare edge
+(every response from `wingmark-backend.onrender.com` carries `server: cloudflare` and a `cf-ray`
+header). That behaviour was **measured on 2026-10-29, it is not documented by Render**, so it can
+change without notice. What was measured: the edge rejects a request that carries its own
+`CF-Connecting-IP`, and a forged `X-Forwarded-For` does not change the rate-limit key.
+
+To check it again, send a request with a fake header to the live API:
+
+```
+curl -i -H "CF-Connecting-IP: 203.0.113.77" https://wingmark-backend.onrender.com/api/avatars
+```
+
+Expected: `HTTP 403` with the body `error code: 1000` and `server: cloudflare`. That response comes
+from Cloudflare, not from the app: the request never reaches it. If it returns `200` instead, the
+edge no longer blocks the header, and a caller could choose their own key; switch to the fallback
+below. Without the fake header the same request returns `200`.
+
+**Fallback.** `FORWARDED_FOR` with a measured hop count: first work out how many proxies in front of
+the app append to `X-Forwarded-For` (the number of entries added after the one the caller wrote),
+set `CLIENT_IP_TRUSTED_PROXY_HOPS` to that number and `CLIENT_IP_SOURCE=FORWARDED_FOR`. Do not guess
+the count: too low trusts an entry the caller can write, too high puts every user in the same bucket.
+If you later put your own Cloudflare (or another proxy) in front of Render, re-measure first.
 
 ### Auth (`/api/auth`)
 
@@ -471,7 +532,10 @@ Request:
 No response body. If the account exists, a **6-digit code** is emailed (valid 15 minutes,
 single use). Requesting again replaces the previous code; a request within 60 seconds of
 the last code sends nothing. The response is `202` in every case, so it never reveals
-whether the email is registered.
+whether the email is registered. The response time doesn't either: only the lookup happens
+before the answer, and the rest (including sending the email) runs in the background.
+`/resend-verification-email` works the same way, and `/login` runs a dummy bcrypt check for
+an unknown email, so it answers as slowly as a wrong password.
 
 **POST `/reset-password`** → `204 No Content`
 
@@ -858,6 +922,23 @@ sends it on create and edit; on `PUT` omitting it keeps the stored value. Logs w
 count for the early-bird badge. Responses return it (null on older logs).
 
 Response: same shape as one GET entry above.
+
+**Safe retries (`Idempotency-Key`).** If a create reaches the server but the reply is lost, repeating it
+would give a duplicate sighting. Send an optional header `Idempotency-Key: <UUID>`, made once per
+sighting and reused on every retry:
+
+- First call: `201 Created` as usual.
+- Same key again by the same user (also two calls at the same moment): `201 Created` with the
+  **existing** log and the extra header `Idempotent-Replayed: true`. No second log is made. The body
+  of the repeat is ignored, not compared.
+- No header: every call creates a new log, exactly as before (older app builds are unaffected).
+- The key is 8 to 64 characters from letters, digits, `-` and `_` (a UUID fits). Anything else
+  answers `400 VALIDATION_FAILED` with `"validationErrors": {"Idempotency-Key": "must be 8 to 64
+  characters: letters, digits, - or _"}`.
+- Keys are per user (two users may use the same one) and are stored on the log, so deleting the log
+  frees its key. Only create uses it; the photo upload (`POST /api/uploads/photo`) has no key, so
+  upload once and reuse the returned `photoUrl` on retries (an extra upload is an orphan file that
+  the cleanup job removes).
 
 **PUT `/{id}`** → `200 OK`. Request: same shape as POST, except that omitting
 `observedAt` keeps the log's existing sighting time rather than resetting it. Response:

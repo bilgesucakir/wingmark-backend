@@ -40,6 +40,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,6 +51,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -77,6 +80,9 @@ class AuthServiceImplTest {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final AppProperties appProperties = new AppProperties("http://localhost:8080");
 
+    private static final com.wingmark.backend.security.BcryptGate UNLIMITED =
+            new com.wingmark.backend.security.BcryptGate(new com.wingmark.backend.config.BcryptLimitProperties(0, 0, 1));
+
     private AuthServiceImpl authService;
 
     @BeforeEach
@@ -84,7 +90,8 @@ class AuthServiceImplTest {
         authService = new AuthServiceImpl(
                 userRepository, userSettingsRepository, refreshTokenRepository,
                 passwordResetTokenRepository, emailVerificationTokenRepository,
-                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy);
+                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy, Runnable::run, UNLIMITED);
+        authService.initDummyPasswordHash();
     }
 
     @Test
@@ -609,5 +616,67 @@ class AuthServiceImplTest {
 
         assertThat(user.getVerificationEmailSentAt()).isNull();
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    // ---------------------------------------------------------------- no way to tell known from unknown emails
+
+    private long millisOfFailedLogin(String email, String password) {
+        long start = System.nanoTime();
+        assertThatThrownBy(() -> authService.login(new LoginRequestDto(email, password)))
+                .isInstanceOf(InvalidCredentialsException.class)
+                .hasMessage("Invalid email or password");
+        return (System.nanoTime() - start) / 1_000_000;
+    }
+
+    @Test
+    void loginForAnUnknownEmailTakesAboutAsLongAsForAWrongPassword() {
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com")
+                .passwordHash(passwordEncoder.encode("correct-password")).username("someuser").role(Role.USER).build();
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailIgnoreCase("nobody@example.com")).thenReturn(Optional.empty());
+        millisOfFailedLogin("user@example.com", "wrong-password"); // warm-up
+
+        long known = millisOfFailedLogin("user@example.com", "wrong-password");
+        long unknown = millisOfFailedLogin("nobody@example.com", "wrong-password");
+
+        // Without the dummy check the unknown path would take about a millisecond, far below the bcrypt time.
+        assertThat(known).isGreaterThan(10);
+        assertThat(unknown).isGreaterThan(known / 2);
+    }
+
+    @Test
+    void forgotPasswordDoesOnlyTheLookupBeforeAnsweringForAKnownEmail() {
+        List<Runnable> queued = new ArrayList<>();
+        AuthServiceImpl deferred = new AuthServiceImpl(
+                userRepository, userSettingsRepository, refreshTokenRepository,
+                passwordResetTokenRepository, emailVerificationTokenRepository,
+                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy, queued::add, UNLIMITED);
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).build();
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())).thenReturn(Optional.empty());
+
+        deferred.forgotPassword(new ForgotPasswordRequestDto("user@example.com"));
+
+        verifyNoInteractions(passwordResetTokenRepository, emailService);
+        queued.forEach(Runnable::run);
+        verify(emailService).sendPasswordResetCode(eq("user@example.com"), any(), eq(15));
+    }
+
+    @Test
+    void resendVerificationDoesOnlyTheLookupBeforeAnsweringForAKnownEmail() {
+        List<Runnable> queued = new ArrayList<>();
+        AuthServiceImpl deferred = new AuthServiceImpl(
+                userRepository, userSettingsRepository, refreshTokenRepository,
+                passwordResetTokenRepository, emailVerificationTokenRepository,
+                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy, queued::add, UNLIMITED);
+        User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
+        when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
+        when(emailVerificationTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())).thenReturn(Optional.empty());
+
+        deferred.resendVerificationEmail(new ResendVerificationEmailRequestDto("user@example.com"));
+
+        verifyNoInteractions(emailVerificationTokenRepository, emailService);
+        queued.forEach(Runnable::run);
+        verify(emailService).sendVerificationEmail(eq("user@example.com"), any());
     }
 }

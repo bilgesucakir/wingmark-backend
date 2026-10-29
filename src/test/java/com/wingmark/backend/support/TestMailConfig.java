@@ -1,6 +1,7 @@
 package com.wingmark.backend.support;
 
 import jakarta.mail.internet.MimeMessage;
+import com.wingmark.backend.service.BackgroundTasks;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -38,5 +39,12 @@ public class TestMailConfig {
     @Primary
     public JavaMailSender testMailSender() {
         return new CapturingMailSender();
+    }
+
+    /** Runs background work inline, so tests can check its effects right after the call. */
+    @Bean
+    @Primary
+    public BackgroundTasks inlineBackgroundTasks() {
+        return Runnable::run;
     }
 }

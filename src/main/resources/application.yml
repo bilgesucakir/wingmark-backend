@@ -68,6 +68,18 @@ management:
       enabled: false
 
 wingmark:
+  # Which address the rate limits treat as the caller's: CLOUDFLARE (CF-Connecting-IP, set by Render's Cloudflare edge),
+  # FORWARDED_FOR (the X-Forwarded-For entry added by the last of CLIENT_IP_TRUSTED_PROXY_HOPS trusted proxies) or
+  # REMOTE_ADDR (the socket address). Only the chosen source is trusted.
+  client-ip:
+    source: ${CLIENT_IP_SOURCE:CLOUDFLARE}
+    trusted-proxy-hops: ${CLIENT_IP_TRUSTED_PROXY_HOPS:1}
+  # Login password checks (bcrypt) allowed to run at once; over it a login waits up to wait-millis, then gets 429 with
+  # Retry-After: retry-after-seconds. max-concurrent 0 turns the cap off.
+  bcrypt:
+    max-concurrent: ${BCRYPT_MAX_CONCURRENT:4}
+    wait-millis: ${BCRYPT_WAIT_MILLIS:500}
+    retry-after-seconds: ${BCRYPT_RETRY_AFTER_SECONDS:2}
   jwt:
     secret: ${JWT_SECRET:change-this-development-only-secret-key-please-override-me-1234567890}
     access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000}
