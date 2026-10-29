@@ -387,6 +387,29 @@ a forged `X-Forwarded-For` or `CF-Connecting-IP` does not change the key. A valu
 an IP address is ignored. Never choose a source the caller can set: it would let them pick
 a fresh rate-limit bucket on every request.
 
+**What the default relies on.** The `CLOUDFLARE` default depends on Render's own Cloudflare edge
+(every response from `wingmark-backend.onrender.com` carries `server: cloudflare` and a `cf-ray`
+header). That behaviour was **measured on 2026-10-29, it is not documented by Render**, so it can
+change without notice. What was measured: the edge rejects a request that carries its own
+`CF-Connecting-IP`, and a forged `X-Forwarded-For` does not change the rate-limit key.
+
+To check it again, send a request with a fake header to the live API:
+
+```
+curl -i -H "CF-Connecting-IP: 203.0.113.77" https://wingmark-backend.onrender.com/api/avatars
+```
+
+Expected: `HTTP 403` with the body `error code: 1000` and `server: cloudflare`. That response comes
+from Cloudflare, not from the app: the request never reaches it. If it returns `200` instead, the
+edge no longer blocks the header, and a caller could choose their own key; switch to the fallback
+below. Without the fake header the same request returns `200`.
+
+**Fallback.** `FORWARDED_FOR` with a measured hop count: first work out how many proxies in front of
+the app append to `X-Forwarded-For` (the number of entries added after the one the caller wrote),
+set `CLIENT_IP_TRUSTED_PROXY_HOPS` to that number and `CLIENT_IP_SOURCE=FORWARDED_FOR`. Do not guess
+the count: too low trusts an entry the caller can write, too high puts every user in the same bucket.
+If you later put your own Cloudflare (or another proxy) in front of Render, re-measure first.
+
 ### Auth (`/api/auth`)
 
 | Method | Path                          | Auth | Description                                                          |
