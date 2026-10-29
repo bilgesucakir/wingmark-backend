@@ -8,6 +8,8 @@ Backend API for **<a href="https://github.com/bilgesucakir/wingmark-ios">Wingmar
 in a species guide (with photos and live call/song recordings), and earn badges as you
 go. Personal-only for now: every user sees just their own logs, never anyone else's.
 
+<a href="https://apps.apple.com/us/app/wingmark-birdwatching-diary/id6820532421"><img src="assets/app-store-badge.png" width="160" alt="Download on the App Store"></a>
+
 ## Tech stack
 
 - Java 21, Spring Boot 3.3.4
