@@ -47,7 +47,8 @@ public class AuthController {
     }
 
     /** Authenticates with email + password and returns a fresh token pair. */
-    @Operation(summary = "Login", description = "Authenticates with email + password and returns a fresh access/refresh token pair.")
+    @Operation(summary = "Login", description = "Authenticates with email + password and returns a fresh access/refresh token pair. 429 RATE_LIMITED (with Retry-After) when too many attempts " +
+            "were made, or when too many password checks are running at once; wait the seconds in Retry-After and try again.")
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto request, HttpServletRequest http) {
         authRateLimits.login(http, request.email());

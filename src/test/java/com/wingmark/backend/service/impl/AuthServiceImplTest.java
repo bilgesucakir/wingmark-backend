@@ -80,6 +80,9 @@ class AuthServiceImplTest {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final AppProperties appProperties = new AppProperties("http://localhost:8080");
 
+    private static final com.wingmark.backend.security.BcryptGate UNLIMITED =
+            new com.wingmark.backend.security.BcryptGate(new com.wingmark.backend.config.BcryptLimitProperties(0, 0, 1));
+
     private AuthServiceImpl authService;
 
     @BeforeEach
@@ -87,7 +90,7 @@ class AuthServiceImplTest {
         authService = new AuthServiceImpl(
                 userRepository, userSettingsRepository, refreshTokenRepository,
                 passwordResetTokenRepository, emailVerificationTokenRepository,
-                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy, Runnable::run);
+                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy, Runnable::run, UNLIMITED);
         authService.initDummyPasswordHash();
     }
 
@@ -647,7 +650,7 @@ class AuthServiceImplTest {
         AuthServiceImpl deferred = new AuthServiceImpl(
                 userRepository, userSettingsRepository, refreshTokenRepository,
                 passwordResetTokenRepository, emailVerificationTokenRepository,
-                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy, queued::add);
+                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy, queued::add, UNLIMITED);
         User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).build();
         when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
         when(passwordResetTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())).thenReturn(Optional.empty());
@@ -665,7 +668,7 @@ class AuthServiceImplTest {
         AuthServiceImpl deferred = new AuthServiceImpl(
                 userRepository, userSettingsRepository, refreshTokenRepository,
                 passwordResetTokenRepository, emailVerificationTokenRepository,
-                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy, queued::add);
+                passwordEncoder, jwtTokenProvider, emailService, appProperties, consentService, passwordPolicy, queued::add, UNLIMITED);
         User user = User.builder().id(UUID.randomUUID()).email("user@example.com").role(Role.USER).emailVerified(false).build();
         when(userRepository.findByEmailIgnoreCase("user@example.com")).thenReturn(Optional.of(user));
         when(emailVerificationTokenRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())).thenReturn(Optional.empty());

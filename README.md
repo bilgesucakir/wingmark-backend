@@ -348,10 +348,19 @@ The same limits apply whether or not the email exists:
 | `POST /api/auth/refresh` | 120 per IP / 15 min |
 | `POST /api/users/{id}/password`, `DELETE /api/users/{id}` | 10 per user / 15 min |
 | Everything under `/api/` | 600 per IP / minute |
+| Password checks in `POST /api/auth/login` | at most 4 running at once (see below) |
 
 Over the limit → `429 RATE_LIMITED` with `Retry-After`. Counters are in memory, which is
 right for one instance; more instances would need a shared store (e.g. Redis). All limits
 are configurable under `wingmark.rate-limit.*`.
+
+**Load cap on login.** Checking a password (bcrypt) is deliberately slow and uses a lot of CPU, so
+a burst of logins from many addresses could starve the rest of the API. At most
+`BCRYPT_MAX_CONCURRENT` (default 4; 0 = no cap) checks run at the same time. A login waits up to
+`BCRYPT_WAIT_MILLIS` (default 500) for a free slot; if none frees up it gets
+`429 RATE_LIMITED` with `Retry-After: BCRYPT_RETRY_AFTER_SECONDS` (default 2). It is a 429, not a
+503, because the iOS app already handles that and locks the login button. This applies to wrong
+and unknown-email attempts too, since they cost the same.
 
 **Which address is the "IP".** Only one source is trusted, set with `wingmark.client-ip.source`
 (env `CLIENT_IP_SOURCE`), because a header is only as trustworthy as the proxy that sets it:

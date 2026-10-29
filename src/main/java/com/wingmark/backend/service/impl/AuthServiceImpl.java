@@ -28,6 +28,7 @@ import com.wingmark.backend.repository.RefreshTokenRepository;
 import com.wingmark.backend.repository.UserRepository;
 import com.wingmark.backend.repository.UserSettingsRepository;
 import com.wingmark.backend.security.JwtTokenProvider;
+import com.wingmark.backend.security.BcryptGate;
 import com.wingmark.backend.security.PasswordPolicy;
 import com.wingmark.backend.service.AuthService;
 import com.wingmark.backend.service.BackgroundTasks;
@@ -68,6 +69,7 @@ public class AuthServiceImpl implements AuthService {
     private final ConsentService consentService;
     private final PasswordPolicy passwordPolicy;
     private final BackgroundTasks backgroundTasks;
+    private final BcryptGate bcryptGate;
 
     /** A hash nobody knows the password of, so an unknown email costs the same bcrypt check as a known one. */
     private String dummyPasswordHash;
@@ -117,11 +119,11 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmailIgnoreCase(request.email()).orElse(null);
         if (user == null) {
             // Same bcrypt work as a wrong password, so the response time does not reveal which emails exist.
-            passwordEncoder.matches(request.password(), dummyPasswordHash);
+            bcryptGate.run(() -> passwordEncoder.matches(request.password(), dummyPasswordHash));
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+        if (!bcryptGate.run(() -> passwordEncoder.matches(request.password(), user.getPasswordHash()))) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
