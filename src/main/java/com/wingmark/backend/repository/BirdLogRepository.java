@@ -13,6 +13,8 @@ public interface BirdLogRepository extends MongoRepository<BirdLog, UUID>, BirdL
 
     Optional<BirdLog> findByIdAndUserId(UUID id, UUID userId);
 
+    Optional<BirdLog> findByUserIdAndIdempotencyKey(UUID userId, String idempotencyKey);
+
 
     long countByUserId(UUID userId);
 

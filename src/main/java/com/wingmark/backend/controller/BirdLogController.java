@@ -8,7 +8,9 @@ import com.wingmark.backend.enums.Gender;
 import com.wingmark.backend.enums.LifeStage;
 import com.wingmark.backend.exception.ResourceNotFoundException;
 import com.wingmark.backend.security.UserPrincipal;
+import com.wingmark.backend.exception.ValidationFailedException;
 import com.wingmark.backend.service.BirdLogService;
+import com.wingmark.backend.service.CreatedBirdLog;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,11 +27,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -46,6 +51,9 @@ import java.util.UUID;
 public class BirdLogController {
 
     public static final String TRUNCATED_HEADER = "X-Result-Truncated";
+
+    private static final String IDEMPOTENCY_KEY = "Idempotency-Key";
+    private static final Pattern IDEMPOTENCY_KEY_FORMAT = Pattern.compile("[A-Za-z0-9_-]{8,64}");
 
     private final BirdLogService birdLogService;
 
@@ -118,12 +126,24 @@ public class BirdLogController {
 
     /** Creates a new bird sighting log for the caller and re-evaluates their badge progress. */
     @Operation(summary = "Create a bird log", description = "Creates a new bird sighting log for the caller and re-evaluates their badge progress. " +
-            "observedAt (ISO-8601, e.g. 2026-09-28T07:30:00Z) is optional and defaults to the upload time; it cannot be in the future.")
+            "observedAt (ISO-8601, e.g. 2026-09-28T07:30:00Z) is optional and defaults to the upload time; it cannot be in the future. " +
+            "Safe to repeat: send an optional Idempotency-Key header (a UUID the client makes once per sighting). A second call with the same key " +
+            "by the same user creates no new log; it answers 201 with the existing log and the header Idempotent-Replayed: true, and ignores " +
+            "the request body. Without the header every call creates a new log. A bad key gives 400 VALIDATION_FAILED.")
     @PostMapping
     public ResponseEntity<BirdLogResponseDto> create(@AuthenticationPrincipal UserPrincipal principal,
+                                                    @RequestHeader(value = IDEMPOTENCY_KEY, required = false) String idempotencyKey,
                                                     @Valid @RequestBody CreateBirdLogRequestDto request,
                                                     Locale locale) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(birdLogService.create(principal.getId(), request, locale));
+        if (idempotencyKey != null && !IDEMPOTENCY_KEY_FORMAT.matcher(idempotencyKey).matches()) {
+            throw new ValidationFailedException(Map.of(IDEMPOTENCY_KEY, "must be 8 to 64 characters: letters, digits, - or _"));
+        }
+        CreatedBirdLog created = birdLogService.create(principal.getId(), request, idempotencyKey, locale);
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(HttpStatus.CREATED);
+        if (created.replayed()) {
+            response.header("Idempotent-Replayed", "true");
+        }
+        return response.body(created.log());
     }
 
     /** Updates one of the caller's own bird logs and re-evaluates their badge progress. */

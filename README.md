@@ -218,6 +218,15 @@ plain UUID references between them (e.g. `BirdLog.userId`, `BirdLog.speciesId`) 
 than joins — the same shape the JPA entities had, so no relation modeling was needed for
 the switch.
 
+**Indexes are created by the app at startup**, no manual step on Atlas: `auto-index-creation` is on
+(`application.yml`), so every `@Indexed` / `@CompoundIndex` on the entities is created when the app
+boots, and the Atlas user needs the permission to create indexes (it already does for the existing
+unique indexes). The newest one is `bird_logs.user_idempotency_key`, a **partial unique** index on
+`(userId, idempotencyKey)` that only covers logs which have a key. It is partial rather than sparse
+because `userId` is always set, so a sparse compound index would also index old logs without a key and
+reject them as duplicates. Old logs are not touched and need no backfill, and because none of them
+has a key the index starts empty, so building it on existing logs takes no noticeable time.
+
 ### Becoming an admin
 
 There's no self-service "become admin" flow by design — admin-only endpoints (species
@@ -890,6 +899,23 @@ sends it on create and edit; on `PUT` omitting it keeps the stored value. Logs w
 count for the early-bird badge. Responses return it (null on older logs).
 
 Response: same shape as one GET entry above.
+
+**Safe retries (`Idempotency-Key`).** If a create reaches the server but the reply is lost, repeating it
+would give a duplicate sighting. Send an optional header `Idempotency-Key: <UUID>`, made once per
+sighting and reused on every retry:
+
+- First call: `201 Created` as usual.
+- Same key again by the same user (also two calls at the same moment): `201 Created` with the
+  **existing** log and the extra header `Idempotent-Replayed: true`. No second log is made. The body
+  of the repeat is ignored, not compared.
+- No header: every call creates a new log, exactly as before (older app builds are unaffected).
+- The key is 8 to 64 characters from letters, digits, `-` and `_` (a UUID fits). Anything else
+  answers `400 VALIDATION_FAILED` with `"validationErrors": {"Idempotency-Key": "must be 8 to 64
+  characters: letters, digits, - or _"}`.
+- Keys are per user (two users may use the same one) and are stored on the log, so deleting the log
+  frees its key. Only create uses it; the photo upload (`POST /api/uploads/photo`) has no key, so
+  upload once and reuse the returned `photoUrl` on retries (an extra upload is an orphan file that
+  the cleanup job removes).
 
 **PUT `/{id}`** → `200 OK`. Request: same shape as POST, except that omitting
 `observedAt` keeps the log's existing sighting time rather than resetting it. Response:

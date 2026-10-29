@@ -132,6 +132,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
+    @ExceptionHandler(ValidationFailedException.class)
+    public ResponseEntity<ErrorResponse> handleValidationFailed(ValidationFailedException ex, HttpServletRequest request) {
+        ErrorResponse body = ErrorResponse.ofValidation(HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                ex.getMessage(), request.getRequestURI(), ex.getValidationErrors());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMalformedRequest(HttpMessageNotReadableException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, ErrorCode.MALFORMED_REQUEST, "Malformed request body - check for invalid or incomplete JSON", request);

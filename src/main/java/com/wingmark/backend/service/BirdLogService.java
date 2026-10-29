@@ -37,6 +37,13 @@ public interface BirdLogService {
     /** Creates a new log for this user and re-evaluates their badge progress. */
     BirdLogResponseDto create(UUID userId, CreateBirdLogRequestDto request, Locale locale);
 
+    /**
+     * Creates a log, safe to repeat: when {@code idempotencyKey} (null = none) was already used by this user, no
+     * second log is made and the existing one is returned with {@code replayed} set. Two calls racing with the
+     * same key also produce one log.
+     */
+    CreatedBirdLog create(UUID userId, CreateBirdLogRequestDto request, String idempotencyKey, Locale locale);
+
     /** Updates one of this user's existing logs and re-evaluates their badge progress. */
     BirdLogResponseDto update(UUID userId, UUID logId, UpdateBirdLogRequestDto request, Locale locale);
 

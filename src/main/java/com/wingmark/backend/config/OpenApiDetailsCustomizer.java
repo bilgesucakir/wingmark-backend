@@ -88,6 +88,7 @@ public class OpenApiDetailsCustomizer implements OpenApiCustomizer {
 
     private static final Map<String, String> PARAMETERS = Map.ofEntries(
             Map.entry("userId", "Id of the user. Must be the caller's own id; any other id gives 404, except for admins."),
+            Map.entry("Idempotency-Key", "Optional. A UUID (or any 8 to 64 characters from letters, digits, - and _) the client makes once per sighting and reuses on every retry; the same key by the same user returns the existing log instead of creating a second one."),
             Map.entry("iconId", "Id of the app icon, as in the list (for example halloween)."),
             Map.entry("imageId", "Id of the species reference image."),
             Map.entry("token", "Verification token from the link in the verification email."),
