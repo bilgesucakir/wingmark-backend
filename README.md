@@ -2,13 +2,13 @@
 
 [![API status](https://img.shields.io/website?url=https%3A%2F%2Fwingmark-backend.onrender.com%2Factuator%2Fhealth&label=API&up_message=operational&down_message=down)](https://wingmark.betteruptime.com/)
 
+<a href="https://apps.apple.com/us/app/wingmark-birdwatching-diary/id6820532421"><img src="assets/app-store-badge.png" width="160" alt="Download on the App Store"></a>
+
 Backend API for **<a href="https://github.com/bilgesucakir/wingmark-ios">Wingmark</a>**, a personal bird-logging iOS app
 ([iOS app: wingmark-ios](https://github.com/bilgesucakir/wingmark-ios), [website: wingmark-site](https://github.com/bilgesucakir/wingmark-site)). Log a bird sighting
 (photo, species, life stage, gender, location, notes), browse it on a map, look it up
 in a species guide (with photos and live call/song recordings), and earn badges as you
 go. Personal-only for now: every user sees just their own logs, never anyone else's.
-
-<a href="https://apps.apple.com/us/app/wingmark-birdwatching-diary/id6820532421"><img src="assets/app-store-badge.png" width="160" alt="Download on the App Store"></a>
 
 ## Tech stack
 
