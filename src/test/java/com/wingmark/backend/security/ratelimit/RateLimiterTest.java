@@ -47,15 +47,4 @@ class RateLimiterTest {
             limiter.check("k", 1, Duration.ofMinutes(1));
         }
     }
-
-    @Test
-    void clientIpPrefersCloudflareThenForwardedForThenSocket() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("10.0.0.1");
-        assertThat(ClientIp.of(request)).isEqualTo("10.0.0.1");
-        request.addHeader("X-Forwarded-For", "203.0.113.7, 10.0.0.2");
-        assertThat(ClientIp.of(request)).isEqualTo("203.0.113.7");
-        request.addHeader("CF-Connecting-IP", "198.51.100.9");
-        assertThat(ClientIp.of(request)).isEqualTo("198.51.100.9");
-    }
 }

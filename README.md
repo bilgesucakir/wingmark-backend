@@ -353,6 +353,20 @@ Over the limit → `429 RATE_LIMITED` with `Retry-After`. Counters are in memory
 right for one instance; more instances would need a shared store (e.g. Redis). All limits
 are configurable under `wingmark.rate-limit.*`.
 
+**Which address is the "IP".** Only one source is trusted, set with `wingmark.client-ip.source`
+(env `CLIENT_IP_SOURCE`), because a header is only as trustworthy as the proxy that sets it:
+
+| `CLIENT_IP_SOURCE` | Uses | When |
+|---|---|---|
+| `CLOUDFLARE` (default) | the `CF-Connecting-IP` header; if it is missing or not an IP, the socket address | Render. Its edge is Cloudflare, which sets this header and rejects a request that brings its own |
+| `FORWARDED_FOR` | the `X-Forwarded-For` entry added by your last trusted proxy, `CLIENT_IP_TRUSTED_PROXY_HOPS` places from the right (default 1) | behind your own proxy or load balancer |
+| `REMOTE_ADDR` | the socket address only | the app is reached directly |
+
+Entries to the left of the trusted ones are written by the caller and never used, so sending
+a forged `X-Forwarded-For` or `CF-Connecting-IP` does not change the key. A value that is not
+an IP address is ignored. Never choose a source the caller can set: it would let them pick
+a fresh rate-limit bucket on every request.
+
 ### Auth (`/api/auth`)
 
 | Method | Path                          | Auth | Description                                                          |

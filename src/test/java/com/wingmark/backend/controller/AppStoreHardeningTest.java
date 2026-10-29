@@ -42,7 +42,10 @@ class AppStoreHardeningTest {
 
     /** A fresh client address per test, so rate-limit buckets never leak between tests. */
     private static String newIp() {
-        return "198.51.100." + (int) (Math.random() * 250 + 1) + "-" + UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        return String.format("2001:db8:%x:%x:%x:%x", id.getMostSignificantBits() >>> 48 & 0xffff,
+                id.getMostSignificantBits() >>> 32 & 0xffff, id.getLeastSignificantBits() >>> 48 & 0xffff,
+                id.getLeastSignificantBits() >>> 32 & 0xffff) + ":1:1";
     }
 
     private String json(Object body) throws Exception {
@@ -78,6 +81,16 @@ class AppStoreHardeningTest {
                 .andExpect(jsonPath("$.code").value("RATE_LIMITED"));
         // Someone else is unaffected.
         mockMvc.perform(get("/api/avatars").header("CF-Connecting-IP", newIp())).andExpect(status().isOk());
+    }
+
+    @Test
+    void changingTheForwardedForHeaderDoesNotEscapeTheLimit() throws Exception {
+        // No CF-Connecting-IP: every request comes from the same socket, whatever X-Forwarded-For claims.
+        for (int i = 0; i < 30; i++) {
+            mockMvc.perform(get("/api/avatars").header("X-Forwarded-For", newIp())).andExpect(status().isOk());
+        }
+        mockMvc.perform(get("/api/avatars").header("X-Forwarded-For", newIp()))
+                .andExpect(status().isTooManyRequests());
     }
 
     @Test

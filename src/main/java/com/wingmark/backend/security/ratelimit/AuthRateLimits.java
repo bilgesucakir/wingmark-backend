@@ -19,30 +19,31 @@ public class AuthRateLimits {
 
     private final RateLimiter rateLimiter;
     private final RateLimitProperties limits;
+    private final ClientIp clientIp;
 
     public void login(HttpServletRequest request, String email) {
-        rateLimiter.check("login:ip:" + ClientIp.of(request), limits.loginPerIpPer15Min(), FIFTEEN_MINUTES);
+        rateLimiter.check("login:ip:" + clientIp.of(request), limits.loginPerIpPer15Min(), FIFTEEN_MINUTES);
         rateLimiter.check("login:acct:" + email, limits.loginPerAccountPer15Min(), FIFTEEN_MINUTES);
     }
 
     public void register(HttpServletRequest request) {
-        rateLimiter.check("register:ip:" + ClientIp.of(request), limits.registerPerIpPerHour(), ONE_HOUR);
-        rateLimiter.check("register-day:ip:" + ClientIp.of(request), limits.registerPerIpPerDay(), ONE_DAY);
+        rateLimiter.check("register:ip:" + clientIp.of(request), limits.registerPerIpPerHour(), ONE_HOUR);
+        rateLimiter.check("register-day:ip:" + clientIp.of(request), limits.registerPerIpPerDay(), ONE_DAY);
     }
 
     /** Forgot-password and resend-verification: both send an email, so both are capped per address. */
     public void emailSending(HttpServletRequest request, String kind, String email) {
-        rateLimiter.check(kind + ":ip:" + ClientIp.of(request), limits.resetRequestPerIpPerHour(), ONE_HOUR);
+        rateLimiter.check(kind + ":ip:" + clientIp.of(request), limits.resetRequestPerIpPerHour(), ONE_HOUR);
         rateLimiter.check(kind + ":acct:" + email, limits.resetRequestPerAccountPerHour(), ONE_HOUR);
     }
 
     public void resetConfirm(HttpServletRequest request, String email) {
-        rateLimiter.check("reset-confirm:ip:" + ClientIp.of(request), limits.resetConfirmPerIpPer15Min(), FIFTEEN_MINUTES);
+        rateLimiter.check("reset-confirm:ip:" + clientIp.of(request), limits.resetConfirmPerIpPer15Min(), FIFTEEN_MINUTES);
         rateLimiter.check("reset-confirm:acct:" + email, limits.resetConfirmPerAccountPer15Min(), FIFTEEN_MINUTES);
     }
 
     public void refresh(HttpServletRequest request) {
-        rateLimiter.check("refresh:ip:" + ClientIp.of(request), limits.refreshPerIpPer15Min(), FIFTEEN_MINUTES);
+        rateLimiter.check("refresh:ip:" + clientIp.of(request), limits.refreshPerIpPer15Min(), FIFTEEN_MINUTES);
     }
 
     /** Endpoints that re-check the current password (change password, delete account). */

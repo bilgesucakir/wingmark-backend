@@ -42,7 +42,7 @@ class AuthRateLimitsRegisterTest {
     private final MovableClock clock = new MovableClock();
     private final RateLimitProperties limits = new RateLimitProperties(true, 600, 10, 50, 5, 3, 20, 10, 30, 120, 10, 20);
     private final RateLimiter limiter = new RateLimiter(limits);
-    private final AuthRateLimits authRateLimits = new AuthRateLimits(limiter, limits);
+    private final AuthRateLimits authRateLimits = new AuthRateLimits(limiter, limits, new ClientIp(new com.wingmark.backend.config.ClientIpProperties(com.wingmark.backend.config.ClientIpProperties.Source.CLOUDFLARE, 1)));
 
     private static MockHttpServletRequest from(String ip) {
         MockHttpServletRequest request = new MockHttpServletRequest();

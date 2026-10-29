@@ -27,6 +27,7 @@ public class GlobalRateLimitFilter extends OncePerRequestFilter {
     private final RateLimiter rateLimiter;
     private final RateLimitProperties limits;
     private final ObjectMapper objectMapper;
+    private final ClientIp clientIp;
 
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
@@ -38,7 +39,7 @@ public class GlobalRateLimitFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
-            rateLimiter.check("global:ip:" + ClientIp.of(request), limits.globalPerIpPerMinute(), Duration.ofMinutes(1));
+            rateLimiter.check("global:ip:" + clientIp.of(request), limits.globalPerIpPerMinute(), Duration.ofMinutes(1));
         } catch (RateLimitExceededException ex) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()));
